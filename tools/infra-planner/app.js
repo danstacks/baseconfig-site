@@ -43,7 +43,28 @@ const workloadPresets = {
         serverCost: 93748.91,
         serverHeight: 2,
         storagePerServer: 100,
-        description: 'Hadoop distributed storage and compute nodes'
+        description: 'Hadoop distributed storage and compute nodes',
+        specs: {
+            chassis: 'Cisco UCS C240 M8L (2U LFF)',
+            cpu: '1x Intel Xeon 6520P (24C, 210W)',
+            ram: '1TB DDR5-6400 (16x 64GB RDIMMs)',
+            boot: '2x 960GB M.2 SATA SSD (RAID1)',
+            storage: '12x 24TB SAS 7.2K + 2x 15.3TB NVMe',
+            nic: '2x 25G SFP28 (Mellanox CX6-Lx OCP)',
+            raid: '24G Tri-Mode RAID w/8GB FBWC 32Drv',
+            psu: '2x 1200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCSC-C240-M8L', description: 'UCS C240 M8 Rack 2U LFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-I6520P', description: 'Intel Xeon 6520P 24C 210W', qty: 1 },
+            { partNumber: 'UCS-MRX64G2RE5', description: '64GB DDR5-6400 RDIMM', qty: 16 },
+            { partNumber: 'UCS-M2-960G-D', description: '960GB M.2 SATA SSD', qty: 2 },
+            { partNumber: 'UCS-HDM24TW1S74K', description: '24TB SAS 7.2K RPM 4K HDD', qty: 12 },
+            { partNumber: 'UCS-NVMEG4-M1536D', description: '15.3TB NVMe U.3 P7450', qty: 2 },
+            { partNumber: 'UCSC-O-N6CD25GFO', description: 'Mellanox CX6-Lx 2x25G OCP NIC', qty: 1 },
+            { partNumber: 'UCSC-RAIDMP1LL32', description: '24G Tri-Mode RAID w/8GB FBWC 32Drv', qty: 1 },
+            { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
+        ]
     },
     datawarehouse_amd: {
         name: 'DataWarehouse - AMD',
@@ -51,7 +72,28 @@ const workloadPresets = {
         serverCost: 77524.56,
         serverHeight: 2,
         storagePerServer: 50,
-        description: 'AMD-based data warehouse servers'
+        description: 'AMD-based data warehouse servers',
+        specs: {
+            chassis: 'Cisco UCS C245 M8SX (2U SFF)',
+            cpu: '2x AMD EPYC 9255 (24C, 200W)',
+            ram: '1.5TB DDR5-6400 (24x 64GB RDIMMs)',
+            boot: '2x 240GB M.2 SATA SSD (RAID1)',
+            storage: '6x 960GB SATA SSD + 2x 24G RAID',
+            nic: '2x 25G SFP28 (Mellanox CX6-Lx) + 2x 32G FC HBA',
+            raid: '24G Tri-Mode RAID w/4GB FBWC',
+            psu: '2x 1200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCSC-C245-M8SX', description: 'UCS C245 M8 Rack 2U SFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-A9255', description: 'AMD EPYC 9255 24C 200W', qty: 2 },
+            { partNumber: 'UCS-MRX64G2RE5', description: '64GB DDR5-6400 RDIMM', qty: 24 },
+            { partNumber: 'UCS-M2-240G-D', description: '240GB M.2 SATA SSD', qty: 2 },
+            { partNumber: 'UCS-SD960GBM3XEPD', description: '960GB SATA SSD', qty: 6 },
+            { partNumber: 'UCSC-O-N6CD25GFD', description: 'Mellanox CX6-Lx 2x25G OCP NIC', qty: 1 },
+            { partNumber: 'UCSC-P-B7D32GF-D', description: 'Emulex LPe35002 32G FC HBA', qty: 2 },
+            { partNumber: 'UCSC-RAID-M1L16', description: '24G Tri-Mode RAID w/4GB FBWC', qty: 2 },
+            { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
+        ]
     },
     datawarehouse_intel: {
         name: 'DataWarehouse - Intel',
@@ -59,7 +101,28 @@ const workloadPresets = {
         serverCost: 96745.95,
         serverHeight: 2,
         storagePerServer: 50,
-        description: 'Intel-based data warehouse servers'
+        description: 'Intel-based data warehouse servers',
+        specs: {
+            chassis: 'Cisco UCS C240 M8SX (2U SFF)',
+            cpu: '2x Intel Xeon 6520P (24C, 210W)',
+            ram: '2TB DDR5-6400 (32x 64GB RDIMMs)',
+            boot: '2x 240GB M.2 SATA SSD (RAID1)',
+            storage: '6x 960GB SATA SSD + 2x 24G RAID',
+            nic: '2x 25G SFP28 (Mellanox CX6-Lx) + 2x 32G FC HBA',
+            raid: '24G Tri-Mode RAID w/4GB FBWC',
+            psu: '2x 1200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCSC-C240-M8SX', description: 'UCS C240 M8 Rack 2U SFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-I6520P', description: 'Intel Xeon 6520P 24C 210W', qty: 2 },
+            { partNumber: 'UCS-MRX64G2RE5', description: '64GB DDR5-6400 RDIMM', qty: 32 },
+            { partNumber: 'UCS-M2-240G-D', description: '240GB M.2 SATA SSD', qty: 2 },
+            { partNumber: 'UCS-SD960GBM3XEPD', description: '960GB SATA SSD', qty: 6 },
+            { partNumber: 'UCSC-O-N6CD25GFO', description: 'Mellanox CX6-Lx 2x25G OCP NIC', qty: 1 },
+            { partNumber: 'UCSC-P-B7D32GF-D', description: 'Emulex LPe35002 32G FC HBA', qty: 2 },
+            { partNumber: 'UCSC-RAID-M1L16', description: '24G Tri-Mode RAID w/4GB FBWC', qty: 2 },
+            { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
+        ]
     },
     gp_local_intel: {
         name: 'General Purpose Local Intel',
@@ -67,7 +130,27 @@ const workloadPresets = {
         serverCost: 37583.81,
         serverHeight: 1,
         storagePerServer: 2,
-        description: 'Intel general purpose with local storage'
+        description: 'Intel general purpose with local storage',
+        specs: {
+            chassis: 'Cisco UCS C220 M7S (1U SFF)',
+            cpu: '1x Intel Xeon 6548Y+ (32C, 250W)',
+            ram: '512GB DDR5-5600 (8x 64GB RDIMMs)',
+            boot: '2x 240GB M.2 SATA SSD (RAID1)',
+            storage: '6x 960GB SATA SSD',
+            nic: '2x 25G SFP28 (Mellanox CX6-Lx OCP)',
+            raid: '24G Tri-Mode RAID w/4GB FBWC',
+            psu: '2x 1200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCSC-C220-M7S', description: 'UCS C220 M7 Rack 1U SFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-I6548Y+', description: 'Intel Xeon 6548Y+ 32C 250W', qty: 1 },
+            { partNumber: 'UCS-MRX64G2RE3', description: '64GB DDR5-5600 RDIMM', qty: 8 },
+            { partNumber: 'UCS-M2-240G-D', description: '240GB M.2 SATA SSD', qty: 2 },
+            { partNumber: 'UCS-SD960GBM3XEPD', description: '960GB SATA SSD', qty: 6 },
+            { partNumber: 'UCSC-P-N6D25GF-D', description: 'Mellanox CX6-Lx 2x25G PCIe NIC', qty: 1 },
+            { partNumber: 'UCSC-RAID-M1L16', description: '24G Tri-Mode RAID w/4GB FBWC', qty: 1 },
+            { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
+        ]
     },
     gp_san_intel: {
         name: 'General Purpose SAN Intel',
@@ -75,31 +158,136 @@ const workloadPresets = {
         serverCost: 33697.29,
         serverHeight: 1,
         storagePerServer: 0,
-        description: 'Intel general purpose with SAN storage'
+        description: 'Intel general purpose with SAN storage',
+        specs: {
+            chassis: 'Cisco UCS C220 M7S (1U SFF)',
+            cpu: '2x Intel Xeon 6526Y (16C, 195W)',
+            ram: '512GB DDR5-5600 (16x 32GB RDIMMs)',
+            boot: '2x 240GB M.2 SATA SSD (RAID1)',
+            storage: 'SAN (no local)',
+            nic: '2x 25G SFP28 (Mellanox CX6-Lx) + 1x 32G FC HBA',
+            raid: 'N/A (SAN)',
+            psu: '2x 1200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCSC-C220-M7S', description: 'UCS C220 M7 Rack 1U SFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-I6526Y', description: 'Intel Xeon 6526Y 16C 195W', qty: 2 },
+            { partNumber: 'UCS-MRX32G1RE3', description: '32GB DDR5-5600 RDIMM', qty: 16 },
+            { partNumber: 'UCS-M2-240G-D', description: '240GB M.2 SATA SSD', qty: 2 },
+            { partNumber: 'UCSC-P-N6D25GF-D', description: 'Mellanox CX6-Lx 2x25G PCIe NIC', qty: 2 },
+            { partNumber: 'UCSC-P-B7D32GF-D', description: 'Emulex LPe35002 32G FC HBA', qty: 1 },
+            { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
+        ]
     },
     db_local_intel: {
         name: 'Database Local Optimized Intel',
         serverPower: 934,
         serverCost: 57980.73,
-        serverHeight: 2,
+        serverHeight: 1,
         storagePerServer: 20,
-        description: 'Intel database servers with local NVMe storage'
+        description: 'Intel database servers with local NVMe storage',
+        specs: {
+            chassis: 'Cisco UCS C220 M7S (1U SFF)',
+            cpu: '2x Intel Xeon 6548Y+ (32C, 250W)',
+            ram: '1TB DDR5-5600 (32x 32GB RDIMMs)',
+            boot: '2x 240GB M.2 SATA SSD (RAID1)',
+            storage: '6x 960GB SATA SSD',
+            nic: '2x 25G SFP28 (Mellanox CX6-Lx OCP)',
+            raid: 'M7 12G SAS RAID w/4GB FBWC',
+            psu: '2x 1200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCSC-C220-M7S', description: 'UCS C220 M7 Rack 1U SFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-I6548Y+', description: 'Intel Xeon 6548Y+ 32C 250W', qty: 2 },
+            { partNumber: 'UCS-MRX32G1RE3', description: '32GB DDR5-5600 RDIMM', qty: 32 },
+            { partNumber: 'UCS-M2-240G-D', description: '240GB M.2 SATA SSD', qty: 2 },
+            { partNumber: 'UCS-SD960GBM3XEPD', description: '960GB SATA SSD', qty: 6 },
+            { partNumber: 'UCSC-P-N6D25GF-D', description: 'Mellanox CX6-Lx 2x25G PCIe NIC', qty: 1 },
+            { partNumber: 'UCSC-RAID-T-D', description: 'M7 12G SAS RAID w/4GB FBWC', qty: 1 },
+            { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
+        ]
     },
     db_san_intel: {
         name: 'Database SAN Optimized Intel',
         serverPower: 891,
         serverCost: 53551.32,
-        serverHeight: 2,
+        serverHeight: 1,
         storagePerServer: 0,
-        description: 'Intel database servers with SAN storage'
+        description: 'Intel database servers with SAN storage',
+        specs: {
+            chassis: 'Cisco UCS C220 M7S (1U SFF)',
+            cpu: '2x Intel Xeon 6548Y+ (32C, 250W)',
+            ram: '1TB DDR5-5600 (32x 32GB RDIMMs)',
+            boot: '2x 240GB M.2 SATA SSD (RAID1)',
+            storage: 'SAN (no local)',
+            nic: '2x 25G SFP28 (Mellanox CX6-Lx) + 1x 32G FC HBA',
+            raid: 'N/A (SAN)',
+            psu: '2x 1200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCSC-C220-M7S', description: 'UCS C220 M7 Rack 1U SFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-I6548Y+', description: 'Intel Xeon 6548Y+ 32C 250W', qty: 2 },
+            { partNumber: 'UCS-MRX32G1RE3', description: '32GB DDR5-5600 RDIMM', qty: 32 },
+            { partNumber: 'UCS-M2-240G-D', description: '240GB M.2 SATA SSD', qty: 2 },
+            { partNumber: 'UCSC-P-N6D25GF-D', description: 'Mellanox CX6-Lx 2x25G PCIe NIC', qty: 1 },
+            { partNumber: 'UCSC-P-B7D32GF-D', description: 'Emulex LPe35002 32G FC HBA', qty: 1 },
+            { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
+        ]
+    },
+    gp_local_amd: {
+        name: 'General Purpose Local AMD',
+        serverPower: 770,
+        serverCost: 42388.37,
+        serverHeight: 1,
+        storagePerServer: 2,
+        description: 'AMD general purpose with local storage',
+        specs: {
+            chassis: 'Cisco UCS C225 M8S (1U SFF)',
+            cpu: '1x AMD EPYC 9335 (32C, 210W)',
+            ram: '768GB DDR5-6400 (12x 64GB RDIMMs)',
+            boot: '2x 240GB M.2 SATA SSD (RAID1)',
+            storage: '6x 960GB SATA SSD',
+            nic: '2x 25G SFP28 (Mellanox CX6-Lx OCP)',
+            raid: '24G Tri-Mode RAID w/4GB FBWC',
+            psu: '2x 1200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCSC-C225-M8S', description: 'UCS C225 M8 Rack 1U SFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-A9335', description: 'AMD EPYC 9335 32C 210W', qty: 1 },
+            { partNumber: 'UCS-MRX64G2RE5', description: '64GB DDR5-6400 RDIMM', qty: 12 },
+            { partNumber: 'UCS-M2-240G-D', description: '240GB M.2 SATA SSD', qty: 2 },
+            { partNumber: 'UCS-SD960GBM3XEPD', description: '960GB SATA SSD', qty: 6 },
+            { partNumber: 'UCSC-P-N6D25GF-D', description: 'Mellanox CX6-Lx 2x25G PCIe NIC', qty: 1 },
+            { partNumber: 'UCSC-RAID-M1L16', description: '24G Tri-Mode RAID w/4GB FBWC', qty: 1 },
+            { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
+        ]
     },
     gp_san_amd: {
         name: 'General Purpose SAN AMD',
         serverPower: 770,
         serverCost: 42388.37,
-        serverHeight: 1,
+        serverHeight: 2,
         storagePerServer: 0,
-        description: 'AMD general purpose with SAN storage'
+        description: 'AMD general purpose with SAN storage',
+        specs: {
+            chassis: 'Cisco UCS C245 M8SX (2U SFF)',
+            cpu: '2x AMD EPYC 9115 (16C, 125W)',
+            ram: '768GB DDR5-6400 (24x 32GB RDIMMs)',
+            boot: '2x 240GB M.2 SATA SSD (RAID1)',
+            storage: 'SAN (no local)',
+            nic: '2x 25G SFP28 (Mellanox CX6-Lx) + 1x 32G FC HBA',
+            raid: 'N/A (SAN)',
+            psu: '2x 1200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCSC-C245-M8SX', description: 'UCS C245 M8 Rack 2U SFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-A9115', description: 'AMD EPYC 9115 16C 125W', qty: 2 },
+            { partNumber: 'UCS-MRX32G1RE5', description: '32GB DDR5-6400 RDIMM', qty: 24 },
+            { partNumber: 'UCS-M2-240G-D', description: '240GB M.2 SATA SSD', qty: 2 },
+            { partNumber: 'UCSC-P-N6D25GF-D', description: 'Mellanox CX6-Lx 2x25G PCIe NIC', qty: 1 },
+            { partNumber: 'UCSC-P-B7D32GF-D', description: 'Emulex LPe35002 32G FC HBA', qty: 1 },
+            { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
+        ]
     },
     db_local_amd: {
         name: 'Database Local Optimized AMD',
@@ -107,7 +295,27 @@ const workloadPresets = {
         serverCost: 75604.69,
         serverHeight: 2,
         storagePerServer: 20,
-        description: 'AMD database servers with local NVMe storage'
+        description: 'AMD database servers with local NVMe storage',
+        specs: {
+            chassis: 'Cisco UCS C245 M8SX (2U SFF)',
+            cpu: '2x AMD EPYC 9335 (32C, 210W)',
+            ram: '1.5TB DDR5-6400 (24x 64GB RDIMMs)',
+            boot: '2x 240GB M.2 SATA SSD (RAID1)',
+            storage: '6x 960GB SATA SSD',
+            nic: '2x 25G SFP28 (Mellanox CX6-Lx OCP)',
+            raid: '24G Tri-Mode RAID w/4GB FBWC',
+            psu: '2x 1200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCSC-C245-M8SX', description: 'UCS C245 M8 Rack 2U SFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-A9335', description: 'AMD EPYC 9335 32C 210W', qty: 2 },
+            { partNumber: 'UCS-MRX64G2RE5', description: '64GB DDR5-6400 RDIMM', qty: 24 },
+            { partNumber: 'UCS-M2-240G-D', description: '240GB M.2 SATA SSD', qty: 2 },
+            { partNumber: 'UCS-SD960GBM3XEPD', description: '960GB SATA SSD', qty: 6 },
+            { partNumber: 'UCSC-P-N6D25GF-D', description: 'Mellanox CX6-Lx 2x25G PCIe NIC', qty: 1 },
+            { partNumber: 'UCSC-RAID-M1L16', description: '24G Tri-Mode RAID w/4GB FBWC', qty: 1 },
+            { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
+        ]
     },
     db_san_amd: {
         name: 'Database SAN Optimized AMD',
@@ -115,15 +323,53 @@ const workloadPresets = {
         serverCost: 70077.29,
         serverHeight: 2,
         storagePerServer: 0,
-        description: 'AMD database servers with SAN storage'
+        description: 'AMD database servers with SAN storage',
+        specs: {
+            chassis: 'Cisco UCS C245 M8SX (2U SFF)',
+            cpu: '2x AMD EPYC 9335 (32C, 210W)',
+            ram: '1.5TB DDR5-6400 (24x 64GB RDIMMs)',
+            boot: '2x 240GB M.2 SATA SSD (RAID1)',
+            storage: 'SAN (no local)',
+            nic: '2x 25G SFP28 (Mellanox CX6-Lx) + 1x 32G FC HBA',
+            raid: 'N/A (SAN)',
+            psu: '2x 1200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCSC-C245-M8SX', description: 'UCS C245 M8 Rack 2U SFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-A9335', description: 'AMD EPYC 9335 32C 210W', qty: 2 },
+            { partNumber: 'UCS-MRX64G2RE5', description: '64GB DDR5-6400 RDIMM', qty: 24 },
+            { partNumber: 'UCS-M2-240G-D', description: '240GB M.2 SATA SSD', qty: 2 },
+            { partNumber: 'UCSC-P-N6D25GF-D', description: 'Mellanox CX6-Lx 2x25G PCIe NIC', qty: 1 },
+            { partNumber: 'UCSC-P-B7D32GF-D', description: 'Emulex LPe35002 32G FC HBA', qty: 1 },
+            { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
+        ]
     },
     hypervisor: {
         name: 'Hypervisor',
         serverPower: 970,
         serverCost: 51501.34,
-        serverHeight: 2,
+        serverHeight: 1,
         storagePerServer: 5,
-        description: 'Virtualization hosts for VM workloads'
+        description: 'Virtualization hosts for VM workloads',
+        specs: {
+            chassis: 'Cisco UCS C220 M7S (1U SFF)',
+            cpu: '2x Intel Xeon 6548Y+ (32C, 250W)',
+            ram: '1TB DDR5-5600 (32x 32GB RDIMMs)',
+            boot: '2x 240GB M.2 SATA SSD (RAID1)',
+            storage: 'SAN (no local)',
+            nic: '2x 25G SFP28 (Mellanox CX6-Lx) + 1x 4x1G NIC',
+            raid: 'N/A (SAN)',
+            psu: '2x 1200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCSC-C220-M7S', description: 'UCS C220 M7 Rack 1U SFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-I6548Y+', description: 'Intel Xeon 6548Y+ 32C 250W', qty: 2 },
+            { partNumber: 'UCS-MRX32G1RE3', description: '32GB DDR5-5600 RDIMM', qty: 32 },
+            { partNumber: 'UCS-M2-240G-D', description: '240GB M.2 SATA SSD', qty: 2 },
+            { partNumber: 'UCSC-P-N6D25GF-D', description: 'Mellanox CX6-Lx 2x25G PCIe NIC', qty: 1 },
+            { partNumber: 'UCSC-P-IQ1GC', description: 'Intel I710-T4L 4x1G NIC', qty: 1 },
+            { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
+        ]
     },
     container_worker: {
         name: 'Container Worker',
@@ -131,15 +377,54 @@ const workloadPresets = {
         serverCost: 46312.82,
         serverHeight: 1,
         storagePerServer: 2,
-        description: 'Kubernetes/container worker nodes'
+        description: 'Kubernetes/container worker nodes',
+        specs: {
+            chassis: 'Cisco UCS C225 M8S (1U SFF)',
+            cpu: '1x AMD EPYC 9535 (64C, 300W)',
+            ram: '768GB DDR5-6400 (12x 64GB RDIMMs)',
+            boot: '2x 240GB M.2 SATA SSD (RAID1)',
+            storage: '2x 3.8TB SATA SSD + 2x 960GB SATA SSD',
+            nic: '2x 25G SFP28 (Mellanox CX6-Lx OCP)',
+            raid: '24G Tri-Mode RAID w/4GB FBWC',
+            psu: '2x 1200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCSC-C225-M8S', description: 'UCS C225 M8 Rack 1U SFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-A9535', description: 'AMD EPYC 9535 64C 300W', qty: 1 },
+            { partNumber: 'UCS-MRX64G2RE5', description: '64GB DDR5-6400 RDIMM', qty: 12 },
+            { partNumber: 'UCS-M2-240G-D', description: '240GB M.2 SATA SSD', qty: 2 },
+            { partNumber: 'UCS-SDB3T8SA1VD', description: '3.8TB SATA SSD', qty: 2 },
+            { partNumber: 'UCS-SD960GBM3XEPD', description: '960GB SATA SSD', qty: 2 },
+            { partNumber: 'UCSC-P-N6D25GF-D', description: 'Mellanox CX6-Lx 2x25G PCIe NIC', qty: 1 },
+            { partNumber: 'UCSC-RAID-M1L16', description: '24G Tri-Mode RAID w/4GB FBWC', qty: 1 },
+            { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
+        ]
     },
     oracle_db_intel: {
         name: 'Oracle DB Optimized Intel',
         serverPower: 871,
         serverCost: 81500.01,
-        serverHeight: 2,
+        serverHeight: 1,
         storagePerServer: 30,
-        description: 'Oracle database optimized configuration'
+        description: 'Oracle database optimized configuration',
+        specs: {
+            chassis: 'Cisco UCS C220 M7S (1U SFF)',
+            cpu: '2x Intel Xeon 6526Y (16C, 195W)',
+            ram: '1TB DDR5-5600 (32x 32GB RDIMMs)',
+            boot: '2x 240GB M.2 SATA SSD (RAID1)',
+            storage: 'SAN (no local)',
+            nic: '2x 25G SFP28 (Mellanox CX6-Lx)',
+            raid: 'N/A (SAN)',
+            psu: '2x 1200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCSC-C220-M7S', description: 'UCS C220 M7 Rack 1U SFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-I6526Y', description: 'Intel Xeon 6526Y 16C 195W', qty: 2 },
+            { partNumber: 'UCS-MRX32G1RE3', description: '32GB DDR5-5600 RDIMM', qty: 32 },
+            { partNumber: 'UCS-M2-240G-D', description: '240GB M.2 SATA SSD', qty: 2 },
+            { partNumber: 'UCSC-P-N6D25GF-D', description: 'Mellanox CX6-Lx 2x25G PCIe NIC', qty: 2 },
+            { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
+        ]
     },
     logging: {
         name: 'Logging',
@@ -147,15 +432,56 @@ const workloadPresets = {
         serverCost: 53436.81,
         serverHeight: 2,
         storagePerServer: 50,
-        description: 'Log aggregation and analysis servers'
+        description: 'Log aggregation and analysis servers',
+        specs: {
+            chassis: 'Cisco UCS C240 M8L (2U LFF)',
+            cpu: '2x Intel Xeon 6730P (32C, 270W)',
+            ram: '512GB DDR5-6400 (16x 32GB RDIMMs)',
+            boot: '2x 240GB M.2 SATA SSD (RAID1)',
+            storage: '8x 16TB SAS 7.2K + 4x 4TB SAS 7.2K',
+            nic: '2x 25G SFP28 (Mellanox CX6-Lx OCP)',
+            raid: '24G Tri-Mode RAID w/8GB FBWC 32Drv',
+            psu: '2x 1200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCSC-C240-M8L', description: 'UCS C240 M8 Rack 2U LFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-I6730P', description: 'Intel Xeon 6730P 32C 270W', qty: 2 },
+            { partNumber: 'UCS-MRX32G1RE5', description: '32GB DDR5-6400 RDIMM', qty: 16 },
+            { partNumber: 'UCS-M2-240G-D', description: '240GB M.2 SATA SSD', qty: 2 },
+            { partNumber: 'UCS-HDL16TT1S74K', description: '16TB SAS 7.2K RPM 4K HDD', qty: 8 },
+            { partNumber: 'UCS-HDL4TG1S74K', description: '4TB SAS 7.2K RPM 4K HDD', qty: 4 },
+            { partNumber: 'UCSC-P-N6D25GFO', description: 'Mellanox CX6-Lx 2x25G OCP NIC', qty: 1 },
+            { partNumber: 'UCSC-RAIDMP1LL32', description: '24G Tri-Mode RAID w/8GB FBWC 32Drv', qty: 1 },
+            { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
+        ]
     },
     data_storage: {
         name: 'Data Storage Servers',
         serverPower: 1151,
         serverCost: 52548.37,
-        serverHeight: 4,
+        serverHeight: 2,
         storagePerServer: 200,
-        description: 'High-density storage servers'
+        description: 'High-density storage servers',
+        specs: {
+            chassis: 'Cisco UCS C240 M8L (2U LFF)',
+            cpu: '2x Intel Xeon 6737P (32C, 270W)',
+            ram: '512GB DDR5-6400 (16x 32GB RDIMMs)',
+            boot: '2x 240GB M.2 SATA SSD (RAID1)',
+            storage: '12x 8TB SAS 7.2K HDD',
+            nic: '2x 25G SFP28 (Mellanox CX6-Lx OCP)',
+            raid: '24G Tri-Mode RAID w/8GB FBWC 32Drv',
+            psu: '2x 1200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCSC-C240-M8L', description: 'UCS C240 M8 Rack 2U LFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-I6737P', description: 'Intel Xeon 6737P 32C 270W', qty: 2 },
+            { partNumber: 'UCS-MRX32G1RE5', description: '32GB DDR5-6400 RDIMM', qty: 16 },
+            { partNumber: 'UCS-M2-240G-D', description: '240GB M.2 SATA SSD', qty: 2 },
+            { partNumber: 'UCS-HDL8TT1S74K', description: '8TB SAS 7.2K RPM 4K HDD', qty: 12 },
+            { partNumber: 'UCSC-P-N6D25GFO', description: 'Mellanox CX6-Lx 2x25G OCP NIC', qty: 1 },
+            { partNumber: 'UCSC-RAIDMP1LL32', description: '24G Tri-Mode RAID w/8GB FBWC 32Drv', qty: 1 },
+            { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
+        ]
     }
 };
 
