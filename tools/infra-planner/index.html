@@ -82,6 +82,9 @@
                             <option value="data_storage">Data Storage Servers</option>
                         </select>
                         <p class="text-xs text-gray-500 mt-1" id="workloadDescription"></p>
+                        <div id="workloadSpecs" class="hidden mt-3 p-3 bg-slate-800/50 rounded-lg border border-slate-600/50">
+                            <div class="grid grid-cols-2 gap-2 text-xs" id="workloadSpecsContent"></div>
+                        </div>
                     </div>
                     
                     <div>
@@ -283,17 +286,9 @@
                                     <th class="text-left py-2 px-3 text-gray-400">Part Number</th>
                                     <th class="text-left py-2 px-3 text-gray-400">Description</th>
                                     <th class="text-right py-2 px-3 text-gray-400">Qty</th>
-                                    <th class="text-right py-2 px-3 text-gray-400">Unit Price</th>
-                                    <th class="text-right py-2 px-3 text-gray-400">Ext Price</th>
                                 </tr>
                             </thead>
                             <tbody id="bomTableBody"></tbody>
-                            <tfoot>
-                                <tr class="border-t border-slate-600 font-semibold">
-                                    <td colspan="4" class="py-2 px-3 text-right">Total Per Server:</td>
-                                    <td class="py-2 px-3 text-right text-cyan-400" id="bomTotal">$0</td>
-                                </tr>
-                            </tfoot>
                         </table>
                     </div>
                 </div>
