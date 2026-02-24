@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BaseConfig | Dan Stacks - Infrastructure & Tech</title>
+    <meta name="description" content="BaseConfig - Data center infrastructure, tech insights, and tools by Dan Stacks">
+    <link rel="canonical" href="https://baseconfig.tech">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        .social-btn {
+            transition: all 0.2s ease;
+        }
+        .social-btn:hover {
+            transform: scale(1.05);
+        }
+        .glow {
+            box-shadow: 0 0 60px rgba(56, 189, 248, 0.3);
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .float-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen font-sans text-gray-100">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-700/50">
+        <div class="max-w-6xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <a href="/" class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-400 to-purple-500 flex items-center justify-center font-bold text-lg">
+                        BC
+                    </div>
+                    <span class="text-xl font-bold">BaseConfig</span>
+                </a>
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="#about" class="text-gray-300 hover:text-white transition-colors">About</a>
+                    <a href="#tools" class="text-gray-300 hover:text-white transition-colors">Tools</a>
+                    <a href="#content" class="text-gray-300 hover:text-white transition-colors">Content</a>
+                    <a href="#connect" class="text-gray-300 hover:text-white transition-colors">Connect</a>
+                </div>
+                <a href="https://www.linkedin.com/in/dan-stacks/" target="_blank" class="hidden md:flex items-center gap-2 px-4 py-2 bg-sky-500 hover:bg-sky-600 rounded-lg font-medium transition-colors">
+                    <i data-lucide="linkedin" class="w-4 h-4"></i>
+                    Let's Connect
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 px-6">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 rounded-full text-sm text-sky-400 mb-6">
+                        <i data-lucide="server" class="w-4 h-4"></i>
+                        Infrastructure & Technology
+                    </div>
+                    <h1 class="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+                        Hi, I'm <span class="gradient-text">Dan Stacks</span>
+                    </h1>
+                    <p class="text-xl text-gray-400 mb-8 leading-relaxed">
+                        Building and sharing knowledge about <strong class="text-white">data center infrastructure</strong>, 
+                        server deployments, and the tech that powers enterprise environments.
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="#tools" class="px-6 py-3 bg-gradient-to-r from-sky-500 to-purple-500 hover:from-sky-600 hover:to-purple-600 rounded-lg font-semibold transition-all">
+                            Explore Tools
+                        </a>
+                        <a href="#content" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg font-semibold transition-all">
+                            Watch Content
+                        </a>
+                    </div>
+                </div>
+                <div class="flex justify-center">
+                    <div class="relative">
+                        <div class="w-72 h-72 rounded-full bg-gradient-to-br from-sky-500/20 to-purple-500/20 glow float-animation"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="w-56 h-56 rounded-full bg-slate-800 border-4 border-slate-700 flex items-center justify-center">
+                                <i data-lucide="server-cog" class="w-24 h-24 text-sky-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Social Links Bar -->
+    <section class="py-8 bg-slate-800/50 border-y border-slate-700/50">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="https://www.youtube.com/@BaseConfig" target="_blank" class="social-btn flex items-center gap-3 px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-medium">
+                    <i data-lucide="youtube" class="w-5 h-5"></i>
+                    YouTube
+                </a>
+                <a href="https://www.tiktok.com/@baseconfig" target="_blank" class="social-btn flex items-center gap-3 px-6 py-3 bg-slate-900 hover:bg-black rounded-lg font-medium border border-slate-600">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
+                    TikTok
+                </a>
+                <a href="https://www.instagram.com/baseconfig/" target="_blank" class="social-btn flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-medium">
+                    <i data-lucide="instagram" class="w-5 h-5"></i>
+                    Instagram
+                </a>
+                <a href="https://www.linkedin.com/in/dan-stacks/" target="_blank" class="social-btn flex items-center gap-3 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium">
+                    <i data-lucide="linkedin" class="w-5 h-5"></i>
+                    LinkedIn
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-20 px-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-6">About <span class="gradient-text">BaseConfig</span></h2>
+            <p class="text-lg text-gray-400 leading-relaxed mb-8">
+                BaseConfig is where infrastructure meets education. I break down complex data center concepts, 
+                server configurations, and enterprise technology into digestible content. Whether you're planning 
+                a rack deployment, sizing a scalable unit, or just curious about what powers the cloud — 
+                you're in the right place.
+            </p>
+            <div class="grid md:grid-cols-3 gap-6 mt-12">
+                <div class="card-hover p-6 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <div class="w-12 h-12 bg-sky-500/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                        <i data-lucide="server" class="w-6 h-6 text-sky-400"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">Infrastructure</h3>
+                    <p class="text-gray-400 text-sm">Data centers, racks, power, cooling, and everything in between</p>
+                </div>
+                <div class="card-hover p-6 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <div class="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                        <i data-lucide="network" class="w-6 h-6 text-purple-400"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">Networking</h3>
+                    <p class="text-gray-400 text-sm">ToR switches, spine-leaf, 25G/100G, and network architecture</p>
+                </div>
+                <div class="card-hover p-6 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <div class="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                        <i data-lucide="calculator" class="w-6 h-6 text-green-400"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">Planning Tools</h3>
+                    <p class="text-gray-400 text-sm">Free tools to help you plan and budget your deployments</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tools Section -->
+    <section id="tools" class="py-20 px-6 bg-slate-800/30">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Free <span class="gradient-text">Tools</span></h2>
+                <p class="text-gray-400">Practical tools to help with infrastructure planning</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <a href="/tools/infra-planner/" class="card-hover block p-6 bg-slate-800 rounded-xl border border-slate-700 group">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-sky-500 to-purple-500 rounded-lg flex items-center justify-center">
+                            <i data-lucide="layout-grid" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg group-hover:text-sky-400 transition-colors">Infrastructure Planner</h3>
+                            <p class="text-sm text-gray-500">Rack & Power Calculator</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm mb-4">
+                        Calculate scalable units, power requirements, network devices, and costs for your server deployment.
+                    </p>
+                    <div class="flex items-center text-sky-400 text-sm font-medium">
+                        Launch Tool <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+                    </div>
+                </a>
+                <div class="card-hover p-6 bg-slate-800/50 rounded-xl border border-slate-700 border-dashed opacity-60">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center">
+                            <i data-lucide="hard-drive" class="w-6 h-6 text-gray-500"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg text-gray-500">Storage Calculator</h3>
+                            <p class="text-sm text-gray-600">Coming Soon</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-500 text-sm">
+                        Plan storage capacity, IOPS, and throughput for your workloads.
+                    </p>
+                </div>
+                <div class="card-hover p-6 bg-slate-800/50 rounded-xl border border-slate-700 border-dashed opacity-60">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center">
+                            <i data-lucide="thermometer" class="w-6 h-6 text-gray-500"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg text-gray-500">Cooling Estimator</h3>
+                            <p class="text-sm text-gray-600">Coming Soon</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-500 text-sm">
+                        Estimate cooling requirements based on power density and rack layout.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Content Section -->
+    <section id="content" class="py-20 px-6">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Latest <span class="gradient-text">Content</span></h2>
+                <p class="text-gray-400">Follow along on your favorite platform</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- YouTube Embed Placeholder -->
+                <div class="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
+                    <div class="aspect-video bg-slate-900 flex items-center justify-center">
+                        <a href="https://www.youtube.com/@BaseConfig" target="_blank" class="text-center">
+                            <i data-lucide="youtube" class="w-16 h-16 text-red-500 mx-auto mb-4"></i>
+                            <p class="text-gray-400">Watch on YouTube</p>
+                        </a>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold mb-2">YouTube Channel</h3>
+                        <p class="text-sm text-gray-400">In-depth infrastructure tutorials and walkthroughs</p>
+                    </div>
+                </div>
+                <!-- TikTok Placeholder -->
+                <div class="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
+                    <div class="aspect-video bg-slate-900 flex items-center justify-center">
+                        <a href="https://www.tiktok.com/@baseconfig" target="_blank" class="text-center">
+                            <svg class="w-16 h-16 mx-auto mb-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
+                            <p class="text-gray-400">Watch on TikTok</p>
+                        </a>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold mb-2">TikTok</h3>
+                        <p class="text-sm text-gray-400">Quick tips and behind-the-scenes content</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Connect Section -->
+    <section id="connect" class="py-20 px-6 bg-gradient-to-b from-slate-800/30 to-transparent">
+        <div class="max-w-2xl mx-auto text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-6">Let's <span class="gradient-text">Connect</span></h2>
+            <p class="text-gray-400 mb-8">
+                Whether you want to collaborate, have questions about infrastructure, or just want to chat tech — 
+                I'd love to hear from you.
+            </p>
+            <a href="https://www.linkedin.com/in/dan-stacks/" target="_blank" class="inline-flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-semibold text-lg transition-all">
+                <i data-lucide="linkedin" class="w-6 h-6"></i>
+                Connect on LinkedIn
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-8 px-6 border-t border-slate-800">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-purple-500 flex items-center justify-center font-bold text-sm">
+                        BC
+                    </div>
+                    <span class="font-semibold">BaseConfig</span>
+                </div>
+                <div class="flex items-center gap-6">
+                    <a href="https://www.youtube.com/@BaseConfig" target="_blank" class="text-gray-400 hover:text-white transition-colors">
+                        <i data-lucide="youtube" class="w-5 h-5"></i>
+                    </a>
+                    <a href="https://www.tiktok.com/@baseconfig" target="_blank" class="text-gray-400 hover:text-white transition-colors">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
+                    </a>
+                    <a href="https://www.instagram.com/baseconfig/" target="_blank" class="text-gray-400 hover:text-white transition-colors">
+                        <i data-lucide="instagram" class="w-5 h-5"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/in/dan-stacks/" target="_blank" class="text-gray-400 hover:text-white transition-colors">
+                        <i data-lucide="linkedin" class="w-5 h-5"></i>
+                    </a>
+                </div>
+                <p class="text-gray-500 text-sm">© 2026 BaseConfig. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+        
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

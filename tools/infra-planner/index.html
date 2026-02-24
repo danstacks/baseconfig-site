@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infrastructure Planner | BaseConfig</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#64748b',
+                        accent: '#8b5cf6',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="gradient-bg min-h-screen text-gray-100">
+    <!-- Setup Wizard Modal -->
+    <div id="wizardOverlay" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+        <div class="card rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">Infrastructure Planning Wizard</h2>
+                    <p class="text-gray-400 mt-2">Let's configure your deployment in a few steps</p>
+                </div>
+                
+                <!-- Progress Steps -->
+                <div class="flex justify-center mb-8">
+                    <div class="flex items-center gap-2">
+                        <div id="step1Indicator" class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-sm font-bold">1</div>
+                        <div class="w-12 h-1 bg-slate-600" id="step1Bar"></div>
+                        <div id="step2Indicator" class="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-sm font-bold">2</div>
+                        <div class="w-12 h-1 bg-slate-600" id="step2Bar"></div>
+                        <div id="step3Indicator" class="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-sm font-bold">3</div>
+                    </div>
+                </div>
+
+                <!-- Step 1: Basic Info -->
+                <div id="wizardStep1" class="wizard-step space-y-6">
+                    <h3 class="text-lg font-semibold flex items-center gap-2"><i data-lucide="server" class="w-5 h-5 text-blue-400"></i>Basic Configuration</h3>
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Total Servers to Refresh *</label>
+                        <input type="number" id="wizardTotalServers" value="6000" min="1" class="input-field w-full px-4 py-3 rounded-lg text-white text-lg">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Workload Type *</label>
+                        <select id="wizardWorkloadType" class="input-field w-full px-4 py-3 rounded-lg text-white" onchange="updateWorkloadDefaults()">
+                            <option value="">-- Select Workload Type --</option>
+                            <option value="high_compute">High Compute</option>
+                            <option value="hadoop_data_node">Hadoop Data Node</option>
+                            <option value="datawarehouse_amd">DataWarehouse - AMD</option>
+                            <option value="datawarehouse_intel">DataWarehouse - Intel</option>
+                            <option value="gp_local_intel">General Purpose Local Intel</option>
+                            <option value="gp_san_intel">General Purpose SAN Intel</option>
+                            <option value="db_local_intel">Database Local Optimized Intel</option>
+                            <option value="db_san_intel">Database SAN Optimized Intel</option>
+                            <option value="gp_san_amd">General Purpose SAN AMD</option>
+                            <option value="db_local_amd">Database Local Optimized AMD</option>
+                            <option value="db_san_amd">Database SAN Optimized AMD</option>
+                            <option value="hypervisor">Hypervisor</option>
+                            <option value="container_worker">Container Worker</option>
+                            <option value="oracle_db_intel">Oracle DB Optimized Intel</option>
+                            <option value="logging">Logging</option>
+                            <option value="data_storage">Data Storage Servers</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1" id="workloadDescription"></p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Network Speed to Server *</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button type="button" id="net25g" onclick="selectNetworkSpeed('25g')" class="network-speed-btn p-4 rounded-lg border-2 border-slate-600 hover:border-blue-500 transition-all text-center">
+                                <div class="text-2xl font-bold text-blue-400">25G</div>
+                                <div class="text-xs text-gray-400">Standard</div>
+                            </button>
+                            <button type="button" id="net100g" onclick="selectNetworkSpeed('100g')" class="network-speed-btn p-4 rounded-lg border-2 border-slate-600 hover:border-purple-500 transition-all text-center">
+                                <div class="text-2xl font-bold text-purple-400">100G</div>
+                                <div class="text-xs text-gray-400">High Performance</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Power & Rack -->
+                <div id="wizardStep2" class="wizard-step hidden space-y-6">
+                    <h3 class="text-lg font-semibold flex items-center gap-2"><i data-lucide="zap" class="w-5 h-5 text-yellow-400"></i>Power & Rack Configuration</h3>
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Rack Power Limit (kW) *</label>
+                        <div class="grid grid-cols-4 gap-2 mb-2">
+                            <button type="button" onclick="setRackPower(8)" class="rack-power-btn px-3 py-2 rounded bg-slate-700 hover:bg-slate-600 text-sm">8 kW</button>
+                            <button type="button" onclick="setRackPower(10)" class="rack-power-btn px-3 py-2 rounded bg-slate-700 hover:bg-slate-600 text-sm">10 kW</button>
+                            <button type="button" onclick="setRackPower(15)" class="rack-power-btn px-3 py-2 rounded bg-slate-700 hover:bg-slate-600 text-sm">15 kW</button>
+                            <button type="button" onclick="setRackPower(20)" class="rack-power-btn px-3 py-2 rounded bg-slate-700 hover:bg-slate-600 text-sm">20 kW</button>
+                        </div>
+                        <input type="number" id="wizardRackPower" value="10" min="1" class="input-field w-full px-4 py-3 rounded-lg text-white" onchange="updatePowerPreview()">
+                        <p class="text-xs text-gray-500 mt-1">Most datacenters limit racks to 10kW. This is often the primary constraint.</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Scalable Unit Layout</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button type="button" id="layoutSingle" onclick="selectRackLayout('single')" class="rack-layout-btn p-4 rounded-lg border-2 border-blue-500 bg-blue-900/30 transition-all text-left">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i data-lucide="square" class="w-5 h-5 text-blue-400"></i>
+                                    <span class="font-semibold">Single Rack</span>
+                                </div>
+                                <div class="text-xs text-gray-400">2 ToRs in 1 rack, servers connect to both</div>
+                            </button>
+                            <button type="button" id="layoutSplit" onclick="selectRackLayout('split')" class="rack-layout-btn p-4 rounded-lg border-2 border-slate-600 hover:border-purple-500 transition-all text-left">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i data-lucide="columns" class="w-5 h-5 text-purple-400"></i>
+                                    <span class="font-semibold">Split (2 Racks)</span>
+                                </div>
+                                <div class="text-xs text-gray-400">1 ToR per rack, servers cross-cabled between racks</div>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2" id="layoutDescription">Standard layout: each scalable unit fits in one rack.</p>
+                    </div>
+                    
+                    <div class="p-4 bg-slate-800 rounded-lg">
+                        <h4 class="font-semibold mb-3 flex items-center gap-2"><i data-lucide="calculator" class="w-4 h-4 text-green-400"></i>Power Estimate Preview</h4>
+                        <div id="powerPreview" class="space-y-2 text-sm"></div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Refresh Rate -->
+                <div id="wizardStep3" class="wizard-step hidden space-y-6">
+                    <h3 class="text-lg font-semibold flex items-center gap-2"><i data-lucide="refresh-cw" class="w-5 h-5 text-cyan-400"></i>Refresh Rate Options</h3>
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Run Rate (servers/month)</label>
+                        <input type="number" id="wizardRunRate" value="250" min="1" class="input-field w-full px-4 py-3 rounded-lg text-white">
+                        <p class="text-xs text-gray-500 mt-1">Standard deployment pace with existing resources</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Rack & Roll Rate (servers/month)</label>
+                        <input type="number" id="wizardRackRollRate" value="1000" min="1" class="input-field w-full px-4 py-3 rounded-lg text-white">
+                        <p class="text-xs text-gray-500 mt-1">Accelerated deployment with additional resources/contractors</p>
+                    </div>
+                    
+                    <div class="p-4 bg-slate-800 rounded-lg">
+                        <h4 class="font-semibold mb-3">Timeline Preview</h4>
+                        <div id="timelinePreview" class="space-y-2 text-sm"></div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="flex justify-between mt-8 pt-6 border-t border-slate-600">
+                    <button id="wizardBack" onclick="wizardPrevStep()" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-medium transition-colors hidden">
+                        <span class="flex items-center gap-2"><i data-lucide="arrow-left" class="w-4 h-4"></i>Back</span>
+                    </button>
+                    <div class="flex-1"></div>
+                    <button id="wizardNext" onclick="wizardNextStep()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors">
+                        <span class="flex items-center gap-2">Next<i data-lucide="arrow-right" class="w-4 h-4"></i></span>
+                    </button>
+                    <button id="wizardFinish" onclick="finishWizard()" class="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors hidden">
+                        <span class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4"></i>Start Planning</span>
+                    </button>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <button onclick="skipWizard()" class="text-sm text-gray-500 hover:text-gray-300">Skip wizard and use defaults</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 max-w-7xl" id="mainContent">
+        <header class="text-center mb-8">
+            <a href="/" class="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to BaseConfig
+            </a>
+            <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-2">
+                Infrastructure Planning Calculator
+            </h1>
+            <p class="text-gray-400">Plan your server refresh, budget, and timeline with precision</p>
+        </header>
+
+        <nav class="flex flex-wrap justify-center gap-2 mb-8">
+            <button onclick="showTab('config')" id="tab-config" class="tab-btn tab-active px-6 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
+                <span class="flex items-center gap-2"><i data-lucide="settings" class="w-4 h-4"></i>Configuration</span>
+            </button>
+            <button onclick="showTab('scalable')" id="tab-scalable" class="tab-btn px-6 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
+                <span class="flex items-center gap-2"><i data-lucide="server" class="w-4 h-4"></i>Scalable Units</span>
+            </button>
+            <button onclick="showTab('timeline')" id="tab-timeline" class="tab-btn px-6 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
+                <span class="flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4"></i>Timeline</span>
+            </button>
+            <button onclick="showTab('costs')" id="tab-costs" class="tab-btn px-6 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
+                <span class="flex items-center gap-2"><i data-lucide="dollar-sign" class="w-4 h-4"></i>Cost Analysis</span>
+            </button>
+            <button onclick="showTab('summary')" id="tab-summary" class="tab-btn px-6 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
+                <span class="flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4"></i>Summary</span>
+            </button>
+        </nav>
+
+        <!-- Configuration Tab -->
+        <section id="section-config" class="tab-section animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Workload & Network Summary Card -->
+                <div class="card rounded-xl p-6 lg:col-span-2 highlight-card">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h2 class="text-xl font-semibold mb-2 flex items-center gap-2">
+                                <i data-lucide="cpu" class="w-5 h-5 text-blue-400"></i>Current Configuration
+                            </h2>
+                            <div class="flex flex-wrap gap-4 text-sm">
+                                <span class="px-3 py-1 bg-blue-900/50 rounded-full" id="configWorkloadBadge">General Purpose</span>
+                                <span class="px-3 py-1 bg-purple-900/50 rounded-full" id="configNetworkBadge">25G Network</span>
+                                <span class="px-3 py-1 bg-yellow-900/50 rounded-full" id="configPowerBadge">10kW Rack Limit</span>
+                            </div>
+                        </div>
+                        <button onclick="showWizard()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm flex items-center gap-2">
+                            <i data-lucide="wand-2" class="w-4 h-4"></i>Re-run Wizard
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="server" class="w-5 h-5 text-blue-400"></i>Server Configuration
+                    </h2>
+                    <div class="space-y-4">
+                        <div><label class="block text-sm text-gray-400 mb-1">Total Servers to Refresh</label>
+                        <input type="number" id="totalServers" value="6000" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Workload Type</label>
+                            <select id="workloadType" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="applyWorkloadPreset(); calculate()">
+                                <option value="high_compute">High Compute</option>
+                                <option value="hadoop_data_node">Hadoop Data Node</option>
+                                <option value="datawarehouse_amd">DataWarehouse - AMD</option>
+                                <option value="datawarehouse_intel">DataWarehouse - Intel</option>
+                                <option value="gp_local_intel">General Purpose Local Intel</option>
+                                <option value="gp_san_intel">General Purpose SAN Intel</option>
+                                <option value="db_local_intel">Database Local Optimized Intel</option>
+                                <option value="db_san_intel">Database SAN Optimized Intel</option>
+                                <option value="gp_san_amd">General Purpose SAN AMD</option>
+                                <option value="db_local_amd">Database Local Optimized AMD</option>
+                                <option value="db_san_amd">Database SAN Optimized AMD</option>
+                                <option value="hypervisor">Hypervisor</option>
+                                <option value="container_worker">Container Worker</option>
+                                <option value="oracle_db_intel">Oracle DB Optimized Intel</option>
+                                <option value="logging">Logging</option>
+                                <option value="data_storage">Data Storage Servers</option>
+                            </select>
+                        </div>
+                        <div><label class="block text-sm text-gray-400 mb-1">Server Power Consumption (Watts)</label>
+                        <input type="number" id="serverPower" value="750" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">Server Cost ($)</label>
+                        <input type="number" id="serverCost" value="8500" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="layout-grid" class="w-5 h-5 text-purple-400"></i>Rack Configuration
+                    </h2>
+                    <div class="space-y-4">
+                        <div><label class="block text-sm text-gray-400 mb-1">Rack Power Capacity (kW)</label>
+                        <input type="number" id="rackPower" value="10" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()">
+                        <p class="text-xs text-yellow-500 mt-1">⚠️ This is often the primary constraint</p></div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Scalable Unit Layout</label>
+                            <select id="rackLayout" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()">
+                                <option value="single">Single Rack (1 ToR per rack)</option>
+                                <option value="split">Split (2 Racks, 1 ToR each)</option>
+                            </select>
+                        </div>
+                        <div><label class="block text-sm text-gray-400 mb-1">Rack Units (U) Available</label>
+                        <input type="number" id="rackUnits" value="42" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">Server Height (U)</label>
+                        <input type="number" id="serverHeight" value="1" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">Rack Cost ($)</label>
+                        <input type="number" id="rackCost" value="3500" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="network" class="w-5 h-5 text-green-400"></i>Network Configuration
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Network Speed to Server</label>
+                            <select id="networkSpeed" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="applyNetworkPreset(); calculate()">
+                                <option value="25g">25G</option>
+                                <option value="100g">100G</option>
+                            </select>
+                        </div>
+                        <div><label class="block text-sm text-gray-400 mb-1">ToR Switch Ports</label>
+                        <input type="number" id="torPorts" value="48" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">ToR Switch Cost ($)</label>
+                        <input type="number" id="torCost" value="15000" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">ToR Switch Power (Watts)</label>
+                        <input type="number" id="torPower" value="350" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">Spine Switch Cost ($)</label>
+                        <input type="number" id="spineCost" value="45000" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">Servers per Spine Switch</label>
+                        <input type="number" id="serversPerSpine" value="500" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="zap" class="w-5 h-5 text-yellow-400"></i>Optics Configuration
+                    </h2>
+                    <div class="space-y-4">
+                        <div><label class="block text-sm text-gray-400 mb-1">Server NIC Optics Cost ($)</label>
+                        <input type="number" id="serverOpticsCost" value="150" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">Optics per Server</label>
+                        <input type="number" id="opticsPerServer" value="2" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">Uplink Optics Cost ($)</label>
+                        <input type="number" id="uplinkOpticsCost" value="500" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">Uplinks per ToR</label>
+                        <input type="number" id="uplinksPerTor" value="4" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="hard-drive" class="w-5 h-5 text-red-400"></i>Storage Configuration
+                    </h2>
+                    <div class="space-y-4">
+                        <div><label class="block text-sm text-gray-400 mb-1">Storage per Server (TB)</label>
+                        <input type="number" id="storagePerServer" value="10" min="0" step="0.1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">Storage Node Capacity (TB)</label>
+                        <input type="number" id="storageNodeCapacity" value="500" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">Storage Node Cost ($)</label>
+                        <input type="number" id="storageNodeCost" value="75000" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">Replication Factor</label>
+                        <input type="number" id="replicationFactor" value="3" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="refresh-cw" class="w-5 h-5 text-cyan-400"></i>Refresh Rate Options
+                    </h2>
+                    <div class="space-y-4">
+                        <div><label class="block text-sm text-gray-400 mb-1">Run Rate (servers/month)</label>
+                        <input type="number" id="runRate" value="250" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">Rack & Roll Rate (servers/month)</label>
+                        <input type="number" id="rackRollRate" value="1000" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">Rack & Roll Premium (%)</label>
+                        <input type="number" id="rackRollPremium" value="25" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">Monthly Labor Cost per Server ($)</label>
+                        <input type="number" id="laborCostPerServer" value="50" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Scalable Units Tab -->
+        <section id="section-scalable" class="tab-section hidden animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="layers" class="w-5 h-5 text-blue-400"></i>Scalable Unit Breakdown
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead><tr class="border-b border-slate-600">
+                                <th class="text-left py-3 px-4 text-gray-400">Component</th>
+                                <th class="text-right py-3 px-4 text-gray-400">Per Unit</th>
+                                <th class="text-right py-3 px-4 text-gray-400">Total Required</th>
+                                <th class="text-right py-3 px-4 text-gray-400">Unit Cost</th>
+                                <th class="text-right py-3 px-4 text-gray-400">Total Cost</th>
+                            </tr></thead>
+                            <tbody id="scalableUnitTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="bolt" class="w-5 h-5 text-yellow-400"></i>Power Analysis
+                    </h2>
+                    <div class="space-y-4" id="powerAnalysis"></div>
+                </div>
+                <div class="lg:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="highlight-card rounded-xl p-4 text-center">
+                        <div class="text-3xl font-bold text-blue-400" id="totalScalableUnits">0</div>
+                        <div class="text-sm text-gray-400">Scalable Units</div>
+                    </div>
+                    <div class="highlight-card rounded-xl p-4 text-center">
+                        <div class="text-3xl font-bold text-purple-400" id="totalRacks">0</div>
+                        <div class="text-sm text-gray-400">Total Racks</div>
+                    </div>
+                    <div class="highlight-card rounded-xl p-4 text-center">
+                        <div class="text-3xl font-bold text-green-400" id="totalNetworkDevices">0</div>
+                        <div class="text-sm text-gray-400">Network Devices</div>
+                    </div>
+                    <div class="highlight-card rounded-xl p-4 text-center">
+                        <div class="text-3xl font-bold text-red-400" id="totalStorageNodes">0</div>
+                        <div class="text-sm text-gray-400">Storage Nodes</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Timeline Tab -->
+        <section id="section-timeline" class="tab-section hidden animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="clock" class="w-5 h-5 text-blue-400"></i>Run Rate Timeline
+                        <span class="text-sm font-normal text-gray-400" id="runRateLabel">(250/month)</span>
+                    </h2>
+                    <div id="runRateTimeline" class="space-y-3"></div>
+                </div>
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="rocket" class="w-5 h-5 text-purple-400"></i>Rack & Roll Timeline
+                        <span class="text-sm font-normal text-gray-400" id="rackRollLabel">(1000/month)</span>
+                    </h2>
+                    <div id="rackRollTimeline" class="space-y-3"></div>
+                </div>
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="git-compare" class="w-5 h-5 text-green-400"></i>Timeline Comparison
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="timelineComparison"></div>
+                </div>
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-cyan-400"></i>Monthly Progress Projection
+                    </h2>
+                    <div class="overflow-x-auto"><div id="progressChart" class="min-w-[600px]"></div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cost Analysis Tab -->
+        <section id="section-costs" class="tab-section hidden animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="wallet" class="w-5 h-5 text-blue-400"></i>Run Rate Cost Breakdown
+                    </h2>
+                    <div id="runRateCosts" class="space-y-3"></div>
+                    <div class="mt-4 pt-4 border-t border-slate-600">
+                        <div class="flex justify-between items-center text-lg font-semibold">
+                            <span>Total Cost</span><span class="text-blue-400" id="runRateTotalCost">$0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="credit-card" class="w-5 h-5 text-purple-400"></i>Rack & Roll Cost Breakdown
+                    </h2>
+                    <div id="rackRollCosts" class="space-y-3"></div>
+                    <div class="mt-4 pt-4 border-t border-slate-600">
+                        <div class="flex justify-between items-center text-lg font-semibold">
+                            <span>Total Cost</span><span class="text-purple-400" id="rackRollTotalCost">$0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="scale" class="w-5 h-5 text-green-400"></i>Cost Comparison Analysis
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="costComparison"></div>
+                </div>
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="trending-up" class="w-5 h-5 text-yellow-400"></i>Monthly Budget Requirements
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead><tr class="border-b border-slate-600">
+                                <th class="text-left py-3 px-4 text-gray-400">Month</th>
+                                <th class="text-right py-3 px-4 text-gray-400">Run Rate Spend</th>
+                                <th class="text-right py-3 px-4 text-gray-400">Run Rate Cumulative</th>
+                                <th class="text-right py-3 px-4 text-gray-400">Rack & Roll Spend</th>
+                                <th class="text-right py-3 px-4 text-gray-400">Rack & Roll Cumulative</th>
+                            </tr></thead>
+                            <tbody id="monthlyBudgetTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Summary Tab -->
+        <section id="section-summary" class="tab-section hidden animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="clipboard-list" class="w-5 h-5 text-blue-400"></i>Executive Summary
+                    </h2>
+                    <div id="executiveSummary" class="prose prose-invert max-w-none"></div>
+                </div>
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="lightbulb" class="w-5 h-5 text-yellow-400"></i>Recommendation
+                    </h2>
+                    <div id="recommendation" class="space-y-4"></div>
+                </div>
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="users" class="w-5 h-5 text-green-400"></i>Resource Requirements
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="resourceRequirements"></div>
+                </div>
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="alert-triangle" class="w-5 h-5 text-red-400"></i>Risk Assessment
+                    </h2>
+                    <div id="riskAssessment" class="space-y-3"></div>
+                </div>
+                <div class="card rounded-xl p-6 lg:col-span-3">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="download" class="w-5 h-5 text-purple-400"></i>Export & Share
+                    </h2>
+                    <div class="flex flex-wrap gap-4">
+                        <button onclick="exportToJSON()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors flex items-center gap-2">
+                            <i data-lucide="file-json" class="w-4 h-4"></i>Export JSON
+                        </button>
+                        <button onclick="exportToCSV()" class="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors flex items-center gap-2">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>Export CSV
+                        </button>
+                        <button onclick="printSummary()" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors flex items-center gap-2">
+                            <i data-lucide="printer" class="w-4 h-4"></i>Print Summary
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
