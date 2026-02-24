@@ -57,7 +57,7 @@
                     
                     <div>
                         <label class="block text-sm text-gray-400 mb-2">Total Servers to Refresh *</label>
-                        <input type="number" id="wizardTotalServers" value="6000" min="1" class="input-field w-full px-4 py-3 rounded-lg text-white text-lg">
+                        <input type="number" id="wizardTotalServers" value="1000" min="1" class="input-field w-full px-4 py-3 rounded-lg text-white text-lg">
                     </div>
                     
                     <div>
@@ -242,7 +242,7 @@
                     </h2>
                     <div class="space-y-4">
                         <div><label class="block text-sm text-gray-400 mb-1">Total Servers to Refresh</label>
-                        <input type="number" id="totalServers" value="6000" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <input type="number" id="totalServers" value="1000" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                         <div>
                             <label class="block text-sm text-gray-400 mb-1">Workload Type</label>
                             <select id="workloadType" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="applyWorkloadPreset(); calculate()">
@@ -268,6 +268,33 @@
                         <input type="number" id="serverPower" value="750" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                         <div><label class="block text-sm text-gray-400 mb-1">Server Cost ($)</label>
                         <input type="number" id="serverCost" value="8500" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                    </div>
+                </div>
+
+                <!-- BOM Section -->
+                <div id="bomSection" class="card rounded-xl p-6 lg:col-span-2 hidden">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="list" class="w-5 h-5 text-cyan-400"></i>Bill of Materials (Per Server)
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-slate-600">
+                                    <th class="text-left py-2 px-3 text-gray-400">Part Number</th>
+                                    <th class="text-left py-2 px-3 text-gray-400">Description</th>
+                                    <th class="text-right py-2 px-3 text-gray-400">Qty</th>
+                                    <th class="text-right py-2 px-3 text-gray-400">Unit Price</th>
+                                    <th class="text-right py-2 px-3 text-gray-400">Ext Price</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bomTableBody"></tbody>
+                            <tfoot>
+                                <tr class="border-t border-slate-600 font-semibold">
+                                    <td colspan="4" class="py-2 px-3 text-right">Total Per Server:</td>
+                                    <td class="py-2 px-3 text-right text-cyan-400" id="bomTotal">$0</td>
+                                </tr>
+                            </tfoot>
+                        </table>
                     </div>
                 </div>
 

@@ -15,7 +15,26 @@ const workloadPresets = {
         serverCost: 93718.61,
         serverHeight: 2,
         storagePerServer: 5,
-        description: 'High-performance compute workloads'
+        description: 'High-performance compute workloads',
+        bom: [
+            { partNumber: 'UCS-M8-MLB', description: 'UCS M8 RACK MLB', qty: 1, unitPrice: 0 },
+            { partNumber: 'DC-MGT-SAAS', description: 'Cisco Intersight SaaS', qty: 1, unitPrice: 0 },
+            { partNumber: 'UCSC-C225-M8S', description: 'UCS C225 M8 Rack w/oCPU, mem, drv, 1U wSFF HDD/SSD backplane', qty: 1, unitPrice: 5409.92 },
+            { partNumber: 'UCS-CPU-A9655P', description: 'AMD 9655P 2.6GHz 400W 96C/384MB Cache DDR5 6000MT/s', qty: 1, unitPrice: 18793.39 },
+            { partNumber: 'UCSC-O-N6CD25GFD', description: 'Cisco-NVDA MCX631432AC-ADAB CX6Lx 2x25G SFP28 x8 OCP NIC', qty: 1, unitPrice: 1836.92 },
+            { partNumber: 'UCS-M2-960G-D', description: '960GB M.2 SATA Micron G2 SSD', qty: 2, unitPrice: 1008.32 },
+            { partNumber: 'UCS-M2-HWRAID-D', description: 'Cisco Boot optimized M.2 Raid controller', qty: 1, unitPrice: 218.70 },
+            { partNumber: 'UCS-TPM2-002D-D', description: 'TPM 2.0 FIPS 140-2 MSW2022 compliant AMD M8 servers', qty: 1, unitPrice: 54.04 },
+            { partNumber: 'UCSC-RAIL-D', description: 'Ball Bearing Rail Kit for C220 & C240 M7/M8 rack servers', qty: 1, unitPrice: 223.73 },
+            { partNumber: 'UCSC-BZL-C220-D', description: 'C220 M7 and M8 Security Bezel', qty: 1, unitPrice: 109.34 },
+            { partNumber: 'UCSC-HSLP-C225M8', description: 'UCS C225 M8 Heatsink', qty: 1, unitPrice: 0 },
+            { partNumber: 'UCSC-BBLKD-M8', description: 'UCS C-Series M6 & M8 SFF drive blanking panel', qty: 8, unitPrice: 0 },
+            { partNumber: 'UCSC-RIS1B-225M8', description: 'C225 M8 1U Riser 1B PCIe Gen5 x16 HH', qty: 1, unitPrice: 545.11 },
+            { partNumber: 'UCSC-RAID-M1L16', description: '24G Tri-Mode M1 RAID Controller w/4GB FBWC 16Drv', qty: 1, unitPrice: 3666.04 },
+            { partNumber: 'UCS-NVMEG4-M1536D', description: '15.3TB 2.5in U.3 15mm P7450 Hg Perf Med End NVMe', qty: 2, unitPrice: 12061.65 },
+            { partNumber: 'UCSC-PSU1-1600W-D', description: 'UCS 1600W AC PSU Platinum', qty: 2, unitPrice: 340.88 },
+            { partNumber: 'UCS-MR128G2RG5', description: '128GB DDR5-6400 RDIMM 2Rx4 (32Gb)', qty: 12, unitPrice: 1828.12 }
+        ]
     },
     hadoop_data_node: {
         name: 'Hadoop Data Node',
@@ -425,14 +444,54 @@ function finishWizard() {
 
 function applyWorkloadPreset() {
     const workloadType = document.getElementById('workloadType').value;
-    if (workloadType && workloadPresets[workloadType]) {
-        const preset = workloadPresets[workloadType];
+    const preset = workloadPresets[workloadType];
+    if (preset) {
         document.getElementById('serverPower').value = preset.serverPower;
         document.getElementById('serverCost').value = preset.serverCost;
         document.getElementById('serverHeight').value = preset.serverHeight;
         document.getElementById('storagePerServer').value = preset.storagePerServer;
+        updateBomDisplay(preset);
+    } else {
+        hideBomDisplay();
     }
     updateConfigBadges();
+}
+
+function updateBomDisplay(preset) {
+    const bomSection = document.getElementById('bomSection');
+    const bomTableBody = document.getElementById('bomTableBody');
+    const bomTotal = document.getElementById('bomTotal');
+    
+    if (!preset.bom || preset.bom.length === 0) {
+        bomSection.classList.add('hidden');
+        return;
+    }
+    
+    bomSection.classList.remove('hidden');
+    let total = 0;
+    let html = '';
+    
+    preset.bom.forEach(item => {
+        const extPrice = item.qty * item.unitPrice;
+        total += extPrice;
+        html += `
+            <tr class="border-b border-slate-700/50 hover:bg-slate-700/30">
+                <td class="py-2 px-3 font-mono text-xs text-cyan-300">${item.partNumber}</td>
+                <td class="py-2 px-3 text-gray-300">${item.description}</td>
+                <td class="py-2 px-3 text-right">${item.qty}</td>
+                <td class="py-2 px-3 text-right">${item.unitPrice > 0 ? '$' + formatNumber(item.unitPrice.toFixed(2)) : '-'}</td>
+                <td class="py-2 px-3 text-right">${extPrice > 0 ? '$' + formatNumber(extPrice.toFixed(2)) : '-'}</td>
+            </tr>
+        `;
+    });
+    
+    bomTableBody.innerHTML = html;
+    bomTotal.textContent = '$' + formatNumber(total.toFixed(2));
+    lucide.createIcons();
+}
+
+function hideBomDisplay() {
+    document.getElementById('bomSection').classList.add('hidden');
 }
 
 function applyNetworkPreset() {
