@@ -702,6 +702,13 @@ function updateWorkloadDefaults() {
             for (const [key, value] of Object.entries(preset.specs)) {
                 html += `<div class="text-gray-400">${specLabels[key] || key}:</div><div class="text-cyan-300">${value}</div>`;
             }
+            // Add power draw and server price
+            if (preset.serverPower) {
+                html += `<div class="text-gray-400">Power Draw:</div><div class="text-yellow-400 font-semibold">${preset.serverPower}W</div>`;
+            }
+            if (preset.serverCost) {
+                html += `<div class="text-gray-400">Est. Price:</div><div class="text-green-400 font-semibold">$${preset.serverCost.toLocaleString()}</div>`;
+            }
             specsContent.innerHTML = html;
         } else {
             specsDiv.classList.add('hidden');
