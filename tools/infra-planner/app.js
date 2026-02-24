@@ -6,6 +6,16 @@ let calculationResults = {};
 let wizardStep = 1;
 let selectedNetworkSpeed = '25g';
 let selectedRackLayout = 'single';
+let comparisonMode = false;
+let comparisonWorkload = null;
+let savedConfigurations = JSON.parse(localStorage.getItem('infraPlannerConfigs') || '[]');
+
+// Constants for calculations
+const CABLE_COST_PER_METER_DAC = 15;  // DAC cable cost per meter
+const CABLE_COST_PER_METER_AOC = 25;  // AOC cable cost per meter
+const DAC_MAX_LENGTH = 5;  // DAC max length in meters
+const AVG_RACK_TO_TOR_LENGTH = 3;  // Average cable length within rack
+const AVG_TOR_TO_SPINE_LENGTH = 15; // Average cable length to spine
 
 // Workload presets with typical configurations
 const workloadPresets = {
@@ -1065,6 +1075,7 @@ function calculate() {
     updateTimelineSection();
     updateCostsSection();
     updateSummarySection();
+    updateAdditionalSections();
 }
 
 function updateScalableUnitsSection() {
@@ -1467,14 +1478,608 @@ function printSummary() {
     window.print();
 }
 
+// Save/Load Configuration Functions
+function saveConfiguration(name) {
+    const config = {
+        name: name || `Config ${new Date().toLocaleDateString()}`,
+        timestamp: new Date().toISOString(),
+        inputs: getInputs(),
+        workloadType: document.getElementById('workloadType').value,
+        networkSpeed: document.getElementById('networkSpeed').value,
+        rackLayout: document.getElementById('rackLayout').value
+    };
+    savedConfigurations.push(config);
+    localStorage.setItem('infraPlannerConfigs', JSON.stringify(savedConfigurations));
+    updateSavedConfigsList();
+    return config;
+}
+
+function loadConfiguration(index) {
+    const config = savedConfigurations[index];
+    if (!config) return;
+    
+    // Set all input values
+    Object.entries(config.inputs).forEach(([key, value]) => {
+        const el = document.getElementById(key);
+        if (el) el.value = value;
+    });
+    
+    if (config.workloadType) {
+        document.getElementById('workloadType').value = config.workloadType;
+        applyWorkloadPreset();
+    }
+    if (config.networkSpeed) {
+        document.getElementById('networkSpeed').value = config.networkSpeed;
+        applyNetworkPreset();
+    }
+    if (config.rackLayout) {
+        document.getElementById('rackLayout').value = config.rackLayout;
+    }
+    
+    calculate();
+    updateConfigBadges();
+}
+
+function deleteConfiguration(index) {
+    savedConfigurations.splice(index, 1);
+    localStorage.setItem('infraPlannerConfigs', JSON.stringify(savedConfigurations));
+    updateSavedConfigsList();
+}
+
+function updateSavedConfigsList() {
+    const container = document.getElementById('savedConfigsList');
+    if (!container) return;
+    
+    if (savedConfigurations.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-sm">No saved configurations</p>';
+        return;
+    }
+    
+    container.innerHTML = savedConfigurations.map((config, i) => `
+        <div class="flex items-center justify-between p-2 bg-slate-800 rounded-lg">
+            <div>
+                <div class="font-medium text-sm">${config.name}</div>
+                <div class="text-xs text-gray-500">${new Date(config.timestamp).toLocaleString()}</div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="loadConfiguration(${i})" class="px-2 py-1 bg-cyan-600 hover:bg-cyan-700 rounded text-xs">Load</button>
+                <button onclick="deleteConfiguration(${i})" class="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs">Delete</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function shareConfiguration() {
+    const config = {
+        inputs: getInputs(),
+        workloadType: document.getElementById('workloadType').value,
+        networkSpeed: document.getElementById('networkSpeed').value,
+        rackLayout: document.getElementById('rackLayout').value
+    };
+    const encoded = btoa(JSON.stringify(config));
+    const url = `${window.location.origin}${window.location.pathname}?config=${encoded}`;
+    navigator.clipboard.writeText(url).then(() => {
+        alert('Configuration URL copied to clipboard!');
+    });
+}
+
+function loadFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const configParam = params.get('config');
+    if (configParam) {
+        try {
+            const config = JSON.parse(atob(configParam));
+            Object.entries(config.inputs).forEach(([key, value]) => {
+                const el = document.getElementById(key);
+                if (el) el.value = value;
+            });
+            if (config.workloadType) {
+                document.getElementById('workloadType').value = config.workloadType;
+            }
+            if (config.networkSpeed) {
+                document.getElementById('networkSpeed').value = config.networkSpeed;
+            }
+            if (config.rackLayout) {
+                document.getElementById('rackLayout').value = config.rackLayout;
+            }
+            hideWizard();
+            applyWorkloadPreset();
+            applyNetworkPreset();
+            calculate();
+        } catch (e) {
+            console.error('Failed to load config from URL:', e);
+        }
+    }
+}
+
+// Validation and Warnings
+function getValidationWarnings() {
+    const warnings = [];
+    const r = calculationResults;
+    const i = r.inputs;
+    
+    // ToR port utilization check
+    const portsNeededPerTor = Math.ceil(r.serversPerScalableUnit / 2) * (i.opticsPerServer / 2);
+    const availableTorPorts = i.torPorts - i.uplinksPerTor;
+    if (portsNeededPerTor > availableTorPorts) {
+        warnings.push({
+            type: 'error',
+            title: 'ToR Port Oversubscription',
+            message: `Need ${portsNeededPerTor} server ports per ToR but only ${availableTorPorts} available (${i.torPorts} total - ${i.uplinksPerTor} uplinks)`
+        });
+    }
+    
+    // Spine oversubscription check
+    const totalServerBandwidth = i.totalServers * (i.opticsPerServer / 2) * (selectedNetworkSpeed === '100g' ? 100 : 25);
+    const totalSpineBandwidth = r.spineSwitches * 32 * (selectedNetworkSpeed === '100g' ? 100 : 25); // Assume 32 ports per spine
+    const oversubscriptionRatio = totalServerBandwidth / totalSpineBandwidth;
+    if (oversubscriptionRatio > 4) {
+        warnings.push({
+            type: 'warning',
+            title: 'High Spine Oversubscription',
+            message: `${oversubscriptionRatio.toFixed(1)}:1 oversubscription ratio. Consider adding more spine switches.`
+        });
+    }
+    
+    // Power warning
+    if (r.actualPowerPerRack > i.rackPower * 0.9) {
+        warnings.push({
+            type: 'warning',
+            title: 'Near Power Limit',
+            message: `Rack power utilization at ${((r.actualPowerPerRack / i.rackPower) * 100).toFixed(0)}% of capacity`
+        });
+    }
+    
+    return warnings;
+}
+
+function displayValidationWarnings() {
+    const warnings = getValidationWarnings();
+    const container = document.getElementById('validationWarnings');
+    if (!container) return;
+    
+    if (warnings.length === 0) {
+        container.innerHTML = '<div class="p-3 bg-green-900/30 border border-green-700/50 rounded-lg text-green-400 text-sm flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i>All validations passed</div>';
+    } else {
+        container.innerHTML = warnings.map(w => `
+            <div class="p-3 ${w.type === 'error' ? 'bg-red-900/30 border-red-700/50' : 'bg-yellow-900/30 border-yellow-700/50'} border rounded-lg text-sm">
+                <div class="font-semibold ${w.type === 'error' ? 'text-red-400' : 'text-yellow-400'}">${w.title}</div>
+                <div class="text-gray-300">${w.message}</div>
+            </div>
+        `).join('');
+    }
+    lucide.createIcons();
+}
+
+// Network Topology Analysis
+function calculateNetworkTopology() {
+    const r = calculationResults;
+    const i = r.inputs;
+    
+    const serverLinksPerTor = Math.ceil(r.serversPerScalableUnit / 2) * (i.opticsPerServer / 2);
+    const uplinkBandwidth = i.uplinksPerTor * (selectedNetworkSpeed === '100g' ? 100 : 25);
+    const serverBandwidth = serverLinksPerTor * (selectedNetworkSpeed === '100g' ? 100 : 25);
+    const torOversubscription = serverBandwidth / uplinkBandwidth;
+    
+    const totalSpinePorts = r.spineSwitches * 64; // Assume 64-port spines
+    const usedSpinePorts = r.torSwitches * i.uplinksPerTor;
+    const spineUtilization = (usedSpinePorts / totalSpinePorts) * 100;
+    
+    return {
+        serverLinksPerTor,
+        uplinkBandwidth,
+        serverBandwidth,
+        torOversubscription,
+        totalSpinePorts,
+        usedSpinePorts,
+        spineUtilization,
+        totalFabricBandwidth: r.spineSwitches * 64 * (selectedNetworkSpeed === '100g' ? 100 : 25) / 1000 // Tbps
+    };
+}
+
+// Cabling Estimates
+function calculateCabling() {
+    const r = calculationResults;
+    const i = r.inputs;
+    
+    // Server to ToR cables (within rack, use DAC)
+    const serverToTorCables = i.totalServers * (i.opticsPerServer / 2);
+    const serverToTorLength = serverToTorCables * AVG_RACK_TO_TOR_LENGTH;
+    const serverToTorCost = serverToTorLength * CABLE_COST_PER_METER_DAC;
+    
+    // ToR to Spine cables (longer runs, may need AOC)
+    const torToSpineCables = r.torSwitches * i.uplinksPerTor;
+    const torToSpineLength = torToSpineCables * AVG_TOR_TO_SPINE_LENGTH;
+    const useAOC = AVG_TOR_TO_SPINE_LENGTH > DAC_MAX_LENGTH;
+    const torToSpineCost = torToSpineLength * (useAOC ? CABLE_COST_PER_METER_AOC : CABLE_COST_PER_METER_DAC);
+    
+    return {
+        serverToTorCables,
+        serverToTorLength,
+        serverToTorCost,
+        serverToTorType: 'DAC',
+        torToSpineCables,
+        torToSpineLength,
+        torToSpineCost,
+        torToSpineType: useAOC ? 'AOC' : 'DAC',
+        totalCables: serverToTorCables + torToSpineCables,
+        totalLength: serverToTorLength + torToSpineLength,
+        totalCost: serverToTorCost + torToSpineCost
+    };
+}
+
+// Power Efficiency Metrics
+function calculatePowerEfficiency() {
+    const r = calculationResults;
+    const i = r.inputs;
+    const pue = parseFloat(document.getElementById('pueValue')?.value) || 1.5;
+    const powerCostPerKwh = parseFloat(document.getElementById('powerCostPerKwh')?.value) || 0.10;
+    
+    const itPower = r.totalPower;
+    const facilityPower = itPower * pue;
+    const coolingOverhead = facilityPower - itPower;
+    
+    const annualKwh = facilityPower * 24 * 365;
+    const annualPowerCost = annualKwh * powerCostPerKwh;
+    const monthlyPowerCost = annualPowerCost / 12;
+    
+    return {
+        pue,
+        itPower,
+        facilityPower,
+        coolingOverhead,
+        annualKwh,
+        annualPowerCost,
+        monthlyPowerCost,
+        powerCostPerServer: annualPowerCost / i.totalServers
+    };
+}
+
+// Comparison Mode
+function enableComparisonMode() {
+    comparisonMode = true;
+    document.getElementById('comparisonPanel')?.classList.remove('hidden');
+}
+
+function disableComparisonMode() {
+    comparisonMode = false;
+    comparisonWorkload = null;
+    document.getElementById('comparisonPanel')?.classList.add('hidden');
+}
+
+function setComparisonWorkload(workloadType) {
+    comparisonWorkload = workloadType;
+    updateComparisonDisplay();
+}
+
+function updateComparisonDisplay() {
+    if (!comparisonMode || !comparisonWorkload) return;
+    
+    const container = document.getElementById('comparisonResults');
+    if (!container) return;
+    
+    const currentWorkload = document.getElementById('workloadType').value;
+    const current = workloadPresets[currentWorkload];
+    const compare = workloadPresets[comparisonWorkload];
+    
+    if (!current || !compare) return;
+    
+    const currentInputs = getInputs();
+    
+    // Calculate for comparison workload
+    const compareInputs = { ...currentInputs };
+    compareInputs.serverPower = compare.serverPower;
+    compareInputs.serverCost = compare.serverCost;
+    compareInputs.serverHeight = compare.serverHeight;
+    compareInputs.storagePerServer = compare.storagePerServer;
+    
+    const comparisons = [
+        { label: 'Server Power', current: current.serverPower + 'W', compare: compare.serverPower + 'W', diff: compare.serverPower - current.serverPower },
+        { label: 'Server Cost', current: '$' + current.serverCost.toLocaleString(), compare: '$' + compare.serverCost.toLocaleString(), diff: compare.serverCost - current.serverCost },
+        { label: 'Height', current: current.serverHeight + 'U', compare: compare.serverHeight + 'U', diff: compare.serverHeight - current.serverHeight },
+        { label: 'Storage/Server', current: current.storagePerServer + 'TB', compare: compare.storagePerServer + 'TB', diff: compare.storagePerServer - current.storagePerServer }
+    ];
+    
+    container.innerHTML = `
+        <div class="text-sm font-semibold mb-3">${current.name} vs ${compare.name}</div>
+        <table class="w-full text-sm">
+            <thead><tr class="border-b border-slate-600">
+                <th class="text-left py-2">Metric</th>
+                <th class="text-right py-2 text-cyan-400">${current.name}</th>
+                <th class="text-right py-2 text-purple-400">${compare.name}</th>
+                <th class="text-right py-2">Diff</th>
+            </tr></thead>
+            <tbody>
+                ${comparisons.map(c => `
+                    <tr class="border-b border-slate-700">
+                        <td class="py-2 text-gray-400">${c.label}</td>
+                        <td class="py-2 text-right">${c.current}</td>
+                        <td class="py-2 text-right">${c.compare}</td>
+                        <td class="py-2 text-right ${c.diff > 0 ? 'text-red-400' : c.diff < 0 ? 'text-green-400' : ''}">${c.diff > 0 ? '+' : ''}${typeof c.diff === 'number' ? c.diff.toLocaleString() : c.diff}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+// Custom Workload Builder
+function openCustomWorkloadBuilder() {
+    document.getElementById('customWorkloadModal')?.classList.remove('hidden');
+}
+
+function closeCustomWorkloadBuilder() {
+    document.getElementById('customWorkloadModal')?.classList.add('hidden');
+}
+
+function saveCustomWorkload() {
+    const name = document.getElementById('customWorkloadName')?.value;
+    if (!name) {
+        alert('Please enter a workload name');
+        return;
+    }
+    
+    const customWorkload = {
+        name: name,
+        serverPower: parseInt(document.getElementById('customServerPower')?.value) || 500,
+        serverCost: parseFloat(document.getElementById('customServerCost')?.value) || 10000,
+        serverHeight: parseInt(document.getElementById('customServerHeight')?.value) || 1,
+        storagePerServer: parseFloat(document.getElementById('customStoragePerServer')?.value) || 10,
+        networkSpeed: document.getElementById('customNetworkSpeed')?.value || '25g',
+        nicPorts: parseInt(document.getElementById('customNicPorts')?.value) || 2,
+        description: document.getElementById('customDescription')?.value || 'Custom workload',
+        specs: {
+            chassis: document.getElementById('customChassis')?.value || 'Custom',
+            cpu: document.getElementById('customCpu')?.value || 'Custom CPU',
+            ram: document.getElementById('customRam')?.value || 'Custom RAM',
+            nic: document.getElementById('customNic')?.value || 'Custom NIC'
+        },
+        bom: [],
+        isCustom: true
+    };
+    
+    const key = 'custom_' + name.toLowerCase().replace(/\s+/g, '_');
+    workloadPresets[key] = customWorkload;
+    
+    // Save to localStorage
+    const customWorkloads = JSON.parse(localStorage.getItem('customWorkloads') || '{}');
+    customWorkloads[key] = customWorkload;
+    localStorage.setItem('customWorkloads', JSON.stringify(customWorkloads));
+    
+    // Add to dropdown
+    addWorkloadToDropdowns(key, customWorkload.name);
+    
+    closeCustomWorkloadBuilder();
+    alert('Custom workload saved!');
+}
+
+function loadCustomWorkloads() {
+    const customWorkloads = JSON.parse(localStorage.getItem('customWorkloads') || '{}');
+    Object.entries(customWorkloads).forEach(([key, workload]) => {
+        workloadPresets[key] = workload;
+        addWorkloadToDropdowns(key, workload.name);
+    });
+}
+
+function addWorkloadToDropdowns(key, name) {
+    ['workloadType', 'wizardWorkloadType', 'comparisonWorkloadSelect'].forEach(id => {
+        const select = document.getElementById(id);
+        if (select && !select.querySelector(`option[value="${key}"]`)) {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = name + ' (Custom)';
+            select.appendChild(option);
+        }
+    });
+}
+
+// Multi-Site Planning
+let sites = [{ name: 'Primary Site', servers: 1000, multiplier: 1.0 }];
+
+function addSite() {
+    sites.push({ name: `Site ${sites.length + 1}`, servers: 500, multiplier: 1.0 });
+    updateSitesDisplay();
+}
+
+function removeSite(index) {
+    if (sites.length > 1) {
+        sites.splice(index, 1);
+        updateSitesDisplay();
+    }
+}
+
+function updateSitesDisplay() {
+    const container = document.getElementById('sitesContainer');
+    if (!container) return;
+    
+    container.innerHTML = sites.map((site, i) => `
+        <div class="p-3 bg-slate-800 rounded-lg flex items-center gap-4">
+            <input type="text" value="${site.name}" onchange="sites[${i}].name = this.value" class="input-field px-2 py-1 rounded text-sm w-32">
+            <div class="flex items-center gap-2">
+                <label class="text-xs text-gray-400">Servers:</label>
+                <input type="number" value="${site.servers}" onchange="sites[${i}].servers = parseInt(this.value); calculateMultiSite()" class="input-field px-2 py-1 rounded text-sm w-24">
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="text-xs text-gray-400">Cost Mult:</label>
+                <input type="number" value="${site.multiplier}" step="0.1" onchange="sites[${i}].multiplier = parseFloat(this.value); calculateMultiSite()" class="input-field px-2 py-1 rounded text-sm w-20">
+            </div>
+            ${sites.length > 1 ? `<button onclick="removeSite(${i})" class="text-red-400 hover:text-red-300"><i data-lucide="x" class="w-4 h-4"></i></button>` : ''}
+        </div>
+    `).join('');
+    lucide.createIcons();
+}
+
+function calculateMultiSite() {
+    const container = document.getElementById('multiSiteResults');
+    if (!container) return;
+    
+    const baseInputs = getInputs();
+    let totalServers = 0;
+    let totalCost = 0;
+    let totalPower = 0;
+    let totalRacks = 0;
+    
+    const siteResults = sites.map(site => {
+        const siteServers = site.servers;
+        const siteCost = siteServers * baseInputs.serverCost * site.multiplier;
+        const sitePower = siteServers * baseInputs.serverPower / 1000;
+        const siteRacks = Math.ceil(siteServers / calculationResults.serversPerRack);
+        
+        totalServers += siteServers;
+        totalCost += siteCost;
+        totalPower += sitePower;
+        totalRacks += siteRacks;
+        
+        return { ...site, cost: siteCost, power: sitePower, racks: siteRacks };
+    });
+    
+    container.innerHTML = `
+        <table class="w-full text-sm">
+            <thead><tr class="border-b border-slate-600">
+                <th class="text-left py-2">Site</th>
+                <th class="text-right py-2">Servers</th>
+                <th class="text-right py-2">Racks</th>
+                <th class="text-right py-2">Power (kW)</th>
+                <th class="text-right py-2">Cost</th>
+            </tr></thead>
+            <tbody>
+                ${siteResults.map(s => `
+                    <tr class="border-b border-slate-700">
+                        <td class="py-2">${s.name}</td>
+                        <td class="py-2 text-right">${formatNumber(s.servers)}</td>
+                        <td class="py-2 text-right">${formatNumber(s.racks)}</td>
+                        <td class="py-2 text-right">${formatNumber(Math.round(s.power))}</td>
+                        <td class="py-2 text-right">${formatCurrency(s.cost)}</td>
+                    </tr>
+                `).join('')}
+                <tr class="font-semibold">
+                    <td class="py-2">Total</td>
+                    <td class="py-2 text-right text-cyan-400">${formatNumber(totalServers)}</td>
+                    <td class="py-2 text-right text-cyan-400">${formatNumber(totalRacks)}</td>
+                    <td class="py-2 text-right text-yellow-400">${formatNumber(Math.round(totalPower))}</td>
+                    <td class="py-2 text-right text-green-400">${formatCurrency(totalCost)}</td>
+                </tr>
+            </tbody>
+        </table>
+    `;
+}
+
+// Update additional sections after calculation
+function updateAdditionalSections() {
+    displayValidationWarnings();
+    updateNetworkTopologyDisplay();
+    updateCablingDisplay();
+    updatePowerEfficiencyDisplay();
+    updateSavedConfigsList();
+    if (comparisonMode) updateComparisonDisplay();
+}
+
+function updateNetworkTopologyDisplay() {
+    const container = document.getElementById('networkTopologyAnalysis');
+    if (!container) return;
+    
+    const topo = calculateNetworkTopology();
+    container.innerHTML = `
+        <div class="grid grid-cols-2 gap-4">
+            <div class="p-3 bg-slate-800 rounded-lg">
+                <div class="text-xs text-gray-400">Server Links per ToR</div>
+                <div class="text-xl font-bold text-cyan-400">${topo.serverLinksPerTor}</div>
+            </div>
+            <div class="p-3 bg-slate-800 rounded-lg">
+                <div class="text-xs text-gray-400">ToR Oversubscription</div>
+                <div class="text-xl font-bold ${topo.torOversubscription > 3 ? 'text-yellow-400' : 'text-green-400'}">${topo.torOversubscription.toFixed(1)}:1</div>
+            </div>
+            <div class="p-3 bg-slate-800 rounded-lg">
+                <div class="text-xs text-gray-400">Spine Port Utilization</div>
+                <div class="text-xl font-bold ${topo.spineUtilization > 80 ? 'text-yellow-400' : 'text-green-400'}">${topo.spineUtilization.toFixed(0)}%</div>
+            </div>
+            <div class="p-3 bg-slate-800 rounded-lg">
+                <div class="text-xs text-gray-400">Total Fabric Bandwidth</div>
+                <div class="text-xl font-bold text-purple-400">${topo.totalFabricBandwidth.toFixed(1)} Tbps</div>
+            </div>
+        </div>
+    `;
+}
+
+function updateCablingDisplay() {
+    const container = document.getElementById('cablingEstimates');
+    if (!container) return;
+    
+    const cable = calculateCabling();
+    container.innerHTML = `
+        <div class="space-y-3">
+            <div class="flex justify-between items-center py-2 border-b border-slate-700">
+                <span class="text-gray-400">Server → ToR (${cable.serverToTorType})</span>
+                <span>${formatNumber(cable.serverToTorCables)} cables (${formatNumber(cable.serverToTorLength)}m)</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-slate-700">
+                <span class="text-gray-400">ToR → Spine (${cable.torToSpineType})</span>
+                <span>${formatNumber(cable.torToSpineCables)} cables (${formatNumber(cable.torToSpineLength)}m)</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-slate-700">
+                <span class="text-gray-400">Total Cables</span>
+                <span class="font-semibold">${formatNumber(cable.totalCables)}</span>
+            </div>
+            <div class="flex justify-between items-center py-2 font-semibold">
+                <span>Estimated Cable Cost</span>
+                <span class="text-green-400">${formatCurrency(cable.totalCost)}</span>
+            </div>
+        </div>
+    `;
+}
+
+function updatePowerEfficiencyDisplay() {
+    const container = document.getElementById('powerEfficiencyMetrics');
+    if (!container) return;
+    
+    const power = calculatePowerEfficiency();
+    container.innerHTML = `
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="p-3 bg-slate-800 rounded-lg">
+                <div class="text-xs text-gray-400">IT Power Load</div>
+                <div class="text-xl font-bold text-cyan-400">${formatNumber(Math.round(power.itPower))} kW</div>
+            </div>
+            <div class="p-3 bg-slate-800 rounded-lg">
+                <div class="text-xs text-gray-400">Facility Power (PUE ${power.pue})</div>
+                <div class="text-xl font-bold text-yellow-400">${formatNumber(Math.round(power.facilityPower))} kW</div>
+            </div>
+            <div class="p-3 bg-slate-800 rounded-lg">
+                <div class="text-xs text-gray-400">Annual Power Cost</div>
+                <div class="text-xl font-bold text-green-400">${formatCurrency(power.annualPowerCost)}</div>
+            </div>
+            <div class="p-3 bg-slate-800 rounded-lg">
+                <div class="text-xs text-gray-400">Monthly Power Cost</div>
+                <div class="text-xl font-bold text-green-400">${formatCurrency(power.monthlyPowerCost)}</div>
+            </div>
+        </div>
+        <div class="text-sm text-gray-400">
+            <div>Cooling Overhead: ${formatNumber(Math.round(power.coolingOverhead))} kW</div>
+            <div>Power Cost per Server/Year: ${formatCurrency(power.powerCostPerServer)}</div>
+        </div>
+    `;
+}
+
 // Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
-    // Show wizard on first load
-    selectNetworkSpeed('25g');
-    selectRackLayout('single');
-    updateWizardUI();
+    // Load custom workloads from localStorage
+    loadCustomWorkloads();
+    
+    // Check for config in URL
+    loadFromURL();
+    
+    // Show wizard on first load (unless loaded from URL)
+    const params = new URLSearchParams(window.location.search);
+    if (!params.get('config')) {
+        selectNetworkSpeed('25g');
+        selectRackLayout('single');
+        updateWizardUI();
+    }
+    
     lucide.createIcons();
     
     // Also calculate with defaults in background
     calculate();
+    updateSavedConfigsList();
+    updateSitesDisplay();
+    calculateMultiSite();
 });

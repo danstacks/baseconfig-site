@@ -200,19 +200,25 @@
         </header>
 
         <nav class="flex flex-wrap justify-center gap-2 mb-8">
-            <button onclick="showTab('config')" id="tab-config" class="tab-btn tab-active px-6 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
+            <button onclick="showTab('config')" id="tab-config" class="tab-btn tab-active px-4 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
                 <span class="flex items-center gap-2"><i data-lucide="settings" class="w-4 h-4"></i>Configuration</span>
             </button>
-            <button onclick="showTab('scalable')" id="tab-scalable" class="tab-btn px-6 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
+            <button onclick="showTab('scalable')" id="tab-scalable" class="tab-btn px-4 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
                 <span class="flex items-center gap-2"><i data-lucide="server" class="w-4 h-4"></i>Scalable Units</span>
             </button>
-            <button onclick="showTab('timeline')" id="tab-timeline" class="tab-btn px-6 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
+            <button onclick="showTab('network')" id="tab-network" class="tab-btn px-4 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
+                <span class="flex items-center gap-2"><i data-lucide="network" class="w-4 h-4"></i>Network</span>
+            </button>
+            <button onclick="showTab('timeline')" id="tab-timeline" class="tab-btn px-4 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
                 <span class="flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4"></i>Timeline</span>
             </button>
-            <button onclick="showTab('costs')" id="tab-costs" class="tab-btn px-6 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
-                <span class="flex items-center gap-2"><i data-lucide="dollar-sign" class="w-4 h-4"></i>Cost Analysis</span>
+            <button onclick="showTab('costs')" id="tab-costs" class="tab-btn px-4 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
+                <span class="flex items-center gap-2"><i data-lucide="dollar-sign" class="w-4 h-4"></i>Costs</span>
             </button>
-            <button onclick="showTab('summary')" id="tab-summary" class="tab-btn px-6 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
+            <button onclick="showTab('advanced')" id="tab-advanced" class="tab-btn px-4 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
+                <span class="flex items-center gap-2"><i data-lucide="sliders" class="w-4 h-4"></i>Advanced</span>
+            </button>
+            <button onclick="showTab('summary')" id="tab-summary" class="tab-btn px-4 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
                 <span class="flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4"></i>Summary</span>
             </button>
         </nav>
@@ -389,6 +395,14 @@
                         <input type="number" id="laborCostPerServer" value="50" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                     </div>
                 </div>
+
+                <!-- Validation Warnings -->
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="shield-check" class="w-5 h-5 text-green-400"></i>Validation Status
+                    </h2>
+                    <div id="validationWarnings" class="space-y-2"></div>
+                </div>
             </div>
         </section>
 
@@ -435,6 +449,40 @@
                         <div class="text-3xl font-bold text-red-400" id="totalStorageNodes">0</div>
                         <div class="text-sm text-gray-400">Storage Nodes</div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Network Tab -->
+        <section id="section-network" class="tab-section hidden animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="git-branch" class="w-5 h-5 text-cyan-400"></i>Network Topology Analysis
+                    </h2>
+                    <div id="networkTopologyAnalysis"></div>
+                </div>
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="cable" class="w-5 h-5 text-purple-400"></i>Cabling Estimates
+                    </h2>
+                    <div id="cablingEstimates"></div>
+                </div>
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="zap" class="w-5 h-5 text-yellow-400"></i>Power Efficiency Metrics
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">PUE (Power Usage Effectiveness)</label>
+                            <input type="number" id="pueValue" value="1.5" min="1" max="3" step="0.1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Power Cost ($/kWh)</label>
+                            <input type="number" id="powerCostPerKwh" value="0.10" min="0" step="0.01" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()">
+                        </div>
+                    </div>
+                    <div id="powerEfficiencyMetrics"></div>
                 </div>
             </div>
         </section>
@@ -518,6 +566,125 @@
                             <tbody id="monthlyBudgetTable"></tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Advanced Tab -->
+        <section id="section-advanced" class="tab-section hidden animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Saved Configurations -->
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="save" class="w-5 h-5 text-cyan-400"></i>Saved Configurations
+                    </h2>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="configName" placeholder="Configuration name" class="input-field flex-1 px-3 py-2 rounded-lg text-white text-sm">
+                        <button onclick="saveConfiguration(document.getElementById('configName').value)" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-sm">Save</button>
+                    </div>
+                    <div id="savedConfigsList" class="space-y-2 max-h-48 overflow-y-auto"></div>
+                    <div class="mt-4 pt-4 border-t border-slate-600">
+                        <button onclick="shareConfiguration()" class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm flex items-center justify-center gap-2">
+                            <i data-lucide="share-2" class="w-4 h-4"></i>Share Configuration URL
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Comparison Mode -->
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="git-compare" class="w-5 h-5 text-purple-400"></i>Workload Comparison
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Compare with:</label>
+                            <select id="comparisonWorkloadSelect" class="input-field w-full px-3 py-2 rounded-lg text-white" onchange="setComparisonWorkload(this.value); enableComparisonMode()">
+                                <option value="">-- Select workload to compare --</option>
+                                <option value="high_compute">High Compute</option>
+                                <option value="hadoop_data_node">Hadoop Data Node</option>
+                                <option value="datawarehouse_amd">DataWarehouse - AMD</option>
+                                <option value="datawarehouse_intel">DataWarehouse - Intel</option>
+                                <option value="gp_local_intel">General Purpose Local Intel</option>
+                                <option value="gp_san_intel">General Purpose SAN Intel</option>
+                                <option value="db_local_intel">Database Local Intel</option>
+                                <option value="db_san_intel">Database SAN Intel</option>
+                                <option value="gp_local_amd">General Purpose Local AMD</option>
+                                <option value="gp_san_amd">General Purpose SAN AMD</option>
+                                <option value="db_local_amd">Database Local AMD</option>
+                                <option value="db_san_amd">Database SAN AMD</option>
+                                <option value="hypervisor">Hypervisor</option>
+                                <option value="container_worker">Container Worker</option>
+                                <option value="oracle_db_intel">Oracle DB Intel</option>
+                                <option value="logging">Logging</option>
+                                <option value="data_storage">Data Storage</option>
+                            </select>
+                        </div>
+                        <div id="comparisonResults"></div>
+                    </div>
+                </div>
+
+                <!-- Multi-Site Planning -->
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="globe" class="w-5 h-5 text-green-400"></i>Multi-Site Planning
+                    </h2>
+                    <div id="sitesContainer" class="space-y-2 mb-4"></div>
+                    <button onclick="addSite()" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm flex items-center gap-2">
+                        <i data-lucide="plus" class="w-4 h-4"></i>Add Site
+                    </button>
+                    <div id="multiSiteResults" class="mt-4"></div>
+                </div>
+
+                <!-- Custom Workload Builder -->
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="wrench" class="w-5 h-5 text-yellow-400"></i>Custom Workload Builder
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Workload Name *</label>
+                            <input type="text" id="customWorkloadName" placeholder="My Custom Workload" class="input-field w-full px-3 py-2 rounded-lg text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Server Power (W)</label>
+                            <input type="number" id="customServerPower" value="500" class="input-field w-full px-3 py-2 rounded-lg text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Server Cost ($)</label>
+                            <input type="number" id="customServerCost" value="10000" class="input-field w-full px-3 py-2 rounded-lg text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Server Height (U)</label>
+                            <input type="number" id="customServerHeight" value="1" class="input-field w-full px-3 py-2 rounded-lg text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Storage per Server (TB)</label>
+                            <input type="number" id="customStoragePerServer" value="10" class="input-field w-full px-3 py-2 rounded-lg text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">NIC Ports</label>
+                            <input type="number" id="customNicPorts" value="2" class="input-field w-full px-3 py-2 rounded-lg text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Chassis</label>
+                            <input type="text" id="customChassis" placeholder="e.g., Dell R750" class="input-field w-full px-3 py-2 rounded-lg text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">CPU</label>
+                            <input type="text" id="customCpu" placeholder="e.g., 2x Intel Xeon" class="input-field w-full px-3 py-2 rounded-lg text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">RAM</label>
+                            <input type="text" id="customRam" placeholder="e.g., 512GB DDR5" class="input-field w-full px-3 py-2 rounded-lg text-white">
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-sm text-gray-400 mb-1">Description</label>
+                            <input type="text" id="customDescription" placeholder="Brief description of workload" class="input-field w-full px-3 py-2 rounded-lg text-white">
+                        </div>
+                    </div>
+                    <button onclick="saveCustomWorkload()" class="mt-4 px-6 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-medium flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>Save Custom Workload
+                    </button>
                 </div>
             </div>
         </section>
