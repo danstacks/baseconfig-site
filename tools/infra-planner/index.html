@@ -86,20 +86,6 @@
                             <div class="grid grid-cols-2 gap-2 text-xs" id="workloadSpecsContent"></div>
                         </div>
                     </div>
-                    
-                    <div id="networkSpeedSection">
-                        <label class="block text-sm text-gray-400 mb-2">Network Speed to Server *</label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <button type="button" id="net25g" onclick="selectNetworkSpeed('25g')" class="network-speed-btn p-4 rounded-lg border-2 border-slate-600 hover:border-cyan-500 transition-all text-center">
-                                <div class="text-2xl font-bold text-cyan-400">25G</div>
-                                <div class="text-xs text-gray-400">Standard</div>
-                            </button>
-                            <button type="button" id="net100g" onclick="selectNetworkSpeed('100g')" class="network-speed-btn p-4 rounded-lg border-2 border-slate-600 hover:border-purple-500 transition-all text-center">
-                                <div class="text-2xl font-bold text-purple-400">100G</div>
-                                <div class="text-xs text-gray-400">High Performance</div>
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Step 2: Power & Rack -->
@@ -535,21 +521,61 @@
         <!-- Migration Tab -->
         <section id="section-migration" class="tab-section hidden animate-fade-in">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Historical Server Templates -->
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="history" class="w-5 h-5 text-cyan-400"></i>Estimate from Historical Server Generation
+                    </h2>
+                    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+                        <p class="text-yellow-400 text-sm flex items-center gap-2">
+                            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                            <span><strong>Note:</strong> These are generalized estimates based on typical server configurations from each era. Actual performance varies by specific model and workload.</span>
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Server Generation Year</label>
+                            <select id="historicalYear" class="input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateHistoricalComparison()">
+                                <option value="">Select year...</option>
+                                <option value="2014">2014 (Haswell Era)</option>
+                                <option value="2016">2016 (Broadwell Era)</option>
+                                <option value="2018">2018 (Skylake Era)</option>
+                                <option value="2020">2020 (Ice Lake Era)</option>
+                                <option value="2022">2022 (Sapphire Rapids Era)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Server Type</label>
+                            <select id="historicalType" class="input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateHistoricalComparison()">
+                                <option value="">Select type...</option>
+                                <option value="high_compute">High Compute (2P)</option>
+                                <option value="general_purpose">General Purpose (2P)</option>
+                                <option value="database">Database Optimized</option>
+                                <option value="storage">Storage Dense</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Number of Old Servers</label>
+                            <input type="number" id="historicalCount" value="100" min="1" class="input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateHistoricalComparison()">
+                        </div>
+                    </div>
+                    <div id="historicalComparison" class="text-gray-400 text-sm">
+                        <p>Select a server generation and type to see estimated performance gains.</p>
+                    </div>
+                </div>
+
                 <!-- Import Existing Infrastructure -->
                 <div class="card rounded-xl p-6">
                     <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <i data-lucide="upload" class="w-5 h-5 text-cyan-400"></i>Import Existing Infrastructure
+                        <i data-lucide="upload" class="w-5 h-5 text-cyan-400"></i>Import Custom Inventory
                     </h2>
-                    <p class="text-gray-400 text-sm mb-4">Upload a CSV or JSON file with your current server inventory to compare against the refresh plan.</p>
+                    <p class="text-gray-400 text-sm mb-4">Or upload a CSV/JSON file with your specific server inventory.</p>
                     <div class="space-y-4">
-                        <div class="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center hover:border-cyan-500 transition-colors cursor-pointer" onclick="document.getElementById('migrationFileInput').click()">
-                            <i data-lucide="file-up" class="w-12 h-12 mx-auto text-gray-500 mb-2"></i>
-                            <p class="text-gray-400">Click to upload or drag & drop</p>
-                            <p class="text-xs text-gray-500 mt-1">CSV or JSON format</p>
+                        <div class="border-2 border-dashed border-slate-600 rounded-lg p-4 text-center hover:border-cyan-500 transition-colors cursor-pointer" onclick="document.getElementById('migrationFileInput').click()">
+                            <i data-lucide="file-up" class="w-8 h-8 mx-auto text-gray-500 mb-2"></i>
+                            <p class="text-gray-400 text-sm">Click to upload</p>
+                            <p class="text-xs text-gray-500">CSV or JSON format</p>
                             <input type="file" id="migrationFileInput" accept=".csv,.json" class="hidden" onchange="handleMigrationFileUpload(event)">
-                        </div>
-                        <div class="text-center">
-                            <button onclick="loadSampleMigrationData()" class="text-cyan-400 hover:text-cyan-300 text-sm underline">Load sample data for demo</button>
                         </div>
                     </div>
                 </div>
@@ -560,7 +586,7 @@
                         <i data-lucide="database" class="w-5 h-5 text-yellow-400"></i>Current Infrastructure
                     </h2>
                     <div id="currentInfraSummary" class="text-gray-400 text-sm">
-                        <p>No infrastructure data loaded. Import a file or load sample data to begin migration planning.</p>
+                        <p>Select historical server generation above or import custom inventory to begin migration planning.</p>
                     </div>
                 </div>
 

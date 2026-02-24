@@ -2109,16 +2109,16 @@ function renderRackDiagram() {
     
     let html = '';
     
-    // Render racks for one scalable unit
+    // Render racks for one scalable unit (top to bottom)
     for (let rack = 0; rack < Math.min(racksPerSU, 4); rack++) {
         html += `
             <div class="rack-diagram bg-slate-900 border-2 border-slate-600 rounded-lg p-2" style="width: 120px;">
                 <div class="text-center text-xs text-gray-400 mb-2 font-mono">Rack ${rack + 1}</div>
-                <div class="rack-units flex flex-col-reverse gap-px">
+                <div class="rack-units flex flex-col gap-px">
         `;
         
-        // 42U rack
-        let currentU = 1;
+        // 42U rack - render top to bottom
+        let currentU = 0;
         
         // ToR switches at top (2U each, 2 switches)
         html += `<div class="rack-unit bg-purple-600 text-white text-xs flex items-center justify-center font-mono" style="height: 16px;">ToR-A</div>`;
@@ -2133,8 +2133,8 @@ function renderRackDiagram() {
             currentU += serverHeight;
         }
         
-        // Empty slots
-        const remainingU = 42 - currentU + 1;
+        // Empty slots at bottom
+        const remainingU = 42 - currentU;
         if (remainingU > 0) {
             html += `<div class="rack-unit bg-slate-700 text-gray-500 text-xs flex items-center justify-center" style="height: ${remainingU * 12}px;">${remainingU}U</div>`;
         }
@@ -2260,57 +2260,67 @@ function render3DDataCenter() {
     const numRows = parseInt(document.getElementById('numRows')?.value || 4);
     const totalRacks = calculationResults.totalRacks;
     
-    let html = `<div class="datacenter-3d" style="transform: rotateX(45deg) rotateZ(-45deg); transform-style: preserve-3d; margin: 100px auto;">`;
+    // Calculate actual rows needed
+    const actualRows = Math.min(numRows, Math.ceil(totalRacks / racksPerRow));
+    
+    // Use a cleaner 2.5D isometric view
+    let html = `
+        <div class="datacenter-floor relative" style="padding: 40px;">
+            <div class="text-center text-gray-400 text-sm mb-4">Data Center Floor Plan (Isometric View)</div>
+            <div class="dc-grid" style="display: grid; grid-template-columns: repeat(${racksPerRow}, 36px); gap: 4px; transform: rotateX(60deg) rotateZ(-45deg); transform-style: preserve-3d; margin: 80px auto; width: fit-content;">
+    `;
     
     let rackCount = 0;
-    for (let row = 0; row < numRows; row++) {
-        html += `<div class="dc-row flex gap-1 mb-8" style="transform: translateZ(${row * 60}px);">`;
-        
+    for (let row = 0; row < actualRows; row++) {
         for (let col = 0; col < racksPerRow; col++) {
-            const isActive = rackCount < totalRacks;
-            const fillPercent = isActive ? Math.min(100, (calculationResults.serversPerRack / 38) * 100) : 0;
-            const color = isActive ? 
-                (fillPercent > 80 ? 'bg-red-500' : fillPercent > 50 ? 'bg-yellow-500' : 'bg-cyan-500') : 
-                'bg-slate-700';
-            
-            html += `
-                <div class="dc-rack ${color} rounded-sm relative group cursor-pointer transition-all hover:scale-110" 
-                     style="width: 30px; height: 60px; transform-style: preserve-3d;"
-                     title="Rack ${rackCount + 1}${isActive ? ` - ${fillPercent.toFixed(0)}% utilized` : ' - Empty'}">
-                    <div class="absolute inset-0 flex items-end justify-center pb-1">
-                        <div class="bg-slate-900/50 w-full" style="height: ${100 - fillPercent}%"></div>
+            if (rackCount >= totalRacks) {
+                // Empty slot
+                html += `<div class="dc-rack-slot bg-slate-800/30 border border-slate-700/50" style="width: 32px; height: 48px;"></div>`;
+            } else {
+                const fillPercent = Math.min(100, (calculationResults.serversPerRack / 38) * 100);
+                const colorClass = fillPercent > 80 ? 'from-red-600 to-red-500' : 
+                                   fillPercent > 50 ? 'from-yellow-600 to-yellow-500' : 
+                                   'from-cyan-600 to-cyan-500';
+                
+                html += `
+                    <div class="dc-rack relative group cursor-pointer" style="width: 32px; height: 48px; transform-style: preserve-3d;">
+                        <!-- Rack top -->
+                        <div class="absolute inset-0 bg-gradient-to-br ${colorClass} rounded-sm shadow-lg" style="transform: translateZ(20px);"></div>
+                        <!-- Rack front -->
+                        <div class="absolute bottom-0 left-0 right-0 bg-slate-900/80" style="height: 20px; transform: rotateX(-90deg) translateZ(10px);"></div>
+                        <!-- Rack side -->
+                        <div class="absolute top-0 right-0 bottom-0 bg-slate-800/60" style="width: 8px; transform: rotateY(90deg) translateZ(24px);"></div>
+                        <!-- Tooltip -->
+                        <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none">
+                            Rack ${rackCount + 1} (${fillPercent.toFixed(0)}%)
+                        </div>
                     </div>
-                    <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                        R${rackCount + 1}
-                    </div>
-                </div>
-            `;
+                `;
+            }
             rackCount++;
-        }
-        
-        html += `</div>`;
-        
-        // Aisle
-        if (row < numRows - 1) {
-            html += `<div class="dc-aisle h-4 bg-slate-800/30 rounded mb-8" style="transform: translateZ(${row * 60 + 30}px);"></div>`;
         }
     }
     
-    html += `</div>`;
-    
-    // Summary
     html += `
-        <div class="absolute bottom-4 left-4 bg-slate-800 p-4 rounded-lg text-sm">
-            <div class="font-semibold mb-2">Data Center Summary</div>
-            <div class="text-gray-400">Total Racks: ${totalRacks}</div>
-            <div class="text-gray-400">Rows: ${Math.ceil(totalRacks / racksPerRow)}</div>
-            <div class="text-gray-400">Floor Space: ~${(totalRacks * 6).toLocaleString()} sq ft</div>
+            </div>
         </div>
-        <div class="absolute bottom-4 right-4 flex gap-2 text-xs">
-            <div class="flex items-center gap-1"><div class="w-3 h-3 bg-cyan-500 rounded"></div>&lt;50%</div>
-            <div class="flex items-center gap-1"><div class="w-3 h-3 bg-yellow-500 rounded"></div>50-80%</div>
-            <div class="flex items-center gap-1"><div class="w-3 h-3 bg-red-500 rounded"></div>&gt;80%</div>
-            <div class="flex items-center gap-1"><div class="w-3 h-3 bg-slate-700 rounded"></div>Empty</div>
+    `;
+    
+    // Summary and legend
+    html += `
+        <div class="flex justify-between items-end mt-4 px-4">
+            <div class="bg-slate-800 p-4 rounded-lg text-sm">
+                <div class="font-semibold mb-2">Data Center Summary</div>
+                <div class="text-gray-400">Total Racks: ${totalRacks}</div>
+                <div class="text-gray-400">Rows: ${actualRows} × ${racksPerRow}</div>
+                <div class="text-gray-400">Floor Space: ~${(totalRacks * 6).toLocaleString()} sq ft</div>
+            </div>
+            <div class="flex gap-3 text-xs">
+                <div class="flex items-center gap-1"><div class="w-3 h-3 bg-cyan-500 rounded"></div>&lt;50%</div>
+                <div class="flex items-center gap-1"><div class="w-3 h-3 bg-yellow-500 rounded"></div>50-80%</div>
+                <div class="flex items-center gap-1"><div class="w-3 h-3 bg-red-500 rounded"></div>&gt;80%</div>
+                <div class="flex items-center gap-1"><div class="w-3 h-3 bg-slate-700 rounded"></div>Empty</div>
+            </div>
         </div>
     `;
     
@@ -2608,6 +2618,149 @@ function parseCSVToInfra(csv) {
     }
     
     return { servers };
+}
+
+// Historical server templates - generalized estimates
+const historicalServerTemplates = {
+    2014: {
+        high_compute: { cpu: '2x E5-2697v3 (14C)', cores: 28, ram: 256, power: 550, perf: 1.0, model: 'Dell R630 / HP DL380 G9' },
+        general_purpose: { cpu: '2x E5-2680v3 (12C)', cores: 24, ram: 128, power: 450, perf: 1.0, model: 'Dell R630 / HP DL360 G9' },
+        database: { cpu: '2x E5-2690v3 (12C)', cores: 24, ram: 512, power: 600, perf: 1.0, model: 'Dell R730 / HP DL380 G9' },
+        storage: { cpu: '2x E5-2620v3 (6C)', cores: 12, ram: 64, power: 400, perf: 1.0, model: 'Dell R730xd / HP DL380 G9' }
+    },
+    2016: {
+        high_compute: { cpu: '2x E5-2697v4 (18C)', cores: 36, ram: 384, power: 550, perf: 1.3, model: 'Dell R640 / HP DL380 G10' },
+        general_purpose: { cpu: '2x E5-2680v4 (14C)', cores: 28, ram: 192, power: 450, perf: 1.25, model: 'Dell R640 / HP DL360 G10' },
+        database: { cpu: '2x E5-2690v4 (14C)', cores: 28, ram: 768, power: 600, perf: 1.3, model: 'Dell R740 / HP DL380 G10' },
+        storage: { cpu: '2x E5-2630v4 (10C)', cores: 20, ram: 128, power: 400, perf: 1.2, model: 'Dell R740xd / HP DL380 G10' }
+    },
+    2018: {
+        high_compute: { cpu: '2x Gold 6154 (18C)', cores: 36, ram: 512, power: 600, perf: 1.8, model: 'Dell R640 / HP DL380 G10' },
+        general_purpose: { cpu: '2x Gold 6140 (18C)', cores: 36, ram: 256, power: 500, perf: 1.7, model: 'Dell R640 / HP DL360 G10' },
+        database: { cpu: '2x Gold 6154 (18C)', cores: 36, ram: 1024, power: 650, perf: 1.8, model: 'Dell R740 / HP DL380 G10' },
+        storage: { cpu: '2x Silver 4116 (12C)', cores: 24, ram: 192, power: 450, perf: 1.5, model: 'Dell R740xd / HP DL380 G10' }
+    },
+    2020: {
+        high_compute: { cpu: '2x Gold 6338 (32C)', cores: 64, ram: 512, power: 600, perf: 2.5, model: 'Dell R650 / HP DL380 G10+' },
+        general_purpose: { cpu: '2x Gold 6330 (28C)', cores: 56, ram: 256, power: 500, perf: 2.3, model: 'Dell R650 / HP DL360 G10+' },
+        database: { cpu: '2x Gold 6348 (28C)', cores: 56, ram: 1024, power: 650, perf: 2.5, model: 'Dell R750 / HP DL380 G10+' },
+        storage: { cpu: '2x Silver 4316 (20C)', cores: 40, ram: 256, power: 450, perf: 2.0, model: 'Dell R750xd / HP DL380 G10+' }
+    },
+    2022: {
+        high_compute: { cpu: '2x Gold 6448Y (32C)', cores: 64, ram: 512, power: 650, perf: 3.2, model: 'Dell R660 / HP DL380 G11' },
+        general_purpose: { cpu: '2x Gold 6430 (32C)', cores: 64, ram: 256, power: 550, perf: 3.0, model: 'Dell R660 / HP DL360 G11' },
+        database: { cpu: '2x Gold 6448Y (32C)', cores: 64, ram: 1024, power: 700, perf: 3.2, model: 'Dell R760 / HP DL380 G11' },
+        storage: { cpu: '2x Silver 4416+ (20C)', cores: 40, ram: 256, power: 500, perf: 2.5, model: 'Dell R760xd / HP DL380 G11' }
+    }
+};
+
+// Current generation (2024-2026) baseline for comparison
+const currentGenBaseline = {
+    high_compute: { cpu: '2x Xeon 6980P (128C)', cores: 256, ram: 1024, power: 700, perf: 5.0 },
+    general_purpose: { cpu: '2x Xeon 6530 (32C)', cores: 64, ram: 512, power: 550, perf: 4.0 },
+    database: { cpu: '2x Xeon 6980P (128C)', cores: 256, ram: 2048, power: 800, perf: 5.0 },
+    storage: { cpu: '2x Xeon 6430 (32C)', cores: 64, ram: 512, power: 550, perf: 3.5 }
+};
+
+function updateHistoricalComparison() {
+    const year = document.getElementById('historicalYear')?.value;
+    const type = document.getElementById('historicalType')?.value;
+    const count = parseInt(document.getElementById('historicalCount')?.value || 100);
+    const container = document.getElementById('historicalComparison');
+    
+    if (!year || !type) {
+        container.innerHTML = '<p>Select a server generation and type to see estimated performance gains.</p>';
+        return;
+    }
+    
+    const oldSpec = historicalServerTemplates[year]?.[type];
+    const newSpec = currentGenBaseline[type];
+    
+    if (!oldSpec || !newSpec) {
+        container.innerHTML = '<p>Invalid selection.</p>';
+        return;
+    }
+    
+    const perfMultiplier = newSpec.perf / oldSpec.perf;
+    const coreMultiplier = newSpec.cores / oldSpec.cores;
+    const equivalentNewServers = Math.ceil(count / perfMultiplier);
+    const powerSavings = (count * oldSpec.power) - (equivalentNewServers * newSpec.power);
+    const consolidationRatio = (count / equivalentNewServers).toFixed(1);
+    
+    // Also update the existing infrastructure for migration comparison
+    existingInfrastructure = {
+        servers: Array(count).fill(null).map((_, i) => ({
+            hostname: `server-${String(i + 1).padStart(3, '0')}`,
+            model: oldSpec.model.split(' / ')[0],
+            age: 2026 - parseInt(year),
+            power: oldSpec.power,
+            cpu: oldSpec.cpu,
+            ram: oldSpec.ram
+        })),
+        source: 'historical'
+    };
+    
+    container.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h4 class="font-semibold text-cyan-400 mb-3">Old Infrastructure (${year})</h4>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between"><span class="text-gray-400">Model:</span><span>${oldSpec.model}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">CPU:</span><span>${oldSpec.cpu}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Cores/Server:</span><span>${oldSpec.cores}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">RAM/Server:</span><span>${oldSpec.ram} GB</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Power/Server:</span><span>${oldSpec.power}W</span></div>
+                    <div class="flex justify-between font-semibold border-t border-slate-600 pt-2 mt-2">
+                        <span>Total Servers:</span><span>${count}</span>
+                    </div>
+                    <div class="flex justify-between"><span class="text-gray-400">Total Cores:</span><span>${formatNumber(count * oldSpec.cores)}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Total Power:</span><span>${((count * oldSpec.power) / 1000).toFixed(1)} kW</span></div>
+                </div>
+            </div>
+            <div>
+                <h4 class="font-semibold text-green-400 mb-3">New Infrastructure (2024-2026)</h4>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between"><span class="text-gray-400">CPU:</span><span>${newSpec.cpu}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Cores/Server:</span><span>${newSpec.cores}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">RAM/Server:</span><span>${newSpec.ram} GB</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Power/Server:</span><span>${newSpec.power}W</span></div>
+                    <div class="flex justify-between font-semibold border-t border-slate-600 pt-2 mt-2">
+                        <span>Equivalent Servers:</span><span class="text-green-400">${equivalentNewServers}</span>
+                    </div>
+                    <div class="flex justify-between"><span class="text-gray-400">Total Cores:</span><span>${formatNumber(equivalentNewServers * newSpec.cores)}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Total Power:</span><span>${((equivalentNewServers * newSpec.power) / 1000).toFixed(1)} kW</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-6 p-4 bg-slate-800 rounded-lg">
+            <h4 class="font-semibold text-purple-400 mb-3">Estimated Migration Benefits</h4>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div class="p-3 bg-slate-700/50 rounded-lg">
+                    <div class="text-2xl font-bold text-cyan-400">${consolidationRatio}:1</div>
+                    <div class="text-xs text-gray-400">Consolidation Ratio</div>
+                </div>
+                <div class="p-3 bg-slate-700/50 rounded-lg">
+                    <div class="text-2xl font-bold text-green-400">${perfMultiplier.toFixed(1)}x</div>
+                    <div class="text-xs text-gray-400">Performance Gain</div>
+                </div>
+                <div class="p-3 bg-slate-700/50 rounded-lg">
+                    <div class="text-2xl font-bold text-yellow-400">${coreMultiplier.toFixed(1)}x</div>
+                    <div class="text-xs text-gray-400">Core Density</div>
+                </div>
+                <div class="p-3 bg-slate-700/50 rounded-lg">
+                    <div class="text-2xl font-bold ${powerSavings > 0 ? 'text-green-400' : 'text-red-400'}">${powerSavings > 0 ? '-' : '+'}${Math.abs(powerSavings / 1000).toFixed(1)} kW</div>
+                    <div class="text-xs text-gray-400">Power Delta</div>
+                </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-3 italic">* These are rough estimates based on generalized performance benchmarks. Actual results depend on specific workloads, configurations, and vendor implementations.</p>
+        </div>
+    `;
+    
+    // Update the infrastructure summary
+    updateMigrationDisplay();
+    
+    lucide.createIcons();
 }
 
 function loadSampleMigrationData() {
