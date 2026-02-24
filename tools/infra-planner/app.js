@@ -15,6 +15,8 @@ const workloadPresets = {
         serverCost: 93718.61,
         serverHeight: 1,
         storagePerServer: 5,
+        networkSpeed: '25g',
+        nicPorts: 2,
         description: 'High-performance compute workloads',
         specs: {
             chassis: 'Cisco UCS C225 M8 (1U)',
@@ -43,6 +45,8 @@ const workloadPresets = {
         serverCost: 93748.91,
         serverHeight: 2,
         storagePerServer: 100,
+        networkSpeed: '25g',
+        nicPorts: 2,
         description: 'Hadoop distributed storage and compute nodes',
         specs: {
             chassis: 'Cisco UCS C240 M8L (2U LFF)',
@@ -72,6 +76,8 @@ const workloadPresets = {
         serverCost: 77524.56,
         serverHeight: 2,
         storagePerServer: 50,
+        networkSpeed: '25g',
+        nicPorts: 2,
         description: 'AMD-based data warehouse servers',
         specs: {
             chassis: 'Cisco UCS C245 M8SX (2U SFF)',
@@ -101,6 +107,8 @@ const workloadPresets = {
         serverCost: 96745.95,
         serverHeight: 2,
         storagePerServer: 50,
+        networkSpeed: '25g',
+        nicPorts: 2,
         description: 'Intel-based data warehouse servers',
         specs: {
             chassis: 'Cisco UCS C240 M8SX (2U SFF)',
@@ -130,6 +138,8 @@ const workloadPresets = {
         serverCost: 37583.81,
         serverHeight: 1,
         storagePerServer: 2,
+        networkSpeed: '25g',
+        nicPorts: 2,
         description: 'Intel general purpose with local storage',
         specs: {
             chassis: 'Cisco UCS C220 M7S (1U SFF)',
@@ -158,6 +168,8 @@ const workloadPresets = {
         serverCost: 33697.29,
         serverHeight: 1,
         storagePerServer: 0,
+        networkSpeed: '25g',
+        nicPorts: 4,
         description: 'Intel general purpose with SAN storage',
         specs: {
             chassis: 'Cisco UCS C220 M7S (1U SFF)',
@@ -185,6 +197,8 @@ const workloadPresets = {
         serverCost: 57980.73,
         serverHeight: 1,
         storagePerServer: 20,
+        networkSpeed: '25g',
+        nicPorts: 2,
         description: 'Intel database servers with local NVMe storage',
         specs: {
             chassis: 'Cisco UCS C220 M7S (1U SFF)',
@@ -213,6 +227,8 @@ const workloadPresets = {
         serverCost: 53551.32,
         serverHeight: 1,
         storagePerServer: 0,
+        networkSpeed: '25g',
+        nicPorts: 2,
         description: 'Intel database servers with SAN storage',
         specs: {
             chassis: 'Cisco UCS C220 M7S (1U SFF)',
@@ -240,6 +256,8 @@ const workloadPresets = {
         serverCost: 42388.37,
         serverHeight: 1,
         storagePerServer: 2,
+        networkSpeed: '25g',
+        nicPorts: 2,
         description: 'AMD general purpose with local storage',
         specs: {
             chassis: 'Cisco UCS C225 M8S (1U SFF)',
@@ -268,6 +286,8 @@ const workloadPresets = {
         serverCost: 42388.37,
         serverHeight: 2,
         storagePerServer: 0,
+        networkSpeed: '25g',
+        nicPorts: 2,
         description: 'AMD general purpose with SAN storage',
         specs: {
             chassis: 'Cisco UCS C245 M8SX (2U SFF)',
@@ -295,6 +315,8 @@ const workloadPresets = {
         serverCost: 75604.69,
         serverHeight: 2,
         storagePerServer: 20,
+        networkSpeed: '25g',
+        nicPorts: 2,
         description: 'AMD database servers with local NVMe storage',
         specs: {
             chassis: 'Cisco UCS C245 M8SX (2U SFF)',
@@ -323,6 +345,8 @@ const workloadPresets = {
         serverCost: 70077.29,
         serverHeight: 2,
         storagePerServer: 0,
+        networkSpeed: '25g',
+        nicPorts: 2,
         description: 'AMD database servers with SAN storage',
         specs: {
             chassis: 'Cisco UCS C245 M8SX (2U SFF)',
@@ -350,6 +374,8 @@ const workloadPresets = {
         serverCost: 51501.34,
         serverHeight: 1,
         storagePerServer: 5,
+        networkSpeed: '25g',
+        nicPorts: 2,
         description: 'Virtualization hosts for VM workloads',
         specs: {
             chassis: 'Cisco UCS C220 M7S (1U SFF)',
@@ -377,6 +403,8 @@ const workloadPresets = {
         serverCost: 46312.82,
         serverHeight: 1,
         storagePerServer: 2,
+        networkSpeed: '25g',
+        nicPorts: 2,
         description: 'Kubernetes/container worker nodes',
         specs: {
             chassis: 'Cisco UCS C225 M8S (1U SFF)',
@@ -406,6 +434,8 @@ const workloadPresets = {
         serverCost: 81500.01,
         serverHeight: 1,
         storagePerServer: 30,
+        networkSpeed: '25g',
+        nicPorts: 4,
         description: 'Oracle database optimized configuration',
         specs: {
             chassis: 'Cisco UCS C220 M7S (1U SFF)',
@@ -432,6 +462,8 @@ const workloadPresets = {
         serverCost: 53436.81,
         serverHeight: 2,
         storagePerServer: 50,
+        networkSpeed: '25g',
+        nicPorts: 2,
         description: 'Log aggregation and analysis servers',
         specs: {
             chassis: 'Cisco UCS C240 M8L (2U LFF)',
@@ -461,6 +493,8 @@ const workloadPresets = {
         serverCost: 52548.37,
         serverHeight: 2,
         storagePerServer: 200,
+        networkSpeed: '25g',
+        nicPorts: 2,
         description: 'High-density storage servers',
         specs: {
             chassis: 'Cisco UCS C240 M8L (2U LFF)',
@@ -634,10 +668,22 @@ function updateWorkloadDefaults() {
     const workloadType = document.getElementById('wizardWorkloadType').value;
     const specsDiv = document.getElementById('workloadSpecs');
     const specsContent = document.getElementById('workloadSpecsContent');
+    const networkSpeedSection = document.getElementById('networkSpeedSection');
     
     if (workloadType && workloadPresets[workloadType]) {
         const preset = workloadPresets[workloadType];
         document.getElementById('workloadDescription').textContent = preset.description;
+        
+        // Auto-select network speed from preset if available
+        if (preset.networkSpeed) {
+            selectedNetworkSpeed = preset.networkSpeed;
+            selectNetworkSpeed(preset.networkSpeed);
+            // Hide network speed selector since it's determined by the workload
+            if (networkSpeedSection) networkSpeedSection.classList.add('hidden');
+        } else {
+            // Show network speed selector if no preset
+            if (networkSpeedSection) networkSpeedSection.classList.remove('hidden');
+        }
         
         // Show specs if available
         if (preset.specs) {
@@ -663,6 +709,8 @@ function updateWorkloadDefaults() {
     } else {
         document.getElementById('workloadDescription').textContent = '';
         specsDiv.classList.add('hidden');
+        // Show network speed selector when no workload selected
+        if (networkSpeedSection) networkSpeedSection.classList.remove('hidden');
     }
 }
 
@@ -803,6 +851,10 @@ function applyWorkloadPreset() {
         document.getElementById('serverCost').value = preset.serverCost;
         document.getElementById('serverHeight').value = preset.serverHeight;
         document.getElementById('storagePerServer').value = preset.storagePerServer;
+        // Set optics per server based on NIC ports (2 optics per link)
+        if (preset.nicPorts) {
+            document.getElementById('opticsPerServer').value = preset.nicPorts * 2;
+        }
         updateBomDisplay(preset);
     } else {
         hideBomDisplay();
