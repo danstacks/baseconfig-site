@@ -1,0 +1,6 @@
+# BaseConfig robots.txt
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://baseconfig.tech/sitemap.xml
