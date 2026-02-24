@@ -3050,6 +3050,168 @@ function calculateMigrationTimeline() {
 }
 
 // ============================================
+// MIGRATION EFFICIENCY CALCULATOR
+// ============================================
+
+function calculateMigrationEfficiency() {
+    const container = document.getElementById('migrationEfficiencyResults');
+    if (!container) return;
+    
+    // Get total servers to migrate (from existing infrastructure or calculation results)
+    let totalServers = 0;
+    if (existingInfrastructure && existingInfrastructure.servers) {
+        totalServers = existingInfrastructure.servers.length;
+    } else if (calculationResults.totalServers) {
+        totalServers = calculationResults.totalServers;
+    }
+    
+    if (totalServers === 0) {
+        container.innerHTML = '<p class="text-gray-400">Select historical server generation or import infrastructure to calculate migration efficiency.</p>';
+        return;
+    }
+    
+    // Get inputs
+    const oldServerPower = parseFloat(document.getElementById('oldServerPower')?.value || 500);
+    const powerCost = parseFloat(document.getElementById('migrationPowerCost')?.value || 0.10);
+    const runRate = parseInt(document.getElementById('runRateServers')?.value || 250);
+    const rackRollRate = parseInt(document.getElementById('rackRollServers')?.value || 500);
+    const rackRollPremium = parseFloat(document.getElementById('rackRollPremium')?.value || 15) / 100;
+    const pue = parseFloat(document.getElementById('migrationPUE')?.value || 1.5);
+    const maintCost = parseFloat(document.getElementById('oldHardwareMaint')?.value || 50);
+    
+    // Calculate migration durations (in months)
+    const runRateDuration = Math.ceil(totalServers / runRate);
+    const rackRollDuration = Math.ceil(totalServers / rackRollRate);
+    const timeSaved = runRateDuration - rackRollDuration;
+    
+    // Calculate power cost per server per month
+    // Power (W) * hours/month * PUE * $/kWh / 1000
+    const hoursPerMonth = 730; // avg hours in a month
+    const powerCostPerServerMonth = (oldServerPower * hoursPerMonth * pue * powerCost) / 1000;
+    
+    // Calculate total cost of running old hardware during migration
+    // This is a declining balance as servers get migrated
+    // Simplified: average servers running = totalServers / 2 over the migration period
+    const avgServersRunning = totalServers / 2;
+    
+    // Run Rate costs
+    const runRatePowerCost = avgServersRunning * powerCostPerServerMonth * runRateDuration;
+    const runRateMaintCost = avgServersRunning * maintCost * runRateDuration;
+    const runRateTotalOldHwCost = runRatePowerCost + runRateMaintCost;
+    
+    // Rack & Roll costs
+    const rackRollPowerCost = avgServersRunning * powerCostPerServerMonth * rackRollDuration;
+    const rackRollMaintCost = avgServersRunning * maintCost * rackRollDuration;
+    const rackRollTotalOldHwCost = rackRollPowerCost + rackRollMaintCost;
+    
+    // Rack & Roll premium cost (applied to new hardware cost)
+    const newServerCost = calculationResults.inputs?.serverCost || 15000;
+    const rackRollPremiumCost = totalServers * newServerCost * rackRollPremium;
+    
+    // Total costs
+    const runRateTotalCost = runRateTotalOldHwCost;
+    const rackRollTotalCost = rackRollTotalOldHwCost + rackRollPremiumCost;
+    
+    // Savings analysis
+    const oldHwSavings = runRateTotalOldHwCost - rackRollTotalOldHwCost;
+    const netSavings = oldHwSavings - rackRollPremiumCost;
+    const isRackRollBetter = netSavings > 0;
+    
+    // Break-even premium calculation
+    const breakEvenPremium = (oldHwSavings / (totalServers * newServerCost)) * 100;
+    
+    // Format currency
+    const fmt = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    
+    container.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Run Rate Analysis -->
+            <div class="p-4 bg-slate-800 rounded-lg border-2 ${!isRackRollBetter ? 'border-green-500' : 'border-slate-600'}">
+                <h4 class="font-semibold text-cyan-400 mb-3 flex items-center gap-2">
+                    <i data-lucide="clock" class="w-4 h-4"></i>Run Rate Model
+                </h4>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between"><span class="text-gray-400">Deployment Rate:</span><span>${runRate} servers/mo</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Migration Duration:</span><span>${runRateDuration} months</span></div>
+                    <div class="flex justify-between border-t border-slate-600 pt-2 mt-2"><span class="text-gray-400">Old HW Power Cost:</span><span>${fmt(runRatePowerCost)}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Old HW Maintenance:</span><span>${fmt(runRateMaintCost)}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Deployment Premium:</span><span>$0</span></div>
+                    <div class="flex justify-between font-semibold border-t border-slate-600 pt-2 mt-2">
+                        <span>Total Migration Cost:</span><span class="text-yellow-400">${fmt(runRateTotalCost)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rack & Roll Analysis -->
+            <div class="p-4 bg-slate-800 rounded-lg border-2 ${isRackRollBetter ? 'border-green-500' : 'border-slate-600'}">
+                <h4 class="font-semibold text-purple-400 mb-3 flex items-center gap-2">
+                    <i data-lucide="zap" class="w-4 h-4"></i>Rack & Roll Model
+                </h4>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between"><span class="text-gray-400">Deployment Rate:</span><span>${rackRollRate} servers/mo</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Migration Duration:</span><span>${rackRollDuration} months</span></div>
+                    <div class="flex justify-between border-t border-slate-600 pt-2 mt-2"><span class="text-gray-400">Old HW Power Cost:</span><span>${fmt(rackRollPowerCost)}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Old HW Maintenance:</span><span>${fmt(rackRollMaintCost)}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Deployment Premium (${(rackRollPremium * 100).toFixed(0)}%):</span><span>${fmt(rackRollPremiumCost)}</span></div>
+                    <div class="flex justify-between font-semibold border-t border-slate-600 pt-2 mt-2">
+                        <span>Total Migration Cost:</span><span class="text-yellow-400">${fmt(rackRollTotalCost)}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summary -->
+        <div class="mt-6 p-4 bg-slate-700/50 rounded-lg">
+            <h4 class="font-semibold mb-3">Efficiency Analysis</h4>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-4">
+                <div class="p-3 bg-slate-800 rounded-lg">
+                    <div class="text-2xl font-bold text-cyan-400">${timeSaved}</div>
+                    <div class="text-xs text-gray-400">Months Saved</div>
+                </div>
+                <div class="p-3 bg-slate-800 rounded-lg">
+                    <div class="text-2xl font-bold text-green-400">${fmt(oldHwSavings)}</div>
+                    <div class="text-xs text-gray-400">Old HW Cost Avoided</div>
+                </div>
+                <div class="p-3 bg-slate-800 rounded-lg">
+                    <div class="text-2xl font-bold text-purple-400">${fmt(rackRollPremiumCost)}</div>
+                    <div class="text-xs text-gray-400">R&R Premium Cost</div>
+                </div>
+                <div class="p-3 bg-slate-800 rounded-lg">
+                    <div class="text-2xl font-bold ${netSavings >= 0 ? 'text-green-400' : 'text-red-400'}">${netSavings >= 0 ? '+' : ''}${fmt(netSavings)}</div>
+                    <div class="text-xs text-gray-400">Net Savings (R&R)</div>
+                </div>
+            </div>
+            
+            <!-- Recommendation -->
+            <div class="p-4 rounded-lg ${isRackRollBetter ? 'bg-green-500/10 border border-green-500/30' : 'bg-cyan-500/10 border border-cyan-500/30'}">
+                <div class="flex items-start gap-3">
+                    <i data-lucide="${isRackRollBetter ? 'check-circle' : 'info'}" class="w-5 h-5 ${isRackRollBetter ? 'text-green-400' : 'text-cyan-400'} mt-0.5"></i>
+                    <div>
+                        <div class="font-semibold ${isRackRollBetter ? 'text-green-400' : 'text-cyan-400'}">
+                            ${isRackRollBetter ? 'Rack & Roll Recommended' : 'Run Rate Recommended'}
+                        </div>
+                        <p class="text-sm text-gray-300 mt-1">
+                            ${isRackRollBetter 
+                                ? `Faster deployment saves ${fmt(netSavings)} net by avoiding ${timeSaved} months of old hardware costs. Break-even premium is ${breakEvenPremium.toFixed(1)}%.`
+                                : `The ${(rackRollPremium * 100).toFixed(0)}% deployment premium exceeds the ${fmt(oldHwSavings)} saved on old hardware. Consider R&R if premium drops below ${breakEvenPremium.toFixed(1)}%.`
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Assumptions -->
+            <p class="text-xs text-gray-500 mt-3 italic">
+                * Analysis assumes linear migration (avg ${Math.round(avgServersRunning)} servers running during migration). 
+                Power cost: ${fmt(powerCostPerServerMonth)}/server/month at ${powerCost}/kWh with PUE ${pue}.
+            </p>
+        </div>
+    `;
+    
+    lucide.createIcons();
+}
+
+// ============================================
 // INITIALIZATION
 // ============================================
 
