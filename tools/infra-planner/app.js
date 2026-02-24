@@ -9,6 +9,8 @@ let selectedRackLayout = 'single';
 let comparisonMode = false;
 let comparisonWorkload = null;
 let savedConfigurations = JSON.parse(localStorage.getItem('infraPlannerConfigs') || '[]');
+let currentVisualizationView = 'rack';
+let existingInfrastructure = null;
 
 // Constants for calculations
 const CABLE_COST_PER_METER_DAC = 15;  // DAC cable cost per meter
@@ -561,6 +563,13 @@ function showTab(tabName) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('tab-active'));
     document.getElementById(`section-${tabName}`).classList.remove('hidden');
     document.getElementById(`tab-${tabName}`).classList.add('tab-active');
+    
+    // Render visualizations when switching to visualize tab
+    if (tabName === 'visualize') {
+        setVisualizationView(currentVisualizationView || 'rack');
+    }
+    
+    lucide.createIcons();
 }
 
 // Format currency
@@ -2058,6 +2067,735 @@ function updatePowerEfficiencyDisplay() {
         </div>
     `;
 }
+
+// ============================================
+// VISUALIZATION FUNCTIONS
+// ============================================
+
+function setVisualizationView(view) {
+    currentVisualizationView = view;
+    
+    // Update button states
+    document.querySelectorAll('.viz-view-btn').forEach(btn => {
+        btn.classList.remove('bg-cyan-600');
+        btn.classList.add('bg-slate-700');
+    });
+    document.getElementById(`view${view.charAt(0).toUpperCase() + view.slice(1)}`).classList.remove('bg-slate-700');
+    document.getElementById(`view${view.charAt(0).toUpperCase() + view.slice(1)}`).classList.add('bg-cyan-600');
+    
+    // Show/hide views
+    document.getElementById('vizRackView').classList.add('hidden');
+    document.getElementById('vizTopologyView').classList.add('hidden');
+    document.getElementById('vizDatacenterView').classList.add('hidden');
+    document.getElementById(`viz${view.charAt(0).toUpperCase() + view.slice(1)}View`).classList.remove('hidden');
+    
+    // Render the selected view
+    if (view === 'rack') renderRackDiagram();
+    else if (view === 'topology') renderNetworkTopology();
+    else if (view === 'datacenter') render3DDataCenter();
+    
+    lucide.createIcons();
+}
+
+function renderRackDiagram() {
+    const container = document.getElementById('rackDiagramContainer');
+    if (!container || !calculationResults.inputs) return;
+    
+    const r = calculationResults;
+    const serverHeight = r.inputs.serverHeight || 1;
+    const serversPerRack = r.serversPerRack || 20;
+    const layout = r.inputs.rackLayout || 'single';
+    const racksPerSU = layout === 'single' ? 1 : (layout === 'dual' ? 2 : 4);
+    
+    let html = '';
+    
+    // Render racks for one scalable unit
+    for (let rack = 0; rack < Math.min(racksPerSU, 4); rack++) {
+        html += `
+            <div class="rack-diagram bg-slate-900 border-2 border-slate-600 rounded-lg p-2" style="width: 120px;">
+                <div class="text-center text-xs text-gray-400 mb-2 font-mono">Rack ${rack + 1}</div>
+                <div class="rack-units flex flex-col-reverse gap-px">
+        `;
+        
+        // 42U rack
+        let currentU = 1;
+        
+        // ToR switches at top (2U each, 2 switches)
+        html += `<div class="rack-unit bg-purple-600 text-white text-xs flex items-center justify-center font-mono" style="height: 16px;">ToR-A</div>`;
+        html += `<div class="rack-unit bg-purple-600 text-white text-xs flex items-center justify-center font-mono" style="height: 16px;">ToR-B</div>`;
+        currentU += 4;
+        
+        // Servers
+        const maxServers = Math.min(serversPerRack, Math.floor((42 - 4) / serverHeight));
+        for (let s = 0; s < maxServers; s++) {
+            const height = serverHeight * 12;
+            html += `<div class="rack-unit bg-cyan-600 text-white text-xs flex items-center justify-center font-mono rounded-sm" style="height: ${height}px;">S${s + 1}</div>`;
+            currentU += serverHeight;
+        }
+        
+        // Empty slots
+        const remainingU = 42 - currentU + 1;
+        if (remainingU > 0) {
+            html += `<div class="rack-unit bg-slate-700 text-gray-500 text-xs flex items-center justify-center" style="height: ${remainingU * 12}px;">${remainingU}U</div>`;
+        }
+        
+        html += `</div></div>`;
+    }
+    
+    // Add spine switches if multi-rack
+    if (racksPerSU > 1) {
+        html += `
+            <div class="spine-switches flex flex-col gap-2 justify-center">
+                <div class="bg-yellow-600 text-white text-xs px-3 py-2 rounded font-mono">Spine-1</div>
+                <div class="bg-yellow-600 text-white text-xs px-3 py-2 rounded font-mono">Spine-2</div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+}
+
+function renderNetworkTopology() {
+    const container = document.getElementById('networkTopologyDiagram');
+    if (!container || !calculationResults.inputs) return;
+    
+    const r = calculationResults;
+    const layout = r.inputs.rackLayout || 'single';
+    const torsPerRack = 2;
+    const racksPerSU = layout === 'single' ? 1 : (layout === 'dual' ? 2 : 4);
+    const totalTors = racksPerSU * torsPerRack;
+    const spines = layout === 'single' ? 0 : 2;
+    const serversPerRack = r.serversPerRack || 20;
+    
+    let html = `<svg viewBox="0 0 800 500" class="w-full h-full">
+        <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+            </marker>
+        </defs>
+    `;
+    
+    // Spine layer
+    if (spines > 0) {
+        html += `<text x="400" y="30" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold">Spine Layer</text>`;
+        const spineStartX = 400 - (spines * 80) / 2;
+        for (let i = 0; i < spines; i++) {
+            const x = spineStartX + i * 80 + 40;
+            html += `<rect x="${x - 30}" y="40" width="60" height="30" rx="4" fill="#eab308"/>`;
+            html += `<text x="${x}" y="60" text-anchor="middle" fill="#1e293b" font-size="10" font-weight="bold">Spine ${i + 1}</text>`;
+        }
+    }
+    
+    // ToR layer
+    html += `<text x="400" y="${spines > 0 ? 120 : 30}" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold">ToR Layer</text>`;
+    const torStartX = 400 - (totalTors * 70) / 2;
+    const torY = spines > 0 ? 140 : 50;
+    
+    for (let i = 0; i < totalTors; i++) {
+        const x = torStartX + i * 70 + 35;
+        html += `<rect x="${x - 25}" y="${torY}" width="50" height="25" rx="4" fill="#a855f7"/>`;
+        html += `<text x="${x}" y="${torY + 16}" text-anchor="middle" fill="white" font-size="9" font-weight="bold">ToR ${i + 1}</text>`;
+        
+        // Lines to spines
+        if (spines > 0) {
+            for (let s = 0; s < spines; s++) {
+                const spineX = (400 - (spines * 80) / 2) + s * 80 + 40;
+                html += `<line x1="${x}" y1="${torY}" x2="${spineX}" y2="70" stroke="#64748b" stroke-width="1" opacity="0.5"/>`;
+            }
+        }
+    }
+    
+    // Server layer
+    html += `<text x="400" y="${torY + 70}" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold">Server Layer</text>`;
+    const serverY = torY + 90;
+    const serversToShow = Math.min(serversPerRack * racksPerSU, 24);
+    const serverStartX = 400 - (serversToShow * 30) / 2;
+    
+    for (let i = 0; i < serversToShow; i++) {
+        const x = serverStartX + i * 30 + 15;
+        const torIndex = Math.floor(i / (serversToShow / totalTors));
+        const torX = torStartX + torIndex * 70 + 35;
+        
+        html += `<rect x="${x - 10}" y="${serverY}" width="20" height="20" rx="2" fill="#06b6d4"/>`;
+        html += `<text x="${x}" y="${serverY + 14}" text-anchor="middle" fill="white" font-size="8">${i + 1}</text>`;
+        html += `<line x1="${x}" y1="${serverY}" x2="${torX}" y2="${torY + 25}" stroke="#64748b" stroke-width="1" opacity="0.3"/>`;
+    }
+    
+    if (serversPerRack * racksPerSU > 24) {
+        html += `<text x="400" y="${serverY + 50}" text-anchor="middle" fill="#64748b" font-size="12">... and ${serversPerRack * racksPerSU - 24} more servers</text>`;
+    }
+    
+    // Legend
+    html += `
+        <g transform="translate(20, 420)">
+            <text x="0" y="0" fill="#94a3b8" font-size="12" font-weight="bold">Legend</text>
+            <rect x="0" y="10" width="20" height="12" rx="2" fill="#eab308"/>
+            <text x="25" y="20" fill="#94a3b8" font-size="10">Spine Switch</text>
+            <rect x="100" y="10" width="20" height="12" rx="2" fill="#a855f7"/>
+            <text x="125" y="20" fill="#94a3b8" font-size="10">ToR Switch</text>
+            <rect x="200" y="10" width="20" height="12" rx="2" fill="#06b6d4"/>
+            <text x="225" y="20" fill="#94a3b8" font-size="10">Server</text>
+        </g>
+    `;
+    
+    // Stats
+    html += `
+        <g transform="translate(550, 420)">
+            <text x="0" y="0" fill="#94a3b8" font-size="12" font-weight="bold">Topology Stats</text>
+            <text x="0" y="20" fill="#64748b" font-size="10">Spines: ${spines}</text>
+            <text x="0" y="35" fill="#64748b" font-size="10">ToRs: ${totalTors}</text>
+            <text x="0" y="50" fill="#64748b" font-size="10">Servers/SU: ${serversPerRack * racksPerSU}</text>
+        </g>
+    `;
+    
+    html += '</svg>';
+    container.innerHTML = html;
+}
+
+function render3DDataCenter() {
+    const container = document.getElementById('datacenter3DContainer');
+    if (!container || !calculationResults.totalRacks) return;
+    
+    const racksPerRow = parseInt(document.getElementById('racksPerRow')?.value || 10);
+    const numRows = parseInt(document.getElementById('numRows')?.value || 4);
+    const totalRacks = calculationResults.totalRacks;
+    
+    let html = `<div class="datacenter-3d" style="transform: rotateX(45deg) rotateZ(-45deg); transform-style: preserve-3d; margin: 100px auto;">`;
+    
+    let rackCount = 0;
+    for (let row = 0; row < numRows; row++) {
+        html += `<div class="dc-row flex gap-1 mb-8" style="transform: translateZ(${row * 60}px);">`;
+        
+        for (let col = 0; col < racksPerRow; col++) {
+            const isActive = rackCount < totalRacks;
+            const fillPercent = isActive ? Math.min(100, (calculationResults.serversPerRack / 38) * 100) : 0;
+            const color = isActive ? 
+                (fillPercent > 80 ? 'bg-red-500' : fillPercent > 50 ? 'bg-yellow-500' : 'bg-cyan-500') : 
+                'bg-slate-700';
+            
+            html += `
+                <div class="dc-rack ${color} rounded-sm relative group cursor-pointer transition-all hover:scale-110" 
+                     style="width: 30px; height: 60px; transform-style: preserve-3d;"
+                     title="Rack ${rackCount + 1}${isActive ? ` - ${fillPercent.toFixed(0)}% utilized` : ' - Empty'}">
+                    <div class="absolute inset-0 flex items-end justify-center pb-1">
+                        <div class="bg-slate-900/50 w-full" style="height: ${100 - fillPercent}%"></div>
+                    </div>
+                    <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        R${rackCount + 1}
+                    </div>
+                </div>
+            `;
+            rackCount++;
+        }
+        
+        html += `</div>`;
+        
+        // Aisle
+        if (row < numRows - 1) {
+            html += `<div class="dc-aisle h-4 bg-slate-800/30 rounded mb-8" style="transform: translateZ(${row * 60 + 30}px);"></div>`;
+        }
+    }
+    
+    html += `</div>`;
+    
+    // Summary
+    html += `
+        <div class="absolute bottom-4 left-4 bg-slate-800 p-4 rounded-lg text-sm">
+            <div class="font-semibold mb-2">Data Center Summary</div>
+            <div class="text-gray-400">Total Racks: ${totalRacks}</div>
+            <div class="text-gray-400">Rows: ${Math.ceil(totalRacks / racksPerRow)}</div>
+            <div class="text-gray-400">Floor Space: ~${(totalRacks * 6).toLocaleString()} sq ft</div>
+        </div>
+        <div class="absolute bottom-4 right-4 flex gap-2 text-xs">
+            <div class="flex items-center gap-1"><div class="w-3 h-3 bg-cyan-500 rounded"></div>&lt;50%</div>
+            <div class="flex items-center gap-1"><div class="w-3 h-3 bg-yellow-500 rounded"></div>50-80%</div>
+            <div class="flex items-center gap-1"><div class="w-3 h-3 bg-red-500 rounded"></div>&gt;80%</div>
+            <div class="flex items-center gap-1"><div class="w-3 h-3 bg-slate-700 rounded"></div>Empty</div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+// ============================================
+// EXPORT FUNCTIONS
+// ============================================
+
+function exportToDrawio() {
+    const r = calculationResults;
+    if (!r.inputs) {
+        alert('Please run a calculation first');
+        return;
+    }
+    
+    // Create Draw.io XML format
+    const layout = r.inputs.rackLayout || 'single';
+    const racksPerSU = layout === 'single' ? 1 : (layout === 'dual' ? 2 : 4);
+    const torsPerRack = 2;
+    const spines = layout === 'single' ? 0 : 2;
+    
+    let mxGraphModel = `<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net">
+  <diagram name="Infrastructure Topology" id="infra-topology">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <!-- Title -->
+        <mxCell id="title" value="Infrastructure Topology - ${r.totalServers} Servers" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="400" y="20" width="300" height="30" as="geometry"/>
+        </mxCell>
+`;
+    
+    let cellId = 10;
+    
+    // Spine switches
+    if (spines > 0) {
+        for (let i = 0; i < spines; i++) {
+            mxGraphModel += `
+        <mxCell id="${cellId++}" value="Spine ${i + 1}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9a825;strokeColor=#c17900;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="${400 + i * 120}" y="80" width="100" height="40" as="geometry"/>
+        </mxCell>`;
+        }
+    }
+    
+    // ToR switches
+    const totalTors = racksPerSU * torsPerRack;
+    for (let i = 0; i < totalTors; i++) {
+        mxGraphModel += `
+        <mxCell id="${cellId++}" value="ToR ${i + 1}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#9c27b0;strokeColor=#7b1fa2;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="${200 + i * 100}" y="180" width="80" height="30" as="geometry"/>
+        </mxCell>`;
+    }
+    
+    // Racks
+    for (let i = 0; i < racksPerSU; i++) {
+        mxGraphModel += `
+        <mxCell id="${cellId++}" value="Rack ${i + 1}&#xa;${r.serversPerRack} Servers" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0097a7;strokeColor=#006064;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="${250 + i * 150}" y="280" width="100" height="80" as="geometry"/>
+        </mxCell>`;
+    }
+    
+    // Summary box
+    mxGraphModel += `
+        <mxCell id="${cellId++}" value="Summary&#xa;Total Servers: ${formatNumber(r.totalServers)}&#xa;Total Racks: ${formatNumber(r.totalRacks)}&#xa;Scalable Units: ${formatNumber(r.scalableUnits)}&#xa;Total Power: ${formatNumber(Math.round(r.totalPower))} kW" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474f;strokeColor=#263238;fontColor=#ffffff;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="700" y="280" width="180" height="100" as="geometry"/>
+        </mxCell>`;
+    
+    mxGraphModel += `
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>`;
+    
+    downloadBlob(mxGraphModel, 'infrastructure-topology.drawio', 'application/xml');
+}
+
+function exportDiagramAsPNG() {
+    // For PNG export, we'll create a canvas from the current SVG or HTML
+    const view = currentVisualizationView;
+    let element;
+    
+    if (view === 'topology') {
+        element = document.querySelector('#networkTopologyDiagram svg');
+    } else {
+        alert('PNG export is currently available for Network Topology view. Please switch to that view.');
+        return;
+    }
+    
+    if (!element) {
+        alert('No diagram to export. Please generate a visualization first.');
+        return;
+    }
+    
+    // Convert SVG to canvas and download
+    const svgData = new XMLSerializer().serializeToString(element);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = function() {
+        canvas.width = img.width * 2;
+        canvas.height = img.height * 2;
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        const link = document.createElement('a');
+        link.download = 'network-topology.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    };
+    
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+}
+
+function exportBOM() {
+    const r = calculationResults;
+    if (!r.inputs) {
+        alert('Please run a calculation first');
+        return;
+    }
+    
+    const workloadType = document.getElementById('workloadType').value;
+    const preset = workloadPresets[workloadType];
+    
+    if (!preset || !preset.bom) {
+        alert('No BOM available for the selected workload type');
+        return;
+    }
+    
+    const totalServers = r.totalServers;
+    
+    // Build full BOM with quantities
+    let csv = 'Part Number,Description,Qty Per Server,Total Qty,Category\n';
+    
+    // Server components
+    preset.bom.forEach(item => {
+        csv += `"${item.partNumber}","${item.description}",${item.qty},${item.qty * totalServers},Server\n`;
+    });
+    
+    // Network equipment
+    const totalTors = r.totalTors || r.totalRacks * 2;
+    const totalSpines = r.totalSpines || (r.inputs.rackLayout === 'single' ? 0 : Math.ceil(r.scalableUnits * 2));
+    
+    csv += `"N9K-C93180YC-FX3","Nexus 93180YC-FX3 ToR Switch",1,${totalTors},Network\n`;
+    if (totalSpines > 0) {
+        csv += `"N9K-C9336C-FX2","Nexus 9336C-FX2 Spine Switch",1,${totalSpines},Network\n`;
+    }
+    
+    // Optics
+    const serverOptics = totalServers * (preset.nicPorts || 2);
+    csv += `"SFP-25G-SR-S","25G SFP28 SR Optic",${preset.nicPorts || 2},${serverOptics},Optics\n`;
+    
+    // Cables
+    const cabling = calculateCabling();
+    csv += `"CAB-DAC-3M","3m DAC Cable",1,${cabling.serverToTorCables},Cabling\n`;
+    if (cabling.torToSpineCables > 0) {
+        csv += `"CAB-AOC-15M","15m AOC Cable",1,${cabling.torToSpineCables},Cabling\n`;
+    }
+    
+    downloadBlob(csv, `full-bom-${totalServers}-servers.csv`, 'text/csv');
+}
+
+function exportExecutiveSummaryPDF() {
+    const r = calculationResults;
+    if (!r.inputs) {
+        alert('Please run a calculation first');
+        return;
+    }
+    
+    // Create a printable HTML document
+    const workloadType = document.getElementById('workloadType').value;
+    const preset = workloadPresets[workloadType];
+    
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Infrastructure Refresh - Executive Summary</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; color: #333; }
+        h1 { color: #0891b2; border-bottom: 2px solid #0891b2; padding-bottom: 10px; }
+        h2 { color: #475569; margin-top: 30px; }
+        .summary-box { background: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .metric { display: inline-block; width: 200px; margin: 10px 20px 10px 0; }
+        .metric-value { font-size: 24px; font-weight: bold; color: #0891b2; }
+        .metric-label { font-size: 12px; color: #64748b; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f1f5f9; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; }
+    </style>
+</head>
+<body>
+    <h1>Infrastructure Refresh - Executive Summary</h1>
+    <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
+    <p><strong>Workload Type:</strong> ${preset?.name || workloadType}</p>
+    
+    <div class="summary-box">
+        <div class="metric">
+            <div class="metric-value">${formatNumber(r.totalServers)}</div>
+            <div class="metric-label">Total Servers</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value">${formatNumber(r.totalRacks)}</div>
+            <div class="metric-label">Total Racks</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value">${formatNumber(r.scalableUnits)}</div>
+            <div class="metric-label">Scalable Units</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value">${formatNumber(Math.round(r.totalPower))} kW</div>
+            <div class="metric-label">Total Power</div>
+        </div>
+    </div>
+    
+    <h2>Cost Summary</h2>
+    <table>
+        <tr><th>Category</th><th>Amount</th></tr>
+        <tr><td>Server Hardware</td><td>${formatCurrency(r.serverCost)}</td></tr>
+        <tr><td>Network Equipment</td><td>${formatCurrency(r.networkCost)}</td></tr>
+        <tr><td>Optics</td><td>${formatCurrency(r.opticsCost)}</td></tr>
+        <tr><td>Storage</td><td>${formatCurrency(r.storageCost)}</td></tr>
+        <tr><td>Base Infrastructure</td><td>${formatCurrency(r.baseInfraCost)}</td></tr>
+        <tr style="font-weight: bold;"><td>Total Capital Cost</td><td>${formatCurrency(r.totalCost)}</td></tr>
+    </table>
+    
+    <h2>Timeline Options</h2>
+    <table>
+        <tr><th>Approach</th><th>Duration</th><th>Total Cost</th></tr>
+        <tr><td>Run Rate (${r.inputs.runRate}/month)</td><td>${r.runRateMonths} months</td><td>${formatCurrency(r.runRateTotalCost)}</td></tr>
+        <tr><td>Rack & Roll (${r.inputs.rackRollRate}/month)</td><td>${r.rackRollMonths} months</td><td>${formatCurrency(r.rackRollTotalCost)}</td></tr>
+    </table>
+    
+    <h2>Recommendation</h2>
+    <p>${r.runRateTotalCost < r.rackRollTotalCost ? 
+        'The <strong>Run Rate</strong> approach is recommended for cost optimization, though it requires a longer timeline.' :
+        'The <strong>Rack & Roll</strong> approach is recommended for faster deployment, with a modest cost premium.'}</p>
+    
+    <div class="footer">
+        <p>Generated by BaseConfig Infrastructure Planner | baseconfig.tech</p>
+    </div>
+</body>
+</html>`;
+    
+    // Open in new window for printing/saving as PDF
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// ============================================
+// MIGRATION PLANNER FUNCTIONS
+// ============================================
+
+function handleMigrationFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const content = e.target.result;
+            if (file.name.endsWith('.json')) {
+                existingInfrastructure = JSON.parse(content);
+            } else if (file.name.endsWith('.csv')) {
+                existingInfrastructure = parseCSVToInfra(content);
+            }
+            updateMigrationDisplay();
+        } catch (err) {
+            alert('Error parsing file: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function parseCSVToInfra(csv) {
+    const lines = csv.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const servers = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',');
+        const server = {};
+        headers.forEach((h, idx) => {
+            server[h] = values[idx]?.trim() || '';
+        });
+        servers.push(server);
+    }
+    
+    return { servers };
+}
+
+function loadSampleMigrationData() {
+    existingInfrastructure = {
+        servers: [
+            { hostname: 'web-001', model: 'Dell R630', age: 5, power: 450, cpu: 'E5-2680v4', ram: 128 },
+            { hostname: 'web-002', model: 'Dell R630', age: 5, power: 450, cpu: 'E5-2680v4', ram: 128 },
+            { hostname: 'db-001', model: 'Dell R730', age: 4, power: 600, cpu: 'E5-2690v4', ram: 256 },
+            { hostname: 'db-002', model: 'Dell R730', age: 4, power: 600, cpu: 'E5-2690v4', ram: 256 },
+            { hostname: 'app-001', model: 'HP DL380 G9', age: 6, power: 500, cpu: 'E5-2670v3', ram: 192 },
+            { hostname: 'app-002', model: 'HP DL380 G9', age: 6, power: 500, cpu: 'E5-2670v3', ram: 192 },
+            { hostname: 'app-003', model: 'HP DL380 G9', age: 6, power: 500, cpu: 'E5-2670v3', ram: 192 },
+            { hostname: 'storage-001', model: 'Dell R740xd', age: 3, power: 700, cpu: 'Gold 6130', ram: 384 },
+        ],
+        summary: {
+            totalServers: 8,
+            avgAge: 4.9,
+            totalPower: 4300,
+            models: ['Dell R630', 'Dell R730', 'HP DL380 G9', 'Dell R740xd']
+        }
+    };
+    updateMigrationDisplay();
+}
+
+function updateMigrationDisplay() {
+    if (!existingInfrastructure) return;
+    
+    const infra = existingInfrastructure;
+    const servers = infra.servers || [];
+    
+    // Current Infrastructure Summary
+    const summaryContainer = document.getElementById('currentInfraSummary');
+    const totalPower = servers.reduce((sum, s) => sum + (parseInt(s.power) || 500), 0);
+    const avgAge = servers.reduce((sum, s) => sum + (parseInt(s.age) || 0), 0) / servers.length;
+    const models = [...new Set(servers.map(s => s.model))];
+    
+    summaryContainer.innerHTML = `
+        <div class="grid grid-cols-2 gap-4">
+            <div class="p-3 bg-slate-800 rounded-lg">
+                <div class="text-2xl font-bold text-cyan-400">${servers.length}</div>
+                <div class="text-xs text-gray-400">Total Servers</div>
+            </div>
+            <div class="p-3 bg-slate-800 rounded-lg">
+                <div class="text-2xl font-bold text-yellow-400">${avgAge.toFixed(1)} yrs</div>
+                <div class="text-xs text-gray-400">Average Age</div>
+            </div>
+            <div class="p-3 bg-slate-800 rounded-lg">
+                <div class="text-2xl font-bold text-purple-400">${(totalPower / 1000).toFixed(1)} kW</div>
+                <div class="text-xs text-gray-400">Total Power</div>
+            </div>
+            <div class="p-3 bg-slate-800 rounded-lg">
+                <div class="text-2xl font-bold text-green-400">${models.length}</div>
+                <div class="text-xs text-gray-400">Unique Models</div>
+            </div>
+        </div>
+        <div class="mt-4">
+            <div class="text-sm font-semibold mb-2">Server Models:</div>
+            <div class="flex flex-wrap gap-2">
+                ${models.map(m => `<span class="px-2 py-1 bg-slate-700 rounded text-xs">${m}</span>`).join('')}
+            </div>
+        </div>
+    `;
+    
+    // Migration Comparison
+    updateMigrationComparison(servers, totalPower);
+    
+    // Migration Timeline
+    calculateMigrationTimeline();
+    
+    lucide.createIcons();
+}
+
+function updateMigrationComparison(oldServers, oldPower) {
+    const container = document.getElementById('migrationComparison');
+    const r = calculationResults;
+    
+    if (!r.inputs) {
+        container.innerHTML = '<p>Run a calculation to see comparison.</p>';
+        return;
+    }
+    
+    const newServers = r.totalServers;
+    const newPower = r.totalPower;
+    const oldServerCount = oldServers.length;
+    
+    const serverDiff = newServers - oldServerCount;
+    const powerDiff = newPower - (oldPower / 1000);
+    const consolidationRatio = oldServerCount > 0 ? (oldServerCount / newServers).toFixed(2) : 'N/A';
+    
+    container.innerHTML = `
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-slate-600">
+                        <th class="text-left py-3 px-4 text-gray-400">Metric</th>
+                        <th class="text-right py-3 px-4 text-gray-400">Current</th>
+                        <th class="text-right py-3 px-4 text-gray-400">Refresh</th>
+                        <th class="text-right py-3 px-4 text-gray-400">Change</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border-b border-slate-700">
+                        <td class="py-3 px-4">Server Count</td>
+                        <td class="py-3 px-4 text-right">${formatNumber(oldServerCount)}</td>
+                        <td class="py-3 px-4 text-right text-cyan-400">${formatNumber(newServers)}</td>
+                        <td class="py-3 px-4 text-right ${serverDiff > 0 ? 'text-green-400' : 'text-red-400'}">${serverDiff > 0 ? '+' : ''}${formatNumber(serverDiff)}</td>
+                    </tr>
+                    <tr class="border-b border-slate-700">
+                        <td class="py-3 px-4">Total Power (kW)</td>
+                        <td class="py-3 px-4 text-right">${(oldPower / 1000).toFixed(1)}</td>
+                        <td class="py-3 px-4 text-right text-cyan-400">${newPower.toFixed(1)}</td>
+                        <td class="py-3 px-4 text-right ${powerDiff > 0 ? 'text-yellow-400' : 'text-green-400'}">${powerDiff > 0 ? '+' : ''}${powerDiff.toFixed(1)}</td>
+                    </tr>
+                    <tr class="border-b border-slate-700">
+                        <td class="py-3 px-4">Consolidation Ratio</td>
+                        <td class="py-3 px-4 text-right">1:1</td>
+                        <td class="py-3 px-4 text-right text-cyan-400">${consolidationRatio}:1</td>
+                        <td class="py-3 px-4 text-right text-purple-400">${consolidationRatio !== 'N/A' && parseFloat(consolidationRatio) > 1 ? 'Consolidating' : 'Expanding'}</td>
+                    </tr>
+                    <tr>
+                        <td class="py-3 px-4">Estimated Savings</td>
+                        <td class="py-3 px-4 text-right">-</td>
+                        <td class="py-3 px-4 text-right text-green-400">${powerDiff < 0 ? formatCurrency(Math.abs(powerDiff) * 0.10 * 8760) + '/yr' : '-'}</td>
+                        <td class="py-3 px-4 text-right text-gray-400">(power @ $0.10/kWh)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function calculateMigrationTimeline() {
+    const container = document.getElementById('migrationTimeline');
+    if (!existingInfrastructure || !calculationResults.inputs) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    const startDate = document.getElementById('migrationStartDate')?.value || new Date().toISOString().split('T')[0];
+    const serversPerWeek = parseInt(document.getElementById('migrationServersPerWeek')?.value || 50);
+    const parallel = parseInt(document.getElementById('parallelMigrations')?.value || 2);
+    
+    const totalToMigrate = existingInfrastructure.servers?.length || 0;
+    const effectiveRate = serversPerWeek * parallel;
+    const weeksNeeded = Math.ceil(totalToMigrate / effectiveRate);
+    
+    const start = new Date(startDate);
+    const phases = [
+        { name: 'Planning & Procurement', weeks: 4, color: 'bg-blue-500' },
+        { name: 'Pilot Migration (10%)', weeks: Math.ceil(weeksNeeded * 0.1), color: 'bg-yellow-500' },
+        { name: 'Main Migration (80%)', weeks: Math.ceil(weeksNeeded * 0.8), color: 'bg-cyan-500' },
+        { name: 'Final Migration & Cleanup', weeks: Math.ceil(weeksNeeded * 0.1) + 2, color: 'bg-green-500' },
+    ];
+    
+    let currentDate = new Date(start);
+    let html = `<div class="space-y-3">`;
+    
+    phases.forEach(phase => {
+        const endDate = new Date(currentDate);
+        endDate.setDate(endDate.getDate() + phase.weeks * 7);
+        
+        html += `
+            <div class="flex items-center gap-4">
+                <div class="w-32 text-sm text-gray-400">${currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                <div class="${phase.color} h-8 rounded flex items-center px-3 text-sm font-medium" style="width: ${Math.max(phase.weeks * 20, 100)}px;">
+                    ${phase.name}
+                </div>
+                <div class="text-sm text-gray-400">${phase.weeks} weeks</div>
+            </div>
+        `;
+        
+        currentDate = endDate;
+    });
+    
+    html += `</div>
+        <div class="mt-4 p-4 bg-slate-800 rounded-lg">
+            <div class="text-sm"><strong>Total Duration:</strong> ${phases.reduce((sum, p) => sum + p.weeks, 0)} weeks</div>
+            <div class="text-sm"><strong>Completion Date:</strong> ${currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+            <div class="text-sm"><strong>Migration Rate:</strong> ${effectiveRate} servers/week (${parallel} parallel streams)</div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+// ============================================
+// INITIALIZATION
+// ============================================
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', () => {

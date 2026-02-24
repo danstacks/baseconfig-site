@@ -200,26 +200,32 @@
         </header>
 
         <nav class="flex flex-wrap justify-center gap-2 mb-8">
-            <button onclick="showTab('config')" id="tab-config" class="tab-btn tab-active px-4 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
-                <span class="flex items-center gap-2"><i data-lucide="settings" class="w-4 h-4"></i>Configuration</span>
+            <button onclick="showTab('config')" id="tab-config" class="tab-btn tab-active px-3 py-2 rounded-t-lg font-medium transition-all hover:bg-slate-700/50 text-sm">
+                <span class="flex items-center gap-1"><i data-lucide="settings" class="w-4 h-4"></i>Config</span>
             </button>
-            <button onclick="showTab('scalable')" id="tab-scalable" class="tab-btn px-4 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
-                <span class="flex items-center gap-2"><i data-lucide="server" class="w-4 h-4"></i>Scalable Units</span>
+            <button onclick="showTab('scalable')" id="tab-scalable" class="tab-btn px-3 py-2 rounded-t-lg font-medium transition-all hover:bg-slate-700/50 text-sm">
+                <span class="flex items-center gap-1"><i data-lucide="server" class="w-4 h-4"></i>Units</span>
             </button>
-            <button onclick="showTab('network')" id="tab-network" class="tab-btn px-4 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
-                <span class="flex items-center gap-2"><i data-lucide="network" class="w-4 h-4"></i>Network</span>
+            <button onclick="showTab('visualize')" id="tab-visualize" class="tab-btn px-3 py-2 rounded-t-lg font-medium transition-all hover:bg-slate-700/50 text-sm">
+                <span class="flex items-center gap-1"><i data-lucide="layout" class="w-4 h-4"></i>Visualize</span>
             </button>
-            <button onclick="showTab('timeline')" id="tab-timeline" class="tab-btn px-4 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
-                <span class="flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4"></i>Timeline</span>
+            <button onclick="showTab('network')" id="tab-network" class="tab-btn px-3 py-2 rounded-t-lg font-medium transition-all hover:bg-slate-700/50 text-sm">
+                <span class="flex items-center gap-1"><i data-lucide="network" class="w-4 h-4"></i>Network</span>
             </button>
-            <button onclick="showTab('costs')" id="tab-costs" class="tab-btn px-4 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
-                <span class="flex items-center gap-2"><i data-lucide="dollar-sign" class="w-4 h-4"></i>Costs</span>
+            <button onclick="showTab('migration')" id="tab-migration" class="tab-btn px-3 py-2 rounded-t-lg font-medium transition-all hover:bg-slate-700/50 text-sm">
+                <span class="flex items-center gap-1"><i data-lucide="git-compare" class="w-4 h-4"></i>Migration</span>
             </button>
-            <button onclick="showTab('advanced')" id="tab-advanced" class="tab-btn px-4 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
-                <span class="flex items-center gap-2"><i data-lucide="sliders" class="w-4 h-4"></i>Advanced</span>
+            <button onclick="showTab('timeline')" id="tab-timeline" class="tab-btn px-3 py-2 rounded-t-lg font-medium transition-all hover:bg-slate-700/50 text-sm">
+                <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-4 h-4"></i>Timeline</span>
             </button>
-            <button onclick="showTab('summary')" id="tab-summary" class="tab-btn px-4 py-3 rounded-t-lg font-medium transition-all hover:bg-slate-700/50">
-                <span class="flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4"></i>Summary</span>
+            <button onclick="showTab('costs')" id="tab-costs" class="tab-btn px-3 py-2 rounded-t-lg font-medium transition-all hover:bg-slate-700/50 text-sm">
+                <span class="flex items-center gap-1"><i data-lucide="dollar-sign" class="w-4 h-4"></i>Costs</span>
+            </button>
+            <button onclick="showTab('advanced')" id="tab-advanced" class="tab-btn px-3 py-2 rounded-t-lg font-medium transition-all hover:bg-slate-700/50 text-sm">
+                <span class="flex items-center gap-1"><i data-lucide="sliders" class="w-4 h-4"></i>Advanced</span>
+            </button>
+            <button onclick="showTab('summary')" id="tab-summary" class="tab-btn px-3 py-2 rounded-t-lg font-medium transition-all hover:bg-slate-700/50 text-sm">
+                <span class="flex items-center gap-1"><i data-lucide="file-text" class="w-4 h-4"></i>Summary</span>
             </button>
         </nav>
 
@@ -449,6 +455,145 @@
                         <div class="text-3xl font-bold text-red-400" id="totalStorageNodes">0</div>
                         <div class="text-sm text-gray-400">Storage Nodes</div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Visualize Tab -->
+        <section id="section-visualize" class="tab-section hidden animate-fade-in">
+            <div class="grid grid-cols-1 gap-6">
+                <!-- View Toggle -->
+                <div class="card rounded-xl p-4">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex gap-2">
+                            <button onclick="setVisualizationView('rack')" id="viewRack" class="viz-view-btn px-4 py-2 bg-cyan-600 rounded-lg text-sm font-medium">
+                                <span class="flex items-center gap-2"><i data-lucide="server" class="w-4 h-4"></i>Rack Diagram</span>
+                            </button>
+                            <button onclick="setVisualizationView('topology')" id="viewTopology" class="viz-view-btn px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium">
+                                <span class="flex items-center gap-2"><i data-lucide="git-branch" class="w-4 h-4"></i>Network Topology</span>
+                            </button>
+                            <button onclick="setVisualizationView('datacenter')" id="viewDatacenter" class="viz-view-btn px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium">
+                                <span class="flex items-center gap-2"><i data-lucide="box" class="w-4 h-4"></i>3D Data Center</span>
+                            </button>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="exportToDrawio()" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg text-sm font-medium flex items-center gap-2">
+                                <i data-lucide="share" class="w-4 h-4"></i>Export to Draw.io
+                            </button>
+                            <button onclick="exportDiagramAsPNG()" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium flex items-center gap-2">
+                                <i data-lucide="image" class="w-4 h-4"></i>Export PNG
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rack Diagram View -->
+                <div id="vizRackView" class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="server" class="w-5 h-5 text-cyan-400"></i>Rack Diagram
+                        <span class="text-sm font-normal text-gray-400">Showing sample scalable unit</span>
+                    </h2>
+                    <div id="rackDiagramContainer" class="flex flex-wrap gap-6 justify-center overflow-x-auto py-4"></div>
+                    <div class="mt-4 flex flex-wrap gap-4 text-sm">
+                        <div class="flex items-center gap-2"><div class="w-4 h-4 bg-cyan-500 rounded"></div>Server</div>
+                        <div class="flex items-center gap-2"><div class="w-4 h-4 bg-purple-500 rounded"></div>ToR Switch</div>
+                        <div class="flex items-center gap-2"><div class="w-4 h-4 bg-yellow-500 rounded"></div>Spine Switch</div>
+                        <div class="flex items-center gap-2"><div class="w-4 h-4 bg-slate-600 rounded"></div>Empty</div>
+                    </div>
+                </div>
+
+                <!-- Network Topology View -->
+                <div id="vizTopologyView" class="card rounded-xl p-6 hidden">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="git-branch" class="w-5 h-5 text-purple-400"></i>Network Topology
+                        <span class="text-sm font-normal text-gray-400">Spine-Leaf Architecture</span>
+                    </h2>
+                    <div id="networkTopologyDiagram" class="min-h-[500px] relative"></div>
+                </div>
+
+                <!-- 3D Data Center View -->
+                <div id="vizDatacenterView" class="card rounded-xl p-6 hidden">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="box" class="w-5 h-5 text-green-400"></i>3D Data Center View
+                        <span class="text-sm font-normal text-gray-400">Row and Aisle Layout</span>
+                    </h2>
+                    <div class="mb-4 flex gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Racks per Row</label>
+                            <input type="number" id="racksPerRow" value="10" min="1" max="20" class="input-field w-24 px-3 py-2 rounded-lg text-white" onchange="render3DDataCenter()">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Number of Rows</label>
+                            <input type="number" id="numRows" value="4" min="1" max="10" class="input-field w-24 px-3 py-2 rounded-lg text-white" onchange="render3DDataCenter()">
+                        </div>
+                    </div>
+                    <div id="datacenter3DContainer" class="min-h-[500px] relative" style="perspective: 1000px;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Migration Tab -->
+        <section id="section-migration" class="tab-section hidden animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Import Existing Infrastructure -->
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="upload" class="w-5 h-5 text-cyan-400"></i>Import Existing Infrastructure
+                    </h2>
+                    <p class="text-gray-400 text-sm mb-4">Upload a CSV or JSON file with your current server inventory to compare against the refresh plan.</p>
+                    <div class="space-y-4">
+                        <div class="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center hover:border-cyan-500 transition-colors cursor-pointer" onclick="document.getElementById('migrationFileInput').click()">
+                            <i data-lucide="file-up" class="w-12 h-12 mx-auto text-gray-500 mb-2"></i>
+                            <p class="text-gray-400">Click to upload or drag & drop</p>
+                            <p class="text-xs text-gray-500 mt-1">CSV or JSON format</p>
+                            <input type="file" id="migrationFileInput" accept=".csv,.json" class="hidden" onchange="handleMigrationFileUpload(event)">
+                        </div>
+                        <div class="text-center">
+                            <button onclick="loadSampleMigrationData()" class="text-cyan-400 hover:text-cyan-300 text-sm underline">Load sample data for demo</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Infrastructure Summary -->
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="database" class="w-5 h-5 text-yellow-400"></i>Current Infrastructure
+                    </h2>
+                    <div id="currentInfraSummary" class="text-gray-400 text-sm">
+                        <p>No infrastructure data loaded. Import a file or load sample data to begin migration planning.</p>
+                    </div>
+                </div>
+
+                <!-- Migration Comparison -->
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="git-compare" class="w-5 h-5 text-purple-400"></i>Migration Comparison
+                    </h2>
+                    <div id="migrationComparison" class="text-gray-400 text-sm">
+                        <p>Import existing infrastructure to see comparison with refresh plan.</p>
+                    </div>
+                </div>
+
+                <!-- Migration Timeline -->
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="calendar-clock" class="w-5 h-5 text-green-400"></i>Migration Timeline
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Migration Start Date</label>
+                            <input type="date" id="migrationStartDate" class="input-field w-full px-3 py-2 rounded-lg text-white" onchange="calculateMigrationTimeline()">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Servers per Week</label>
+                            <input type="number" id="migrationServersPerWeek" value="50" min="1" class="input-field w-full px-3 py-2 rounded-lg text-white" onchange="calculateMigrationTimeline()">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Parallel Migrations</label>
+                            <input type="number" id="parallelMigrations" value="2" min="1" max="10" class="input-field w-full px-3 py-2 rounded-lg text-white" onchange="calculateMigrationTimeline()">
+                        </div>
+                    </div>
+                    <div id="migrationTimeline"></div>
                 </div>
             </div>
         </section>
@@ -720,14 +865,20 @@
                     <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
                         <i data-lucide="download" class="w-5 h-5 text-purple-400"></i>Export & Share
                     </h2>
-                    <div class="flex flex-wrap gap-4">
-                        <button onclick="exportToJSON()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors flex items-center gap-2">
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="exportToJSON()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm">
                             <i data-lucide="file-json" class="w-4 h-4"></i>Export JSON
                         </button>
-                        <button onclick="exportToCSV()" class="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors flex items-center gap-2">
+                        <button onclick="exportToCSV()" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm">
                             <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>Export CSV
                         </button>
-                        <button onclick="printSummary()" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors flex items-center gap-2">
+                        <button onclick="exportBOM()" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm">
+                            <i data-lucide="list" class="w-4 h-4"></i>Export Full BOM
+                        </button>
+                        <button onclick="exportExecutiveSummaryPDF()" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm">
+                            <i data-lucide="file-text" class="w-4 h-4"></i>Executive Summary PDF
+                        </button>
+                        <button onclick="printSummary()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm">
                             <i data-lucide="printer" class="w-4 h-4"></i>Print Summary
                         </button>
                     </div>
