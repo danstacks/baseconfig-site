@@ -2107,7 +2107,15 @@ function renderRackDiagram() {
     const layout = r.inputs.rackLayout || 'single';
     const racksPerSU = layout === 'single' ? 1 : (layout === 'dual' ? 2 : 4);
     
-    let html = '';
+    // Layout labels
+    const layoutLabels = {
+        single: 'Single Rack (2 ToRs)',
+        dual: 'Split Config (2 Racks, ToRs interconnected)',
+        quad: 'Quad Config (4 Racks, ToRs to Spines)'
+    };
+    
+    let html = `<div class="text-center text-sm text-gray-400 mb-4">${layoutLabels[layout] || layout}</div>`;
+    html += `<div class="flex flex-wrap gap-4 justify-center items-start">`;
     
     // Render racks for one scalable unit (top to bottom)
     for (let rack = 0; rack < Math.min(racksPerSU, 4); rack++) {
@@ -2120,16 +2128,16 @@ function renderRackDiagram() {
         // 42U rack - render top to bottom
         let currentU = 0;
         
-        // ToR switches at top (2U each, 2 switches)
-        html += `<div class="rack-unit bg-purple-600 text-white text-xs flex items-center justify-center font-mono" style="height: 16px;">ToR-A</div>`;
-        html += `<div class="rack-unit bg-purple-600 text-white text-xs flex items-center justify-center font-mono" style="height: 16px;">ToR-B</div>`;
+        // ToR switches at top (2U each, 2 switches per rack)
+        html += `<div class="rack-unit bg-purple-600 text-white text-xs flex items-center justify-center font-mono" style="height: 16px;">ToR-${rack * 2 + 1}A</div>`;
+        html += `<div class="rack-unit bg-purple-600 text-white text-xs flex items-center justify-center font-mono" style="height: 16px;">ToR-${rack * 2 + 1}B</div>`;
         currentU += 4;
         
         // Servers
         const maxServers = Math.min(serversPerRack, Math.floor((42 - 4) / serverHeight));
         for (let s = 0; s < maxServers; s++) {
             const height = serverHeight * 12;
-            html += `<div class="rack-unit bg-cyan-600 text-white text-xs flex items-center justify-center font-mono rounded-sm" style="height: ${height}px;">S${s + 1}</div>`;
+            html += `<div class="rack-unit bg-cyan-600 text-white text-xs flex items-center justify-center font-mono rounded-sm" style="height: ${height}px;">S${rack * maxServers + s + 1}</div>`;
             currentU += serverHeight;
         }
         
@@ -2140,17 +2148,43 @@ function renderRackDiagram() {
         }
         
         html += `</div></div>`;
+        
+        // Add inter-rack connection indicator for split config
+        if (layout === 'dual' && rack === 0) {
+            html += `
+                <div class="flex flex-col justify-center items-center gap-1" style="width: 60px;">
+                    <div class="text-xs text-gray-500">Inter-rack</div>
+                    <div class="flex flex-col gap-1">
+                        <div class="h-0.5 w-12 bg-purple-500"></div>
+                        <div class="h-0.5 w-12 bg-purple-500"></div>
+                        <div class="h-0.5 w-12 bg-purple-500"></div>
+                        <div class="h-0.5 w-12 bg-purple-500"></div>
+                    </div>
+                    <div class="text-xs text-gray-500">cables</div>
+                </div>
+            `;
+        }
     }
     
-    // Add spine switches if multi-rack
-    if (racksPerSU > 1) {
+    html += `</div>`;
+    
+    // Add spine switches if quad layout
+    if (layout === 'quad') {
         html += `
-            <div class="spine-switches flex flex-col gap-2 justify-center">
-                <div class="bg-yellow-600 text-white text-xs px-3 py-2 rounded font-mono">Spine-1</div>
-                <div class="bg-yellow-600 text-white text-xs px-3 py-2 rounded font-mono">Spine-2</div>
+            <div class="mt-4 flex justify-center gap-4">
+                <div class="text-xs text-gray-400">Spine Layer:</div>
+                <div class="bg-yellow-600 text-white text-xs px-3 py-1 rounded font-mono">Spine-1</div>
+                <div class="bg-yellow-600 text-white text-xs px-3 py-1 rounded font-mono">Spine-2</div>
             </div>
         `;
     }
+    
+    // Add summary
+    html += `
+        <div class="mt-4 text-xs text-gray-400 text-center">
+            ${serversPerRack} servers/rack × ${racksPerSU} rack(s) = ${serversPerRack * racksPerSU} servers per scalable unit
+        </div>
+    `;
     
     container.innerHTML = html;
 }
@@ -2164,8 +2198,13 @@ function renderNetworkTopology() {
     const torsPerRack = 2;
     const racksPerSU = layout === 'single' ? 1 : (layout === 'dual' ? 2 : 4);
     const totalTors = racksPerSU * torsPerRack;
-    const spines = layout === 'single' ? 0 : 2;
+    const spines = layout === 'single' ? 0 : (layout === 'dual' ? 0 : 2); // dual has no spines, just interconnected ToRs
     const serversPerRack = r.serversPerRack || 20;
+    const totalServers = serversPerRack * racksPerSU;
+    
+    // Calculate how many servers to show per ToR pair (each rack has 2 ToRs that share servers)
+    // Servers connect to BOTH ToRs in their rack for redundancy
+    const serversPerTorPair = serversPerRack;
     
     let html = `<svg viewBox="0 0 800 500" class="w-full h-full">
         <defs>
@@ -2175,7 +2214,7 @@ function renderNetworkTopology() {
         </defs>
     `;
     
-    // Spine layer
+    // Spine layer (only for quad layout)
     if (spines > 0) {
         html += `<text x="400" y="30" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold">Spine Layer</text>`;
         const spineStartX = 400 - (spines * 80) / 2;
@@ -2186,43 +2225,88 @@ function renderNetworkTopology() {
         }
     }
     
-    // ToR layer
-    html += `<text x="400" y="${spines > 0 ? 120 : 30}" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold">ToR Layer</text>`;
-    const torStartX = 400 - (totalTors * 70) / 2;
-    const torY = spines > 0 ? 140 : 50;
+    // ToR layer - group by rack
+    const torY = spines > 0 ? 140 : 80;
+    html += `<text x="400" y="${torY - 30}" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold">ToR Layer (2 per rack)</text>`;
     
-    for (let i = 0; i < totalTors; i++) {
-        const x = torStartX + i * 70 + 35;
-        html += `<rect x="${x - 25}" y="${torY}" width="50" height="25" rx="4" fill="#a855f7"/>`;
-        html += `<text x="${x}" y="${torY + 16}" text-anchor="middle" fill="white" font-size="9" font-weight="bold">ToR ${i + 1}</text>`;
+    // Calculate ToR positions grouped by rack
+    const rackWidth = 140;
+    const totalWidth = racksPerSU * rackWidth;
+    const startX = 400 - totalWidth / 2;
+    
+    const torPositions = [];
+    for (let rack = 0; rack < racksPerSU; rack++) {
+        const rackCenterX = startX + rack * rackWidth + rackWidth / 2;
+        // Two ToRs per rack, side by side
+        torPositions.push({ x: rackCenterX - 30, rack: rack, torInRack: 0 });
+        torPositions.push({ x: rackCenterX + 30, rack: rack, torInRack: 1 });
+    }
+    
+    // Draw rack groupings
+    for (let rack = 0; rack < racksPerSU; rack++) {
+        const rackCenterX = startX + rack * rackWidth + rackWidth / 2;
+        html += `<rect x="${rackCenterX - 65}" y="${torY - 10}" width="130" height="45" rx="4" fill="none" stroke="#475569" stroke-dasharray="4"/>`;
+        html += `<text x="${rackCenterX}" y="${torY + 45}" text-anchor="middle" fill="#64748b" font-size="9">Rack ${rack + 1}</text>`;
+    }
+    
+    // Draw ToRs
+    torPositions.forEach((tor, i) => {
+        html += `<rect x="${tor.x - 22}" y="${torY}" width="44" height="25" rx="4" fill="#a855f7"/>`;
+        html += `<text x="${tor.x}" y="${torY + 16}" text-anchor="middle" fill="white" font-size="8" font-weight="bold">ToR ${i + 1}</text>`;
         
-        // Lines to spines
+        // Lines to spines (quad layout)
         if (spines > 0) {
             for (let s = 0; s < spines; s++) {
                 const spineX = (400 - (spines * 80) / 2) + s * 80 + 40;
-                html += `<line x1="${x}" y1="${torY}" x2="${spineX}" y2="70" stroke="#64748b" stroke-width="1" opacity="0.5"/>`;
+                html += `<line x1="${tor.x}" y1="${torY}" x2="${spineX}" y2="70" stroke="#64748b" stroke-width="1" opacity="0.5"/>`;
             }
+        }
+    });
+    
+    // Inter-rack ToR connections for dual layout
+    if (layout === 'dual') {
+        html += `<text x="400" y="${torY - 45}" text-anchor="middle" fill="#94a3b8" font-size="12">Inter-rack ToR Links</text>`;
+        // Connect ToRs between racks
+        for (let i = 0; i < 2; i++) {
+            const tor1 = torPositions[i]; // Rack 1 ToRs
+            const tor2 = torPositions[i + 2]; // Rack 2 ToRs
+            html += `<line x1="${tor1.x}" y1="${torY}" x2="${tor2.x}" y2="${torY}" stroke="#a855f7" stroke-width="2" opacity="0.6"/>`;
         }
     }
     
-    // Server layer
-    html += `<text x="400" y="${torY + 70}" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold">Server Layer</text>`;
-    const serverY = torY + 90;
-    const serversToShow = Math.min(serversPerRack * racksPerSU, 24);
-    const serverStartX = 400 - (serversToShow * 30) / 2;
+    // Server layer - group by rack
+    html += `<text x="400" y="${torY + 100}" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold">Server Layer (${serversPerRack} per rack)</text>`;
+    const serverY = torY + 120;
     
-    for (let i = 0; i < serversToShow; i++) {
-        const x = serverStartX + i * 30 + 15;
-        const torIndex = Math.floor(i / (serversToShow / totalTors));
-        const torX = torStartX + torIndex * 70 + 35;
+    // Show servers grouped by rack
+    const maxServersToShow = Math.min(serversPerRack, 8); // Show up to 8 per rack for clarity
+    
+    for (let rack = 0; rack < racksPerSU; rack++) {
+        const rackCenterX = startX + rack * rackWidth + rackWidth / 2;
+        const serverWidth = Math.min(120 / maxServersToShow, 18);
+        const serverGap = 2;
+        const serversWidth = maxServersToShow * (serverWidth + serverGap);
+        const serverStartX = rackCenterX - serversWidth / 2;
         
-        html += `<rect x="${x - 10}" y="${serverY}" width="20" height="20" rx="2" fill="#06b6d4"/>`;
-        html += `<text x="${x}" y="${serverY + 14}" text-anchor="middle" fill="white" font-size="8">${i + 1}</text>`;
-        html += `<line x1="${x}" y1="${serverY}" x2="${torX}" y2="${torY + 25}" stroke="#64748b" stroke-width="1" opacity="0.3"/>`;
-    }
-    
-    if (serversPerRack * racksPerSU > 24) {
-        html += `<text x="400" y="${serverY + 50}" text-anchor="middle" fill="#64748b" font-size="12">... and ${serversPerRack * racksPerSU - 24} more servers</text>`;
+        for (let s = 0; s < maxServersToShow; s++) {
+            const x = serverStartX + s * (serverWidth + serverGap) + serverWidth / 2;
+            const serverNum = rack * serversPerRack + s + 1;
+            
+            html += `<rect x="${x - serverWidth/2}" y="${serverY}" width="${serverWidth}" height="18" rx="2" fill="#06b6d4"/>`;
+            if (serverWidth > 14) {
+                html += `<text x="${x}" y="${serverY + 12}" text-anchor="middle" fill="white" font-size="7">${serverNum}</text>`;
+            }
+            
+            // Connect to BOTH ToRs in the same rack (dual-homed)
+            const tor1X = torPositions[rack * 2].x;
+            const tor2X = torPositions[rack * 2 + 1].x;
+            html += `<line x1="${x}" y1="${serverY}" x2="${tor1X}" y2="${torY + 25}" stroke="#64748b" stroke-width="1" opacity="0.3"/>`;
+            html += `<line x1="${x}" y1="${serverY}" x2="${tor2X}" y2="${torY + 25}" stroke="#64748b" stroke-width="1" opacity="0.3"/>`;
+        }
+        
+        if (serversPerRack > maxServersToShow) {
+            html += `<text x="${rackCenterX}" y="${serverY + 35}" text-anchor="middle" fill="#64748b" font-size="9">+${serversPerRack - maxServersToShow} more</text>`;
+        }
     }
     
     // Legend
@@ -2234,17 +2318,18 @@ function renderNetworkTopology() {
             <rect x="100" y="10" width="20" height="12" rx="2" fill="#a855f7"/>
             <text x="125" y="20" fill="#94a3b8" font-size="10">ToR Switch</text>
             <rect x="200" y="10" width="20" height="12" rx="2" fill="#06b6d4"/>
-            <text x="225" y="20" fill="#94a3b8" font-size="10">Server</text>
+            <text x="225" y="20" fill="#94a3b8" font-size="10">Server (dual-homed)</text>
         </g>
     `;
     
     // Stats
     html += `
-        <g transform="translate(550, 420)">
+        <g transform="translate(520, 420)">
             <text x="0" y="0" fill="#94a3b8" font-size="12" font-weight="bold">Topology Stats</text>
-            <text x="0" y="20" fill="#64748b" font-size="10">Spines: ${spines}</text>
-            <text x="0" y="35" fill="#64748b" font-size="10">ToRs: ${totalTors}</text>
-            <text x="0" y="50" fill="#64748b" font-size="10">Servers/SU: ${serversPerRack * racksPerSU}</text>
+            <text x="0" y="20" fill="#64748b" font-size="10">Racks: ${racksPerSU}</text>
+            <text x="0" y="35" fill="#64748b" font-size="10">ToRs: ${totalTors} (${torsPerRack}/rack)</text>
+            <text x="0" y="50" fill="#64748b" font-size="10">Servers: ${totalServers} (${serversPerRack}/rack)</text>
+            <text x="0" y="65" fill="#64748b" font-size="10">Spines: ${spines}</text>
         </g>
     `;
     
