@@ -569,6 +569,11 @@ function showTab(tabName) {
         setVisualizationView(currentVisualizationView || 'rack');
     }
     
+    // Calculate migration efficiency when switching to migration tab
+    if (tabName === 'migration') {
+        calculateMigrationEfficiency();
+    }
+    
     lucide.createIcons();
 }
 
@@ -1327,6 +1332,42 @@ function updateCostsSection() {
         </div>
     `;
     
+    // Add migration efficiency cost comparison if data available
+    const migrationData = getMigrationEfficiencyData();
+    if (migrationData) {
+        document.getElementById('costComparison').innerHTML += `
+            <div class="p-4 bg-slate-800 rounded-lg lg:col-span-4 mt-4 border-t-2 border-green-500/50">
+                <div class="text-sm text-gray-400 mb-3 flex items-center gap-2">
+                    <i data-lucide="zap" class="w-4 h-4 text-green-400"></i>
+                    Migration Efficiency - Old Hardware Costs During Migration
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="p-3 bg-slate-700/50 rounded-lg">
+                        <div class="text-xs text-gray-400">Run Rate Old HW Cost</div>
+                        <div class="text-lg font-bold text-blue-400">${formatCurrency(migrationData.runRateTotalOldHwCost)}</div>
+                        <div class="text-xs text-gray-500">${migrationData.runRateDuration} months</div>
+                    </div>
+                    <div class="p-3 bg-slate-700/50 rounded-lg">
+                        <div class="text-xs text-gray-400">R&R Old HW Cost</div>
+                        <div class="text-lg font-bold text-purple-400">${formatCurrency(migrationData.rackRollTotalOldHwCost)}</div>
+                        <div class="text-xs text-gray-500">${migrationData.rackRollDuration} months</div>
+                    </div>
+                    <div class="p-3 bg-slate-700/50 rounded-lg">
+                        <div class="text-xs text-gray-400">R&R Premium Cost</div>
+                        <div class="text-lg font-bold text-yellow-400">${formatCurrency(migrationData.rackRollPremiumCost)}</div>
+                        <div class="text-xs text-gray-500">expedited deployment</div>
+                    </div>
+                    <div class="p-3 ${migrationData.isRackRollBetter ? 'bg-green-900/30 border border-green-700/50' : 'bg-cyan-900/30 border border-cyan-700/50'} rounded-lg">
+                        <div class="text-xs text-gray-400">Net Savings (R&R)</div>
+                        <div class="text-lg font-bold ${migrationData.netSavings >= 0 ? 'text-green-400' : 'text-red-400'}">${migrationData.netSavings >= 0 ? '+' : ''}${formatCurrency(migrationData.netSavings)}</div>
+                        <div class="text-xs ${migrationData.isRackRollBetter ? 'text-green-400' : 'text-cyan-400'}">${migrationData.isRackRollBetter ? 'R&R recommended' : 'Run Rate recommended'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        lucide.createIcons();
+    }
+    
     // Monthly budget table
     const maxMonths = Math.max(r.runRateMonths, r.rackRollMonths);
     let tableHTML = '';
@@ -1352,11 +1393,99 @@ function updateCostsSection() {
     document.getElementById('monthlyBudgetTable').innerHTML = tableHTML;
 }
 
+// Helper function to get migration efficiency data for use in Summary and Costs
+function getMigrationEfficiencyData() {
+    // Get total servers to migrate
+    let totalServers = 0;
+    if (existingInfrastructure && existingInfrastructure.servers) {
+        totalServers = existingInfrastructure.servers.length;
+    } else if (calculationResults.totalServers) {
+        totalServers = calculationResults.totalServers;
+    }
+    
+    if (totalServers === 0) return null;
+    
+    // Get inputs (with fallbacks)
+    const oldServerPower = parseFloat(document.getElementById('oldServerPower')?.value || 500);
+    const powerCost = parseFloat(document.getElementById('migrationPowerCost')?.value || 0.10);
+    const runRate = parseInt(document.getElementById('runRateServers')?.value || 250);
+    const rackRollRate = parseInt(document.getElementById('rackRollServers')?.value || 500);
+    const rackRollPremium = parseFloat(document.getElementById('rackRollPremium')?.value || 15) / 100;
+    const pue = parseFloat(document.getElementById('migrationPUE')?.value || 1.5);
+    const maintCost = parseFloat(document.getElementById('oldHardwareMaint')?.value || 50);
+    
+    // Calculate migration durations (in months)
+    const runRateDuration = Math.ceil(totalServers / runRate);
+    const rackRollDuration = Math.ceil(totalServers / rackRollRate);
+    const timeSaved = runRateDuration - rackRollDuration;
+    
+    // Power cost per server per month
+    const hoursPerMonth = 730;
+    const powerCostPerServerMonth = (oldServerPower * hoursPerMonth * pue * powerCost) / 1000;
+    const avgServersRunning = totalServers / 2;
+    
+    // Run Rate costs
+    const runRatePowerCost = avgServersRunning * powerCostPerServerMonth * runRateDuration;
+    const runRateMaintCost = avgServersRunning * maintCost * runRateDuration;
+    const runRateTotalOldHwCost = runRatePowerCost + runRateMaintCost;
+    
+    // Rack & Roll costs
+    const rackRollPowerCost = avgServersRunning * powerCostPerServerMonth * rackRollDuration;
+    const rackRollMaintCost = avgServersRunning * maintCost * rackRollDuration;
+    const rackRollTotalOldHwCost = rackRollPowerCost + rackRollMaintCost;
+    
+    // Premium cost
+    const newServerCost = calculationResults.inputs?.serverCost || 15000;
+    const rackRollPremiumCost = totalServers * newServerCost * rackRollPremium;
+    
+    // Savings analysis
+    const oldHwSavings = runRateTotalOldHwCost - rackRollTotalOldHwCost;
+    const netSavings = oldHwSavings - rackRollPremiumCost;
+    const isRackRollBetter = netSavings > 0;
+    const breakEvenPremium = (oldHwSavings / (totalServers * newServerCost)) * 100;
+    
+    return {
+        totalServers,
+        runRateDuration,
+        rackRollDuration,
+        timeSaved,
+        runRateTotalOldHwCost,
+        rackRollTotalOldHwCost,
+        rackRollPremiumCost,
+        oldHwSavings,
+        netSavings,
+        isRackRollBetter,
+        breakEvenPremium,
+        powerCostPerServerMonth
+    };
+}
+
 function updateSummarySection() {
     const r = calculationResults;
     const i = r.inputs;
     const timeSaved = r.runRateMonths - r.rackRollMonths;
     const costDiff = r.rackRollTotalCost - r.runRateTotalCost;
+    
+    // Get migration efficiency data if available
+    const migrationData = getMigrationEfficiencyData();
+    
+    let migrationSummaryHTML = '';
+    if (migrationData) {
+        migrationSummaryHTML = `
+            <div class="p-4 bg-slate-800 rounded-lg border-l-4 ${migrationData.isRackRollBetter ? 'border-green-500' : 'border-cyan-500'}">
+                <h3 class="font-semibold text-lg mb-2">Migration Efficiency Analysis</h3>
+                <p class="text-gray-300">Migrating <strong>${formatNumber(migrationData.totalServers)} servers</strong> from legacy hardware.</p>
+                <ul class="text-gray-300 space-y-1 mt-2">
+                    <li>• Run Rate: ${migrationData.runRateDuration} months, ${formatCurrency(migrationData.runRateTotalOldHwCost)} old HW cost</li>
+                    <li>• Rack & Roll: ${migrationData.rackRollDuration} months, ${formatCurrency(migrationData.rackRollTotalOldHwCost)} old HW cost + ${formatCurrency(migrationData.rackRollPremiumCost)} premium</li>
+                    <li>• <strong class="${migrationData.netSavings >= 0 ? 'text-green-400' : 'text-red-400'}">Net ${migrationData.netSavings >= 0 ? 'Savings' : 'Cost'}: ${formatCurrency(Math.abs(migrationData.netSavings))}</strong> with Rack & Roll</li>
+                </ul>
+                <p class="text-sm mt-2 ${migrationData.isRackRollBetter ? 'text-green-400' : 'text-cyan-400'}">
+                    <strong>Recommendation:</strong> ${migrationData.isRackRollBetter ? 'Rack & Roll' : 'Run Rate'} is more cost-effective for this migration.
+                </p>
+            </div>
+        `;
+    }
     
     document.getElementById('executiveSummary').innerHTML = `
         <div class="space-y-4">
@@ -1380,6 +1509,7 @@ function updateSummarySection() {
                     <li>• Rack & Roll Total (${r.rackRollMonths} months): <strong>${formatCurrency(r.rackRollTotalCost)}</strong></li>
                 </ul>
             </div>
+            ${migrationSummaryHTML}
         </div>
     `;
     
@@ -2860,8 +2990,9 @@ function updateHistoricalComparison() {
         </div>
     `;
     
-    // Update the infrastructure summary
+    // Update the infrastructure summary and efficiency calculator
     updateMigrationDisplay();
+    calculateMigrationEfficiency();
     
     lucide.createIcons();
 }
