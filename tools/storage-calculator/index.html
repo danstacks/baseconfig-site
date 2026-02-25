@@ -236,7 +236,7 @@
                                 <i data-lucide="combine" class="w-6 h-6 text-yellow-400"></i>
                                 <div>
                                     <div class="font-semibold">Unified Network</div>
-                                    <div class="text-xs text-gray-400">Single switch set with virtual FE/BE separation</div>
+                                    <div class="text-xs text-gray-400">Single ToR only - no spine layer support</div>
                                 </div>
                             </div>
                             <div class="mt-3 p-3 bg-slate-800/50 rounded text-xs text-gray-400">
@@ -420,7 +420,7 @@
                                 <i data-lucide="combine" class="w-4 h-4 text-yellow-400"></i>
                                 <span class="font-semibold text-sm">Unified</span>
                             </div>
-                            <div class="text-xs text-gray-400">Single switch set, virtual split</div>
+                            <div class="text-xs text-gray-400">Single ToR only (no spine)</div>
                         </button>
                     </div>
                     <div>
@@ -914,7 +914,7 @@
                 desc.innerHTML = '<strong>Dedicated:</strong> Separate frontend and backend switch pairs. Maximum isolation and bandwidth.';
                 singleRackCount.textContent = '4 switches in 1 rack';
             } else {
-                desc.innerHTML = '<strong>Unified:</strong> Single switch pair handles both FE/BE traffic (virtually split). Fewer switches, lower cost.';
+                desc.innerHTML = '<strong>Unified:</strong> Single ToR switch pair handles both FE/BE traffic. <span class="text-yellow-400">Cannot scale beyond single ToR (no spine support).</span>';
                 singleRackCount.textContent = '2 switches in 1 rack';
             }
             
@@ -1417,10 +1417,13 @@
                         <line x1="320" y1="185" x2="290" y2="140" stroke="#eab308" stroke-width="1.5" opacity="0.6"/>
                         
                         <!-- Legend -->
-                        <rect x="150" y="240" width="12" height="12" rx="2" fill="url(#unifiedGrad)"/>
-                        <text x="168" y="250" fill="#9ca3af" font-size="10">Unified Switch (FE+BE virtual split)</text>
-                        <rect x="350" y="240" width="12" height="12" rx="2" fill="#0891b2"/>
-                        <text x="368" y="250" fill="#9ca3af" font-size="10">EBox Servers</text>
+                        <rect x="50" y="240" width="12" height="12" rx="2" fill="url(#unifiedGrad)"/>
+                        <text x="68" y="250" fill="#9ca3af" font-size="9">Unified Switch</text>
+                        <rect x="160" y="240" width="12" height="12" rx="2" fill="#0891b2"/>
+                        <text x="178" y="250" fill="#9ca3af" font-size="9">EBox Servers</text>
+                        
+                        <!-- Optics/Speeds -->
+                        <text x="50" y="268" fill="#6b7280" font-size="8">Optics: Server→Leaf: ${connectionType === 'breakout' ? '400G (2×200G breakout)' : '200G'} | Leaf→Spine: 400G</text>
                     </svg>
                 </div>
             `;
@@ -1511,6 +1514,9 @@
                         
                         <!-- Stats -->
                         <text x="300" y="260" text-anchor="middle" fill="#9ca3af" font-size="10">${servers} servers × 4 ports = ${servers * 4} connections (${switches} FE + ${switches} BE leaf switches)</text>
+                        
+                        <!-- Optics/Speeds -->
+                        <text x="300" y="280" text-anchor="middle" fill="#6b7280" font-size="8">Optics: Server→Leaf: ${connectionType === 'breakout' ? '400G (2×200G breakout)' : '200G'} | Leaf→Spine: 400G</text>
                     </svg>
                 </div>
             `;
@@ -1579,12 +1585,15 @@
                         <line x1="405" y1="135" x2="165" y2="180" stroke="#10b981" stroke-width="1" opacity="0.5"/>
                         
                         <!-- Legend -->
-                        <rect x="100" y="240" width="12" height="12" rx="2" fill="#7c3aed"/>
-                        <text x="118" y="250" fill="#9ca3af" font-size="10">Frontend Network</text>
-                        <rect x="220" y="240" width="12" height="12" rx="2" fill="#059669"/>
-                        <text x="238" y="250" fill="#9ca3af" font-size="10">Backend Network</text>
-                        <rect x="340" y="240" width="12" height="12" rx="2" fill="#0891b2"/>
-                        <text x="358" y="250" fill="#9ca3af" font-size="10">EBox Servers</text>
+                        <rect x="100" y="235" width="12" height="12" rx="2" fill="#7c3aed"/>
+                        <text x="118" y="245" fill="#9ca3af" font-size="9">Frontend Network</text>
+                        <rect x="230" y="235" width="12" height="12" rx="2" fill="#059669"/>
+                        <text x="248" y="245" fill="#9ca3af" font-size="9">Backend Network</text>
+                        <rect x="360" y="235" width="12" height="12" rx="2" fill="#0891b2"/>
+                        <text x="378" y="245" fill="#9ca3af" font-size="9">EBox Servers</text>
+                        
+                        <!-- Optics/Speeds -->
+                        <text x="300" y="268" text-anchor="middle" fill="#6b7280" font-size="8">Optics: Server→Leaf: ${connectionType === 'breakout' ? '400G (2×200G breakout)' : '200G'} | Leaf→Spine: 400G</text>
                     </svg>
                 </div>
             `;
@@ -1623,6 +1632,21 @@
             const isUnified = selectedNetworkDesign === 'unified';
             const isSplit = selectedRackLayout === 'split';
             const connectionType = document.getElementById('connectionType')?.value || 'direct';
+            
+            // Check if unified design exceeds single ToR capacity (unified cannot use spine layer)
+            const unifiedExceedsToR = isUnified && result.actualRacks > (isSplit ? 2 : 1);
+            const unifiedWarning = unifiedExceedsToR ? `
+                <div class="mt-3 p-3 bg-red-900/30 border border-red-500/50 rounded-lg">
+                    <div class="flex items-start gap-2">
+                        <i data-lucide="alert-octagon" class="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0"></i>
+                        <div class="text-xs">
+                            <div class="text-red-400 font-medium">Unified design not supported at this scale</div>
+                            <div class="text-gray-400 mt-1">Unified network design cannot span multiple ToR switch sets (no spine layer support). Switch to <strong>Dedicated</strong> network design for clusters requiring ${result.actualRacks} racks.</div>
+                        </div>
+                    </div>
+                </div>
+            ` : '';
+            
             document.getElementById('rack-config-summary').innerHTML = `
                 <div class="flex justify-between"><span class="text-gray-400">Drive Option:</span><span class="text-${driveColors[driveOptionIndex]}-400 font-medium">${driveLabels[driveOptionIndex]}</span></div>
                 <div class="flex justify-between"><span class="text-gray-400">Usable per Server:</span><span>${selectedCapacity.usable} TB</span></div>
@@ -1630,11 +1654,13 @@
                 <div class="flex justify-between"><span class="text-gray-400">Racks Required:</span><span class="font-medium">${result.actualRacks}</span></div>
                 <div class="flex justify-between"><span class="text-gray-400">Servers per Rack:</span><span>${result.serversPerRack}</span></div>
                 ${isSplit ? `<div class="flex justify-between"><span class="text-gray-400">Servers per Scalable Unit:</span><span>${result.serversPerScalableUnit}</span></div>` : ''}
-                <div class="flex justify-between"><span class="text-gray-400">Network Design:</span><span class="${isUnified ? 'text-yellow-400' : 'text-green-400'}">${isUnified ? 'Unified' : 'Dedicated'}</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Network Design:</span><span class="${isUnified ? (unifiedExceedsToR ? 'text-red-400' : 'text-yellow-400') : 'text-green-400'}">${isUnified ? 'Unified' : 'Dedicated'}${unifiedExceedsToR ? ' ⚠' : ''}</span></div>
                 <div class="flex justify-between"><span class="text-gray-400">Rack Layout:</span><span class="${isSplit ? 'text-purple-400' : 'text-cyan-400'}">${isSplit ? 'Split (2 Racks)' : 'Single Rack'}</span></div>
                 <div class="flex justify-between"><span class="text-gray-400">Connection:</span><span>${connectionType === 'breakout' ? '400G→2×200G' : 'Direct 200G'}</span></div>
                 <div class="flex justify-between"><span class="text-gray-400">Power per Rack:</span><span>${result.powerPerRack.toFixed(1)} kW</span></div>
+                ${unifiedWarning}
             `;
+            lucide.createIcons();
             
             // Update power summary
             updatePowerSummary(result);

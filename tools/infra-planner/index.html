@@ -356,14 +356,21 @@
                         <input type="number" id="uplinkOpticsCost" value="500" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                         <div><label class="block text-sm text-gray-400 mb-1">Uplinks per ToR</label>
                         <input type="number" id="uplinksPerTor" value="4" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="hard-drive" class="w-5 h-5 text-orange-400"></i>VAST EBox Storage
+                    </h2>
                     <div class="space-y-4">
                         <div><label class="block text-sm text-gray-400 mb-1">Storage per Server (TB usable)</label>
                         <input type="number" id="storagePerServer" value="10" min="0" step="0.1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                         <div><label class="block text-sm text-gray-400 mb-1">VAST Drive Option</label>
                         <select id="vastDriveOption" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()">
                             <option value="15.3TB">15.3TB (100TB usable/server)</option>
-                            <option value="30.7TB">30.7TB (200TB usable/server)</option>
-                            <option value="61.4TB" selected>61.4TB (350TB usable/server)</option>
+                            <option value="30.7TB" selected>30.7TB (200TB usable/server)</option>
+                            <option value="61.4TB">61.4TB (350TB usable/server)</option>
                         </select></div>
                         <div class="p-3 bg-slate-800/50 rounded-lg text-xs text-gray-400">
                             <div class="flex justify-between mb-1"><span>VAST EBox Servers:</span><span id="vastServersDisplay" class="text-cyan-400 font-medium">0</span></div>
@@ -1091,6 +1098,11 @@
                 </div>
             </div>
         </section>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center text-gray-500 text-sm">
+            <p>Prepared by Dan Stacks | <a href="/" class="text-cyan-400 hover:text-cyan-300">BaseConfig</a></p>
+        </footer>
     </div>
     <script src="app.js"></script>
 </body>
