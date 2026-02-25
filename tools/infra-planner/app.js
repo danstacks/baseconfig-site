@@ -6,7 +6,7 @@ let calculationResults = {};
 let wizardStep = 1;
 let selectedNetworkSpeed = '25g';
 let selectedRackLayout = 'single';
-let spineUplinkMode = 'breakout'; // 'breakout' or 'direct'
+let spineUplinkMode = 'direct'; // 'direct' (100G in 400G port) or 'breakout' (4:1)
 let comparisonMode = false;
 let comparisonWorkload = null;
 let savedConfigurations = JSON.parse(localStorage.getItem('infraPlannerConfigs') || '[]');
@@ -1000,7 +1000,7 @@ function applyNetworkPreset() {
 }
 
 function updateSpineUplinkMode() {
-    spineUplinkMode = document.getElementById('spineUplinkMode')?.value || 'breakout';
+    spineUplinkMode = document.getElementById('spineUplinkMode')?.value || 'direct';
     const breakoutDiv = document.getElementById('breakoutOpticsCostDiv');
     if (breakoutDiv) {
         breakoutDiv.style.display = spineUplinkMode === 'breakout' ? 'block' : 'none';
@@ -1108,11 +1108,11 @@ function calculate() {
     // Calculate spine switches based on actual port capacity
     // Each ToR has uplinksPerTor connections to spine layer (100G each for 25G network)
     // Spine switches are N9K-C9364D-GX2A with 64x 400G ports
-    // Using 4:1 breakout: each 400G port handles 4x 100G ToR uplinks
-    // So effective spine capacity = 64 ports * 4 = 256 x 100G connections per spine
+    // Direct mode: 1 ToR uplink per 400G port (using 100G optic in 400G port)
+    // Breakout mode: 4 ToR uplinks per 400G port (using QDD-400G-SR4.2-BD breakout)
     // For redundancy, we need 2 spine switches minimum (each ToR connects to both)
     const spinePhysicalPorts = networkPresets[selectedNetworkSpeed]?.spinePorts || 64;
-    const breakoutRatio = selectedNetworkSpeed === '25g' ? 4 : 1; // 4:1 breakout for 100G uplinks from 400G
+    const breakoutRatio = (spineUplinkMode === 'breakout' && selectedNetworkSpeed === '25g') ? 4 : 1;
     const effectiveSpinePorts = spinePhysicalPorts * breakoutRatio;
     const totalUplinkPorts = torSwitches * inputs.uplinksPerTor;
     const uplinksPerSpine = totalUplinkPorts / 2; // Split across 2 spine switches for redundancy
@@ -1256,11 +1256,17 @@ function updateDeploymentScaleSummary() {
     const torUtilization = Math.round((serverPortsPerTor / availableTorPorts) * 100);
     const torOversubscribed = serverPortsPerTor > availableTorPorts;
     
-    // Spine oversubscription
+    // Spine oversubscription - depends on uplink mode (direct vs breakout)
     const networkSpeed = selectedNetworkSpeed === '100g' ? 100 : 25;
     const totalServerBandwidth = i.totalServers * networkSpeed; // Gbps
-    const spinePortsPerSwitch = 32; // Typical spine port count
-    const totalSpineBandwidth = r.spineSwitches * spinePortsPerSwitch * networkSpeed;
+    // Spine: 64x 400G ports
+    // Direct mode: 1 uplink per port = 64 ports per spine
+    // Breakout mode: 4 uplinks per port = 256 effective ports per spine
+    const spinePhysicalPorts = 64;
+    const breakoutRatio = (spineUplinkMode === 'breakout' && selectedNetworkSpeed === '25g') ? 4 : 1;
+    const effectiveSpinePorts = spinePhysicalPorts * breakoutRatio;
+    const spineBandwidthPerSwitch = effectiveSpinePorts * 100; // 100G per effective port
+    const totalSpineBandwidth = r.spineSwitches * spineBandwidthPerSwitch;
     const spineOversubRatio = totalSpineBandwidth > 0 ? (totalServerBandwidth / totalSpineBandwidth).toFixed(1) : 'N/A';
     
     // Network validation display
