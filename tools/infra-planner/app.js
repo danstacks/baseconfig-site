@@ -2745,14 +2745,14 @@ function renderRackDiagram() {
     const serverHeight = r.inputs.serverHeight || 1;
     const serversPerRack = r.serversPerRack || 20;
     const layout = r.inputs.rackLayout || 'single';
-    // Map layout to rack count: single=1, split=2, quad=4
+    // Map layout to rack count: single=1, split=2, supersplit=4
     const racksPerSU = layout === 'single' ? 1 : (layout === 'split' ? 2 : 4);
     
     // Layout labels
     const layoutLabels = {
         single: 'Single Rack (2 ToRs in rack)',
         split: 'Split Config (2 Racks, 1 ToR each, cross-cabled)',
-        quad: 'Quad Config (4 Racks, ToRs to Spines)'
+        supersplit: 'Super Split (2 ToR Racks + 2 Server-Only Racks)'
     };
     
     let html = `<div class="text-center text-sm text-gray-400 mb-4">${layoutLabels[layout] || layout}</div>`;
@@ -2760,16 +2760,22 @@ function renderRackDiagram() {
     
     // Render racks for one scalable unit (top to bottom)
     for (let rack = 0; rack < racksPerSU; rack++) {
+        // For super split: racks 0,1 have ToRs, racks 2,3 are server-only
+        const isToRRack = layout !== 'supersplit' || rack < 2;
+        const rackLabel = layout === 'supersplit' 
+            ? (isToRRack ? `ToR Rack ${rack + 1}` : `Server Rack ${rack - 1}`)
+            : `Rack ${rack + 1}`;
+        
         html += `
-            <div class="rack-diagram bg-slate-900 border-2 border-slate-600 rounded-lg p-2" style="width: 120px;">
-                <div class="text-center text-xs text-gray-400 mb-2 font-mono">Rack ${rack + 1}</div>
+            <div class="rack-diagram bg-slate-900 border-2 ${isToRRack ? 'border-slate-600' : 'border-orange-600'} rounded-lg p-2" style="width: 120px;">
+                <div class="text-center text-xs ${isToRRack ? 'text-gray-400' : 'text-orange-400'} mb-2 font-mono">${rackLabel}</div>
                 <div class="rack-units flex flex-col gap-px">
         `;
         
         // 42U rack - render top to bottom
         let currentU = 0;
         
-        // ToR switches at top
+        // ToR switches at top (only for ToR racks)
         if (layout === 'single') {
             // Single rack: 2 ToRs in the same rack
             html += `<div class="rack-unit bg-purple-600 text-white text-xs flex items-center justify-center font-mono" style="height: 16px;">ToR-A</div>`;
@@ -2779,19 +2785,44 @@ function renderRackDiagram() {
             // Split: 1 ToR per rack
             html += `<div class="rack-unit bg-purple-600 text-white text-xs flex items-center justify-center font-mono" style="height: 16px;">ToR-${rack + 1}</div>`;
             currentU += 2;
+        } else if (layout === 'supersplit' && isToRRack) {
+            // Super Split: 1 ToR in ToR racks only
+            html += `<div class="rack-unit bg-purple-600 text-white text-xs flex items-center justify-center font-mono" style="height: 16px;">ToR-${rack + 1}</div>`;
+            currentU += 2;
+        }
+        // Server-only racks in super split have no ToRs
+        
+        // Servers - calculate based on rack type
+        let torU = 0;
+        if (layout === 'single') torU = 4;
+        else if (layout === 'split') torU = 2;
+        else if (layout === 'supersplit') torU = isToRRack ? 2 : 0;
+        
+        // For super split, server-only racks can fit more servers
+        let maxServersThisRack;
+        if (layout === 'supersplit') {
+            maxServersThisRack = Math.floor((42 - torU) / serverHeight);
         } else {
-            // Quad: 2 ToRs per rack
-            html += `<div class="rack-unit bg-purple-600 text-white text-xs flex items-center justify-center font-mono" style="height: 16px;">ToR-${rack + 1}A</div>`;
-            html += `<div class="rack-unit bg-purple-600 text-white text-xs flex items-center justify-center font-mono" style="height: 16px;">ToR-${rack + 1}B</div>`;
-            currentU += 4;
+            maxServersThisRack = Math.min(serversPerRack, Math.floor((42 - torU) / serverHeight));
         }
         
-        // Servers
-        const torU = layout === 'split' ? 2 : 4;
-        const maxServers = Math.min(serversPerRack, Math.floor((42 - torU) / serverHeight));
-        for (let s = 0; s < maxServers; s++) {
+        // Calculate server numbering offset
+        let serverOffset = 0;
+        if (layout === 'supersplit') {
+            // ToR racks: 0, maxServers; Server racks: 2*maxServers, 3*maxServers
+            const torRackServers = Math.floor((42 - 2) / serverHeight);
+            const serverRackServers = Math.floor(42 / serverHeight);
+            if (rack === 0) serverOffset = 0;
+            else if (rack === 1) serverOffset = torRackServers;
+            else if (rack === 2) serverOffset = torRackServers * 2;
+            else serverOffset = torRackServers * 2 + serverRackServers;
+        } else {
+            serverOffset = rack * maxServersThisRack;
+        }
+        
+        for (let s = 0; s < maxServersThisRack; s++) {
             const height = serverHeight * 12;
-            html += `<div class="rack-unit bg-cyan-600 text-white text-xs flex items-center justify-center font-mono rounded-sm" style="height: ${height}px;">S${rack * maxServers + s + 1}</div>`;
+            html += `<div class="rack-unit bg-cyan-600 text-white text-xs flex items-center justify-center font-mono rounded-sm" style="height: ${height}px;">S${serverOffset + s + 1}</div>`;
             currentU += serverHeight;
         }
         
@@ -2818,6 +2849,17 @@ function renderRackDiagram() {
                 </div>
             `;
         }
+        
+        // Add connection indicator between ToR racks and server racks for super split
+        if (layout === 'supersplit' && rack === 1) {
+            html += `
+                <div class="flex flex-col justify-center items-center gap-1" style="width: 40px;">
+                    <div class="text-xs text-orange-400">→</div>
+                    <div class="text-xs text-gray-500">to</div>
+                    <div class="text-xs text-orange-400">←</div>
+                </div>
+            `;
+        }
     }
     
     html += `</div>`;
@@ -2834,9 +2876,18 @@ function renderRackDiagram() {
     }
     
     // Add summary
+    let summaryText;
+    if (layout === 'supersplit') {
+        const torRackServers = Math.floor((42 - 2) / serverHeight);
+        const serverRackServers = Math.floor(42 / serverHeight);
+        const totalPerUnit = (torRackServers * 2) + (serverRackServers * 2);
+        summaryText = `2 ToR racks (${torRackServers} servers each) + 2 server racks (${serverRackServers} each) = ${totalPerUnit} servers/unit`;
+    } else {
+        summaryText = `${serversPerRack} servers/rack × ${racksPerSU} rack(s) = ${serversPerRack * racksPerSU} servers per scalable unit`;
+    }
     html += `
         <div class="mt-4 text-xs text-gray-400 text-center">
-            ${serversPerRack} servers/rack × ${racksPerSU} rack(s) = ${serversPerRack * racksPerSU} servers per scalable unit
+            ${summaryText}
         </div>
     `;
     
