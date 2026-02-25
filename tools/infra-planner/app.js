@@ -974,7 +974,6 @@ function getInputs() {
         uplinkOpticsCost: parseFloat(document.getElementById('uplinkOpticsCost').value) || 500,
         uplinksPerTor: parseInt(document.getElementById('uplinksPerTor').value) || 4,
         storagePerServer: parseFloat(document.getElementById('storagePerServer').value) || 10,
-        replicationFactor: parseInt(document.getElementById('replicationFactor').value) || 3,
         vastDriveOption: document.getElementById('vastDriveOption')?.value || '61.4TB',
         runRate: parseInt(document.getElementById('runRate').value) || 250,
         rackRollRate: parseInt(document.getElementById('rackRollRate').value) || 1000,
@@ -1032,8 +1031,8 @@ function calculate() {
     const uplinkOptics = torSwitches * inputs.uplinksPerTor * 2;
     const totalOptics = serverOptics + uplinkOptics;
     
-    // Calculate VAST EBox storage
-    const totalStorageNeeded = inputs.totalServers * inputs.storagePerServer * inputs.replicationFactor;
+    // Calculate VAST EBox storage (no replication factor - VAST handles data protection internally)
+    const totalStorageNeeded = inputs.totalServers * inputs.storagePerServer;
     
     // VAST EBox capacities per server (usable TB)
     const vastCapacities = {

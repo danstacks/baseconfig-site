@@ -364,10 +364,8 @@
                         <i data-lucide="hard-drive" class="w-5 h-5 text-red-400"></i>VAST EBox Storage
                     </h2>
                     <div class="space-y-4">
-                        <div><label class="block text-sm text-gray-400 mb-1">Storage per Server (TB)</label>
+                        <div><label class="block text-sm text-gray-400 mb-1">Storage per Server (TB usable)</label>
                         <input type="number" id="storagePerServer" value="10" min="0" step="0.1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
-                        <div><label class="block text-sm text-gray-400 mb-1">Replication Factor</label>
-                        <input type="number" id="replicationFactor" value="3" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                         <div><label class="block text-sm text-gray-400 mb-1">VAST Drive Option</label>
                         <select id="vastDriveOption" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()">
                             <option value="15.3TB">15.3TB (100TB usable/server)</option>
@@ -379,6 +377,7 @@
                             <div class="flex justify-between mb-1"><span>VAST Racks:</span><span id="vastRacksDisplay" class="text-cyan-400 font-medium">0</span></div>
                             <div class="flex justify-between"><span>Total Usable Capacity:</span><span id="vastCapacityDisplay" class="text-cyan-400 font-medium">0 TB</span></div>
                         </div>
+                        <p class="text-xs text-gray-500">VAST handles data protection internally - no replication factor needed</p>
                     </div>
                 </div>
 
