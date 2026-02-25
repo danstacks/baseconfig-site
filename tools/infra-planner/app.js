@@ -1118,7 +1118,29 @@ function calculate() {
     const uplinksPerSpine = totalUplinkPorts / 2; // Split across 2 spine switches for redundancy
     const spinesNeededByPorts = Math.ceil(uplinksPerSpine / effectiveSpinePorts) * 2; // Multiply by 2 for pair
     const spineSwitches = Math.max(2, spinesNeededByPorts); // Minimum 2 for redundancy
-    const totalNetworkDevices = torSwitches + spineSwitches;
+    
+    // Super Spine Layer - needed when >4 spines to provide full mesh connectivity
+    // Each spine connects to each super spine at 400G
+    // Super spines are same model: N9K-C9364D-GX2A with 64x 400G ports
+    // Rule: If >4 spines, add super spine layer for east-west traffic between spine pods
+    let superSpineSwitches = 0;
+    let spineToSuperSpineUplinks = 0;
+    let superSpineOptics = 0;
+    const needsSuperSpine = spineSwitches > 4;
+    
+    if (needsSuperSpine) {
+        // Each spine needs uplinks to super spine layer (typically 4-8 uplinks per spine)
+        spineToSuperSpineUplinks = 4; // 4x 400G uplinks per spine to super spine
+        const totalSpineUplinks = spineSwitches * spineToSuperSpineUplinks;
+        // Super spines need to handle all spine uplinks, split for redundancy
+        const uplinksPerSuperSpine = totalSpineUplinks / 2;
+        const superSpinesNeeded = Math.ceil(uplinksPerSuperSpine / spinePhysicalPorts) * 2;
+        superSpineSwitches = Math.max(2, superSpinesNeeded); // Minimum 2 for redundancy
+        // 400G optics: 2 per link (spine side + super spine side)
+        superSpineOptics = totalSpineUplinks * 2;
+    }
+    
+    const totalNetworkDevices = torSwitches + spineSwitches + superSpineSwitches;
     
     // Calculate optics
     const serverOptics = inputs.totalServers * inputs.opticsPerServer;
@@ -1157,7 +1179,8 @@ function calculate() {
     const torSwitchPower = torSwitches * inputs.torPower / 1000;
     const spinePower = networkPresets[selectedNetworkSpeed]?.spinePower || 950;
     const spineSwitchPower = spineSwitches * spinePower / 1000; // Use actual spine power (950W for N9K-C9364D-GX2A)
-    const networkPowerEstimate = torSwitchPower + spineSwitchPower;
+    const superSpineSwitchPower = superSpineSwitches * spinePower / 1000; // Same switch model
+    const networkPowerEstimate = torSwitchPower + spineSwitchPower + superSpineSwitchPower;
     const storagePowerEstimate = storageNodes * 2;
     const totalPower = totalServerPower + networkPowerEstimate + storagePowerEstimate;
     
@@ -1169,7 +1192,10 @@ function calculate() {
     const racksCost = totalRacks * inputs.rackCost;
     const torCost = torSwitches * inputs.torCost;
     const spinesCost = spineSwitches * inputs.spineCost;
-    const networkCost = torCost + spinesCost;
+    const superSpinesCost = superSpineSwitches * inputs.spineCost; // Same switch model/price
+    // 400G optics for spine-to-superspine links (use STORAGE_PRICING.spineOpticsCost as 400G optic price)
+    const superSpineOpticsCost = superSpineOptics * STORAGE_PRICING.spineOpticsCost;
+    const networkCost = torCost + spinesCost + superSpinesCost + superSpineOpticsCost;
     const serverOpticsCostTotal = serverOptics * inputs.serverOpticsCost;
     
     // Uplink optics cost depends on breakout mode
@@ -1219,6 +1245,9 @@ function calculate() {
         runRateLaborCost, rackRollLaborCost, runRateTotalCost, rackRollTotalCost, 
         rackLimitedBy, torSwitchPower, actualPowerPerRack, availablePowerForServers, 
         torPowerKw, isSplit,
+        // Super Spine details
+        needsSuperSpine, superSpineSwitches, spineToSuperSpineUplinks, superSpineOptics,
+        superSpinesCost, superSpineOpticsCost, superSpineSwitchPower,
         // VAST EBox storage details
         vastServers, vastRacks, vastSwitches, vastServerOptics, vastSpineOptics,
         vastUsablePerServer, vastServersCost, vastDrivesCost, vastSwitchesCost,
@@ -1290,6 +1319,28 @@ function updateDeploymentScaleSummary() {
             </div>
            </div>`;
     
+    // Super spine info card (only shown when needed)
+    const superSpineCard = r.needsSuperSpine ? `
+        <div class="p-4 bg-gradient-to-br from-red-900/40 to-red-900/20 rounded-lg border border-red-500/30">
+            <div class="text-3xl font-bold text-red-400">${r.superSpineSwitches.toLocaleString()}</div>
+            <div class="text-sm text-gray-400">Super Spines</div>
+        </div>
+    ` : '';
+    
+    // Super spine notification
+    const superSpineNotification = r.needsSuperSpine ? `
+        <div class="col-span-2 md:col-span-5 mt-2 p-3 bg-red-900/20 border border-red-500/30 rounded-lg text-sm">
+            <div class="flex items-start gap-2">
+                <span class="text-red-400">🔺</span>
+                <div>
+                    <div class="text-red-400 font-medium">Super Spine Layer Required</div>
+                    <div class="text-gray-400 mt-1">${r.spineSwitches} spines exceed 4-spine limit. Adding ${r.superSpineSwitches} super spines with ${r.spineToSuperSpineUplinks}x 400G uplinks per spine.</div>
+                    <div class="text-gray-500 mt-1">400G optics needed: ${r.superSpineOptics} (spine↔super spine)</div>
+                </div>
+            </div>
+        </div>
+    ` : '';
+    
     container.innerHTML = `
         <div class="p-4 bg-gradient-to-br from-cyan-900/40 to-cyan-900/20 rounded-lg border border-cyan-500/30">
             <div class="text-3xl font-bold text-cyan-400">${i.totalServers.toLocaleString()}</div>
@@ -1307,6 +1358,7 @@ function updateDeploymentScaleSummary() {
             <div class="text-3xl font-bold text-orange-400">${r.spineSwitches.toLocaleString()}</div>
             <div class="text-sm text-gray-400">Spine Switches</div>
         </div>
+        ${superSpineCard}
         <div class="p-4 bg-gradient-to-br from-yellow-900/40 to-yellow-900/20 rounded-lg border border-yellow-500/30">
             <div class="text-3xl font-bold text-yellow-400">${Math.round(r.totalPower).toLocaleString()}</div>
             <div class="text-sm text-gray-400">Total kW</div>
@@ -1320,6 +1372,7 @@ function updateDeploymentScaleSummary() {
                 <div><span class="text-gray-400">Limited by:</span> <span class="font-medium ${r.rackLimitedBy === 'Power' ? 'text-yellow-400' : 'text-blue-400'}">${r.rackLimitedBy}</span></div>
             </div>
         </div>
+        ${superSpineNotification}
         ${networkValidation}
     `;
 }
@@ -1412,6 +1465,10 @@ function updateScalableUnitsSection() {
         { component: 'Racks', perUnit: r.racksPerScalableUnit, total: r.totalRacks, unitCost: i.rackCost, totalCost: r.racksCost },
         { component: 'ToR Switches', perUnit: 2, total: r.torSwitches, unitCost: i.torCost, totalCost: r.torCost },
         { component: 'Spine Switches', perUnit: '-', total: r.spineSwitches, unitCost: i.spineCost, totalCost: r.spinesCost },
+        ...(r.needsSuperSpine ? [
+            { component: 'Super Spine Switches', perUnit: '-', total: r.superSpineSwitches, unitCost: i.spineCost, totalCost: r.superSpinesCost },
+            { component: 'Spine↔Super Spine Optics (400G)', perUnit: '-', total: r.superSpineOptics, unitCost: STORAGE_PRICING.spineOpticsCost, totalCost: r.superSpineOpticsCost }
+        ] : []),
         { component: 'Server Optics', perUnit: r.serversPerScalableUnit * i.opticsPerServer, total: r.serverOptics, unitCost: i.serverOpticsCost, totalCost: r.serverOpticsCostTotal },
         { component: 'Uplink Optics', perUnit: '-', total: r.uplinkOptics, unitCost: i.uplinkOpticsCost, totalCost: r.uplinkOpticsCostTotal },
         { component: 'VAST EBox Servers', perUnit: '-', total: r.vastServers, unitCost: STORAGE_PRICING.serverCost, totalCost: r.storageCost }
