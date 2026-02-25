@@ -2342,10 +2342,17 @@ function getValidationWarnings() {
         });
     }
     
-    // Spine oversubscription check
-    const totalServerBandwidth = i.totalServers * (i.opticsPerServer / 2) * (selectedNetworkSpeed === '100g' ? 100 : 25);
-    const totalSpineBandwidth = r.spineSwitches * 32 * (selectedNetworkSpeed === '100g' ? 100 : 25); // Assume 32 ports per spine
-    const oversubscriptionRatio = totalServerBandwidth / totalSpineBandwidth;
+    // Spine oversubscription check - match deployment scale calculation
+    const networkSpeed = selectedNetworkSpeed === '100g' ? 100 : 25;
+    const totalServerBandwidth = i.totalServers * networkSpeed; // Gbps (each server has 1 link to network)
+    // Spine: 64x 400G ports, but we use 100G effective ports (breakout or direct)
+    const spinePhysicalPorts = 64;
+    const useBreakout = i.useBreakoutCables || false;
+    const breakoutRatio = useBreakout ? 4 : 1; // 4:1 breakout or direct 100G
+    const effectiveSpinePorts = spinePhysicalPorts * breakoutRatio;
+    const spineBandwidthPerSwitch = effectiveSpinePorts * 100; // 100G per effective port
+    const totalSpineBandwidth = r.spineSwitches * spineBandwidthPerSwitch;
+    const oversubscriptionRatio = totalSpineBandwidth > 0 ? totalServerBandwidth / totalSpineBandwidth : 0;
     if (oversubscriptionRatio > 4) {
         warnings.push({
             type: 'warning',
