@@ -356,13 +356,6 @@
                         <input type="number" id="uplinkOpticsCost" value="500" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                         <div><label class="block text-sm text-gray-400 mb-1">Uplinks per ToR</label>
                         <input type="number" id="uplinksPerTor" value="4" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
-                    </div>
-                </div>
-
-                <div class="card rounded-xl p-6">
-                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <i data-lucide="hard-drive" class="w-5 h-5 text-red-400"></i>VAST EBox Storage
-                    </h2>
                     <div class="space-y-4">
                         <div><label class="block text-sm text-gray-400 mb-1">Storage per Server (TB usable)</label>
                         <input type="number" id="storagePerServer" value="10" min="0" step="0.1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
@@ -918,6 +911,7 @@
                 <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
                     <i data-lucide="hard-drive" class="w-5 h-5 text-purple-400"></i>VAST Data EBox on Cisco UCS Storage Calculator
                 </h2>
+                <p class="text-xs text-gray-500 mb-4">* Pricing reflects standard conservative discounts</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Capacity -->
                     <div class="space-y-4">
@@ -1023,19 +1017,13 @@
                                 <td class="py-3 px-4 text-center storage-spine-optics-count">8</td>
                             </tr>
                             <tr class="border-b border-slate-700 bg-slate-700/30">
-                                <td class="py-3 px-4 text-gray-300 font-semibold">Total Solution List Price ($)</td>
-                                <td class="py-3 px-4 text-center storage-total-solution-list-price font-semibold text-cyan-400">3,033,988.10</td>
-                                <td class="py-3 px-4 text-center storage-total-solution-list-price font-semibold text-purple-400">4,085,026.10</td>
-                                <td class="py-3 px-4 text-center storage-total-solution-list-price font-semibold text-green-400">5,865,694.10</td>
-                            </tr>
-                            <tr class="border-b border-slate-700 bg-slate-700/30">
-                                <td class="py-3 px-4 text-gray-300 font-semibold">Total Solution Customer Price ($)</td>
-                                <td class="py-3 px-4 text-center storage-total-solution-customer-price font-semibold text-cyan-400">3,033,988.10</td>
-                                <td class="py-3 px-4 text-center storage-total-solution-customer-price font-semibold text-purple-400">4,085,026.10</td>
-                                <td class="py-3 px-4 text-center storage-total-solution-customer-price font-semibold text-green-400">5,865,694.10</td>
+                                <td class="py-3 px-4 text-gray-300 font-semibold">Total Solution Price ($)</td>
+                                <td class="py-3 px-4 text-center storage-total-solution-price font-semibold text-cyan-400">3,033,988.10</td>
+                                <td class="py-3 px-4 text-center storage-total-solution-price font-semibold text-purple-400">4,085,026.10</td>
+                                <td class="py-3 px-4 text-center storage-total-solution-price font-semibold text-green-400">5,865,694.10</td>
                             </tr>
                             <tr class="border-b border-slate-700 bg-orange-900/10">
-                                <td class="py-3 px-4 text-gray-300">Price per Usable TB ($/TB, after discounts)</td>
+                                <td class="py-3 px-4 text-gray-300">Price per Usable TB ($/TB)</td>
                                 <td class="py-3 px-4 text-center storage-price-per-usable-tb">2,528.32</td>
                                 <td class="py-3 px-4 text-center storage-price-per-usable-tb">1,702.09</td>
                                 <td class="py-3 px-4 text-center storage-price-per-usable-tb">1,319.03</td>

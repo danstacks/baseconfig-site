@@ -305,7 +305,7 @@
                                 <i data-lucide="columns" class="w-6 h-6 text-purple-400"></i>
                                 <div>
                                     <div class="font-semibold">Split (2 Racks)</div>
-                                    <div class="text-xs text-gray-400">Servers cross-cabled between racks for redundancy</div>
+                                    <div class="text-xs text-gray-400">Fewer switches per rack = more power for servers</div>
                                 </div>
                             </div>
                         </button>
@@ -341,6 +341,7 @@
                 <span class="text-cyan-500">&gt;</span> VAST Data EBox on Cisco UCS <span class="gradient-text">Storage Calculator</span>
             </h1>
             <p class="text-gray-400">Calculate storage capacity, pricing, and infrastructure requirements for VAST EBox deployments</p>
+            <p class="text-xs text-gray-500 mt-2">* Pricing reflects standard conservative discounts</p>
             <button onclick="showWizard()" class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm inline-flex items-center gap-2">
                 <i data-lucide="wand-2" class="w-4 h-4"></i>Re-run Configuration Wizard
             </button>
@@ -427,7 +428,7 @@
                                 <i data-lucide="columns" class="w-4 h-4 text-purple-400"></i>
                                 <span class="font-semibold text-sm">Split (2 Racks)</span>
                             </div>
-                            <div class="text-xs text-gray-400">Cross-cabled</div>
+                            <div class="text-xs text-gray-400">More servers per rack</div>
                         </button>
                     </div>
                     <div id="layout-description" class="text-xs text-gray-400 p-2 bg-slate-800/30 rounded">
@@ -613,19 +614,13 @@
                             <td class="py-3 px-4 text-center spine-optics-count">8</td>
                         </tr>
                         <tr class="total-row border-b border-slate-700">
-                            <td class="py-3 px-4 text-gray-300 font-semibold">Total Solution List Price ($)</td>
-                            <td class="py-3 px-4 text-center total-solution-list-price font-semibold text-cyan-400">3,033,988.10</td>
-                            <td class="py-3 px-4 text-center total-solution-list-price font-semibold text-purple-400">4,085,026.10</td>
-                            <td class="py-3 px-4 text-center total-solution-list-price font-semibold text-green-400">5,865,694.10</td>
-                        </tr>
-                        <tr class="total-row border-b border-slate-700">
-                            <td class="py-3 px-4 text-gray-300 font-semibold">Total Solution Customer Price ($)</td>
-                            <td class="py-3 px-4 text-center total-solution-customer-price font-semibold text-cyan-400">3,033,988.10</td>
-                            <td class="py-3 px-4 text-center total-solution-customer-price font-semibold text-purple-400">4,085,026.10</td>
-                            <td class="py-3 px-4 text-center total-solution-customer-price font-semibold text-green-400">5,865,694.10</td>
+                            <td class="py-3 px-4 text-gray-300 font-semibold">Total Solution Price ($)</td>
+                            <td class="py-3 px-4 text-center total-solution-price font-semibold text-cyan-400">3,033,988.10</td>
+                            <td class="py-3 px-4 text-center total-solution-price font-semibold text-purple-400">4,085,026.10</td>
+                            <td class="py-3 px-4 text-center total-solution-price font-semibold text-green-400">5,865,694.10</td>
                         </tr>
                         <tr class="price-row border-b border-slate-700">
-                            <td class="py-3 px-4 text-gray-300">Price per Usable TB ($/TB, after discounts)</td>
+                            <td class="py-3 px-4 text-gray-300">Price per Usable TB ($/TB)</td>
                             <td class="py-3 px-4 text-center price-per-usable-tb">2,528.32</td>
                             <td class="py-3 px-4 text-center price-per-usable-tb">1,702.09</td>
                             <td class="py-3 px-4 text-center price-per-usable-tb">1,319.03</td>
@@ -824,7 +819,7 @@
             selectRackLayout(wizardRackLayout);
             
             // Hide wizard
-            document.getElementById('wizardOverlay').classList.add('hidden');
+            document.getElementById('wizardOverlay').style.display = 'none';
             
             // Calculate
             calculateMetrics();
@@ -832,7 +827,7 @@
         }
 
         function skipWizard() {
-            document.getElementById('wizardOverlay').classList.add('hidden');
+            document.getElementById('wizardOverlay').style.display = 'none';
             calculateMetrics();
             updateVisualizations();
         }
@@ -840,7 +835,7 @@
         function showWizard() {
             wizardStep = 1;
             updateWizardStep();
-            document.getElementById('wizardOverlay').classList.remove('hidden');
+            document.getElementById('wizardOverlay').style.display = 'flex';
         }
 
         // Initialize wizard preview updates
@@ -885,7 +880,7 @@
                 desc.innerHTML = `<strong>Single rack:</strong> ${switchCount} switches ${switchDesc} + servers in one rack. More compact but power-limited.`;
             } else {
                 const perRack = isUnified ? 1 : 2;
-                desc.innerHTML = `<strong>Split:</strong> ${perRack} switch${perRack > 1 ? 'es' : ''} per rack, servers cross-cabled to both racks. Better power distribution.`;
+                desc.innerHTML = `<strong>Split:</strong> ${perRack} switch${perRack > 1 ? 'es' : ''} per rack. Fewer switches = more power for servers.`;
             }
         }
 
@@ -906,7 +901,7 @@
             updateVisualizations();
         }
 
-        // Pricing constants (75% discount already applied)
+        // Pricing constants (pre-discounted with standard conservative discounts - not configurable)
         const PRICING = {
             serverCost: 26066.39,
             switchCost: 19475.05,
@@ -1005,8 +1000,7 @@
             const networkSwitchesCells = document.querySelectorAll('.network-switches');
             const opticsCountCells = document.querySelectorAll('.optics-count');
             const spineOpticsCountCells = document.querySelectorAll('.spine-optics-count');
-            const totalSolutionListPriceCells = document.querySelectorAll('.total-solution-list-price');
-            const totalSolutionCustomerPriceCells = document.querySelectorAll('.total-solution-customer-price');
+            const totalSolutionPriceCells = document.querySelectorAll('.total-solution-price');
             const pricePerUsableTbCells = document.querySelectorAll('.price-per-usable-tb');
             const costBreakdownCells = document.querySelectorAll('.cost-breakdown');
 
@@ -1034,8 +1028,7 @@
                 networkSwitchesCells[i].textContent = switches.toLocaleString('en-US');
                 opticsCountCells[i].textContent = serverOptics.toLocaleString('en-US');
                 spineOpticsCountCells[i].textContent = spineOptics.toLocaleString('en-US');
-                totalSolutionListPriceCells[i].textContent = totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                totalSolutionCustomerPriceCells[i].textContent = totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                totalSolutionPriceCells[i].textContent = totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 pricePerUsableTbCells[i].textContent = (totalPrice / (servers * capacities[i].usable)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 costBreakdownCells[i].innerHTML = `Servers: ${serverCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Drives: ${driveCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Switches: ${switchesCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Server Optics: ${serverOpticsCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Spine Optics: ${spineOpticsCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             }
@@ -1136,9 +1129,9 @@
                 
                 rackHTML += '</div>';
                 
-                // Cross-cabling indicator
+                // Split rack info
                 rackHTML += `<div class="mt-2 p-2 bg-purple-900/20 border border-purple-500/30 rounded text-xs text-purple-300">
-                    <i data-lucide="cable" class="w-3 h-3 inline"></i> Cross-cabled: Each server connects to switches in both racks
+                    <i data-lucide="zap" class="w-3 h-3 inline"></i> Split layout: Fewer switches per rack = more power budget for servers
                 </div>`;
                 
                 container.innerHTML = rackHTML;

@@ -3386,7 +3386,7 @@ function calculateMigrationEfficiency() {
 // STORAGE CALCULATOR
 // ============================================
 
-// Storage Calculator Pricing (75% discount already applied)
+// Storage Calculator Pricing (pre-discounted with standard conservative discounts - not configurable)
 const STORAGE_PRICING = {
     serverCost: 26066.39,
     switchCost: 19475.05,
@@ -3475,8 +3475,7 @@ function calculateStorageMetrics() {
     const networkSwitchesCells = document.querySelectorAll('.storage-network-switches');
     const opticsCountCells = document.querySelectorAll('.storage-optics-count');
     const spineOpticsCountCells = document.querySelectorAll('.storage-spine-optics-count');
-    const totalSolutionListPriceCells = document.querySelectorAll('.storage-total-solution-list-price');
-    const totalSolutionCustomerPriceCells = document.querySelectorAll('.storage-total-solution-customer-price');
+    const totalSolutionPriceCells = document.querySelectorAll('.storage-total-solution-price');
     const pricePerUsableTbCells = document.querySelectorAll('.storage-price-per-usable-tb');
     const costBreakdownCells = document.querySelectorAll('.storage-cost-breakdown');
 
@@ -3505,8 +3504,7 @@ function calculateStorageMetrics() {
         if (networkSwitchesCells[i]) networkSwitchesCells[i].textContent = switches.toLocaleString('en-US');
         if (opticsCountCells[i]) opticsCountCells[i].textContent = serverOptics.toLocaleString('en-US');
         if (spineOpticsCountCells[i]) spineOpticsCountCells[i].textContent = spineOptics.toLocaleString('en-US');
-        if (totalSolutionListPriceCells[i]) totalSolutionListPriceCells[i].textContent = totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        if (totalSolutionCustomerPriceCells[i]) totalSolutionCustomerPriceCells[i].textContent = totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (totalSolutionPriceCells[i]) totalSolutionPriceCells[i].textContent = totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         if (pricePerUsableTbCells[i]) pricePerUsableTbCells[i].textContent = (totalPrice / (servers * storageCapacities[i].usable)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         if (costBreakdownCells[i]) costBreakdownCells[i].innerHTML = `Servers: ${serverCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Drives: ${driveCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Switches: ${switchesCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Server Optics: ${serverOpticsCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Spine Optics: ${spineOpticsCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
