@@ -3152,12 +3152,17 @@ function renderNetworkTopology() {
         </g>
     `;
     
-    // Stats
+    // Stats - use values from calculationResults
+    const totalTors = r.torSwitches || 2;
+    const torsPerUnit = 2; // Always 2 ToRs per scalable unit
+    const totalServers = r.inputs.totalServers || 0;
+    const spines = r.spineSwitches || 2;
+    
     html += `
         <g transform="translate(520, 420)">
             <text x="0" y="0" fill="#94a3b8" font-size="12" font-weight="bold">Topology Stats</text>
-            <text x="0" y="20" fill="#64748b" font-size="10">Racks: ${racksPerSU}</text>
-            <text x="0" y="35" fill="#64748b" font-size="10">ToRs: ${totalTors} (${torsPerRack}/rack)</text>
+            <text x="0" y="20" fill="#64748b" font-size="10">Racks/Unit: ${racksPerSU}</text>
+            <text x="0" y="35" fill="#64748b" font-size="10">ToRs: ${totalTors} (${torsPerUnit}/unit)</text>
             <text x="0" y="50" fill="#64748b" font-size="10">Servers: ${totalServers} (${serversPerRack}/rack)</text>
             <text x="0" y="65" fill="#64748b" font-size="10">Spines: ${spines}</text>
         </g>
