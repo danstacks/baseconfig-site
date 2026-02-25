@@ -234,9 +234,34 @@
                                 <span class="px-3 py-1 bg-yellow-900/50 rounded-full" id="configPowerBadge">10kW Rack Limit</span>
                             </div>
                         </div>
-                        <button onclick="showWizard()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm flex items-center gap-2">
-                            <i data-lucide="wand-2" class="w-4 h-4"></i>Re-run Wizard
-                        </button>
+                        <div class="flex gap-2">
+                            <button onclick="showWizard()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm flex items-center gap-2">
+                                <i data-lucide="wand-2" class="w-4 h-4"></i>Re-run Wizard
+                            </button>
+                            <button id="shareBtn" onclick="copyShareableURL()" class="px-4 py-2 bg-cyan-700 hover:bg-cyan-600 rounded-lg text-sm flex items-center gap-2 transition-colors">
+                                <i data-lucide="share-2" class="w-4 h-4"></i>Share
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Deployment Scale Summary -->
+                <div class="card rounded-xl p-6 lg:col-span-2 border-2 border-cyan-500/30">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="layout-grid" class="w-5 h-5 text-cyan-400"></i>Deployment Scale
+                    </h2>
+                    <div id="deployment-scale-summary" class="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Network Topology Diagram -->
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="network" class="w-5 h-5 text-green-400"></i>Network Topology
+                    </h2>
+                    <div id="network-topology-diagram" class="bg-slate-900 rounded-lg p-4 overflow-x-auto">
+                        <!-- Will be populated by JavaScript -->
                     </div>
                 </div>
 
@@ -246,7 +271,15 @@
                     </h2>
                     <div class="space-y-4">
                         <div><label class="block text-sm text-gray-400 mb-1">Total Servers to Refresh</label>
-                        <input type="number" id="totalServers" value="1000" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <input type="number" id="totalServers" value="1000" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()">
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <button type="button" onclick="setPresetServers(100)" class="px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded transition-colors">100</button>
+                            <button type="button" onclick="setPresetServers(500)" class="px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded transition-colors">500</button>
+                            <button type="button" onclick="setPresetServers(1000)" class="px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded transition-colors">1,000</button>
+                            <button type="button" onclick="setPresetServers(5000)" class="px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded transition-colors">5,000</button>
+                            <button type="button" onclick="setPresetServers(10000)" class="px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded transition-colors">10,000</button>
+                        </div>
+                        </div>
                         <div>
                             <label class="block text-sm text-gray-400 mb-1">Workload Type</label>
                             <select id="workloadType" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="applyWorkloadPreset(); calculate()">
@@ -296,14 +329,15 @@
 
                 <div class="card rounded-xl p-6">
                     <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <i data-lucide="layout-grid" class="w-5 h-5 text-purple-400"></i>Rack Configuration
+                        <i data-lucide="layout-grid" class="w-5 h-5 text-purple-400"></i>
+                        <span class="tooltip" data-tip="Configure rack power limits, layout, and physical constraints. Power is often the primary limiting factor.">Rack Configuration</span>
                     </h2>
                     <div class="space-y-4">
                         <div><label class="block text-sm text-gray-400 mb-1">Rack Power Capacity (kW)</label>
                         <input type="number" id="rackPower" value="10" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()">
                         <p class="text-xs text-yellow-500 mt-1">⚠️ This is often the primary constraint</p></div>
                         <div>
-                            <label class="block text-sm text-gray-400 mb-1">Scalable Unit Layout</label>
+                            <label class="block text-sm text-gray-400 mb-1"><span class="tooltip" data-tip="Single = 2 ToRs in 1 rack (power-limited). Split = 1 ToR per rack across 2 racks (more servers per unit).">Scalable Unit Layout</span></label>
                             <select id="rackLayout" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()">
                                 <option value="single">Single Rack (2 ToRs per rack)</option>
                                 <option value="split">Split (2 Racks, 1 ToR each)</option>
@@ -320,7 +354,8 @@
 
                 <div class="card rounded-xl p-6">
                     <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <i data-lucide="network" class="w-5 h-5 text-green-400"></i>Network Configuration
+                        <i data-lucide="network" class="w-5 h-5 text-green-400"></i>
+                        <span class="tooltip" data-tip="Configure ToR (Top of Rack) and spine switches. ToRs connect servers, spines aggregate ToRs.">Network Configuration</span>
                     </h2>
                     <div class="space-y-4">
                         <div>
@@ -330,7 +365,7 @@
                                 <option value="100g">100G</option>
                             </select>
                         </div>
-                        <div><label class="block text-sm text-gray-400 mb-1">ToR Switch Ports</label>
+                        <div><label class="block text-sm text-gray-400 mb-1"><span class="tooltip" data-tip="Total ports on each ToR switch. Some ports are used for spine uplinks, rest for servers.">ToR Switch Ports</span></label>
                         <input type="number" id="torPorts" value="48" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                         <div><label class="block text-sm text-gray-400 mb-1">ToR Switch Cost ($)</label>
                         <input type="number" id="torCost" value="15000" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>

@@ -1126,10 +1126,161 @@ function calculate() {
     if (vastCapacityDisplay) vastCapacityDisplay.textContent = (vastServers * vastUsablePerServer).toLocaleString() + ' TB';
     
     updateScalableUnitsSection();
+    updateDeploymentScaleSummary();
+    updateNetworkTopologyDiagram();
     updateTimelineSection();
     updateCostsSection();
     updateSummarySection();
     updateAdditionalSections();
+}
+
+function updateDeploymentScaleSummary() {
+    const r = calculationResults;
+    const i = r.inputs;
+    
+    const container = document.getElementById('deployment-scale-summary');
+    if (!container) return;
+    
+    // Calculate network validation metrics
+    const serversPerTor = Math.ceil(r.serversPerScalableUnit / 2);
+    const serverPortsPerTor = serversPerTor * (i.opticsPerServer || 2);
+    const availableTorPorts = i.torPorts - (i.uplinksPerTor || 4);
+    const torUtilization = Math.round((serverPortsPerTor / availableTorPorts) * 100);
+    const torOversubscribed = serverPortsPerTor > availableTorPorts;
+    
+    // Spine oversubscription
+    const networkSpeed = selectedNetworkSpeed === '100g' ? 100 : 25;
+    const totalServerBandwidth = i.totalServers * networkSpeed; // Gbps
+    const spinePortsPerSwitch = 32; // Typical spine port count
+    const totalSpineBandwidth = r.spineSwitches * spinePortsPerSwitch * networkSpeed;
+    const spineOversubRatio = totalSpineBandwidth > 0 ? (totalServerBandwidth / totalSpineBandwidth).toFixed(1) : 'N/A';
+    
+    // Network validation display
+    const networkValidation = torOversubscribed 
+        ? `<div class="col-span-2 md:col-span-5 mt-2 p-3 bg-red-900/30 border border-red-500/50 rounded-lg text-sm">
+            <div class="flex items-start gap-2">
+                <span class="text-red-400">⚠</span>
+                <div>
+                    <div class="text-red-400 font-medium">ToR Port Density Exceeded</div>
+                    <div class="text-gray-400 mt-1">Need ${serverPortsPerTor} server ports per ToR but only ${availableTorPorts} available (${i.torPorts} total - ${i.uplinksPerTor || 4} uplinks)</div>
+                    <div class="text-yellow-400 mt-1">→ Reduce servers per rack or increase ToR port count</div>
+                </div>
+            </div>
+           </div>`
+        : `<div class="col-span-2 md:col-span-5 mt-2 p-3 bg-green-900/20 border border-green-500/30 rounded-lg text-sm">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div><span class="text-gray-400">ToR Ports:</span> <span class="font-medium text-green-400">${serverPortsPerTor}/${availableTorPorts} (${torUtilization}%)</span></div>
+                <div><span class="text-gray-400">Uplinks/ToR:</span> <span class="font-medium">${i.uplinksPerTor || 4}</span></div>
+                <div><span class="text-gray-400">Spine Oversub:</span> <span class="font-medium ${parseFloat(spineOversubRatio) > 4 ? 'text-yellow-400' : 'text-green-400'}">${spineOversubRatio}:1</span></div>
+                <div><span class="text-gray-400">Network:</span> <span class="font-medium">${networkSpeed}G</span></div>
+            </div>
+           </div>`;
+    
+    container.innerHTML = `
+        <div class="p-4 bg-gradient-to-br from-cyan-900/40 to-cyan-900/20 rounded-lg border border-cyan-500/30">
+            <div class="text-3xl font-bold text-cyan-400">${i.totalServers.toLocaleString()}</div>
+            <div class="text-sm text-gray-400">Total Servers</div>
+        </div>
+        <div class="p-4 bg-gradient-to-br from-purple-900/40 to-purple-900/20 rounded-lg border border-purple-500/30">
+            <div class="text-3xl font-bold text-purple-400">${r.totalRacks.toLocaleString()}</div>
+            <div class="text-sm text-gray-400">Total Racks</div>
+        </div>
+        <div class="p-4 bg-gradient-to-br from-green-900/40 to-green-900/20 rounded-lg border border-green-500/30">
+            <div class="text-3xl font-bold text-green-400">${r.torSwitches.toLocaleString()}</div>
+            <div class="text-sm text-gray-400">ToR Switches</div>
+        </div>
+        <div class="p-4 bg-gradient-to-br from-orange-900/40 to-orange-900/20 rounded-lg border border-orange-500/30">
+            <div class="text-3xl font-bold text-orange-400">${r.spineSwitches.toLocaleString()}</div>
+            <div class="text-sm text-gray-400">Spine Switches</div>
+        </div>
+        <div class="p-4 bg-gradient-to-br from-yellow-900/40 to-yellow-900/20 rounded-lg border border-yellow-500/30">
+            <div class="text-3xl font-bold text-yellow-400">${Math.round(r.totalPower).toLocaleString()}</div>
+            <div class="text-sm text-gray-400">Total kW</div>
+        </div>
+        <div class="col-span-2 md:col-span-5 mt-2 p-3 bg-slate-800/50 rounded-lg text-sm">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+                <div><span class="text-gray-400">Scalable Units:</span> <span class="font-medium text-cyan-400">${r.scalableUnits.toLocaleString()}</span></div>
+                <div><span class="text-gray-400">Racks/Unit:</span> <span class="font-medium">${r.racksPerScalableUnit}</span></div>
+                <div><span class="text-gray-400">Servers/Rack:</span> <span class="font-medium">${r.serversPerRack}</span></div>
+                <div><span class="text-gray-400">Layout:</span> <span class="font-medium ${r.isSplit ? 'text-purple-400' : 'text-cyan-400'}">${r.isSplit ? 'Split' : 'Single'}</span></div>
+                <div><span class="text-gray-400">Limited by:</span> <span class="font-medium ${r.rackLimitedBy === 'Power' ? 'text-yellow-400' : 'text-blue-400'}">${r.rackLimitedBy}</span></div>
+            </div>
+        </div>
+        ${networkValidation}
+    `;
+}
+
+function updateNetworkTopologyDiagram() {
+    const r = calculationResults;
+    const i = r.inputs;
+    
+    const container = document.getElementById('network-topology-diagram');
+    if (!container) return;
+    
+    const networkSpeed = selectedNetworkSpeed === '100g' ? '100G' : '25G';
+    const isSplit = r.isSplit;
+    
+    // Simplified topology showing the architecture
+    container.innerHTML = `
+        <div class="min-w-[500px]">
+            <svg viewBox="0 0 500 220" class="w-full">
+                <!-- Title -->
+                <text x="250" y="15" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="bold">${isSplit ? 'Split Rack Layout' : 'Single Rack Layout'} - ${networkSpeed} Network</text>
+                
+                <!-- Spine Layer -->
+                <text x="250" y="40" text-anchor="middle" fill="#9ca3af" font-size="10">Spine Layer (${r.spineSwitches} switches)</text>
+                <rect x="180" y="45" width="60" height="25" rx="4" fill="#7c3aed" stroke="#8b5cf6" stroke-width="2"/>
+                <text x="210" y="62" text-anchor="middle" fill="white" font-size="9">Spine</text>
+                <rect x="260" y="45" width="60" height="25" rx="4" fill="#7c3aed" stroke="#8b5cf6" stroke-width="2"/>
+                <text x="290" y="62" text-anchor="middle" fill="white" font-size="9">Spine</text>
+                
+                <!-- Connection lines spine to ToR -->
+                <line x1="210" y1="70" x2="150" y2="100" stroke="#6b7280" stroke-width="1.5"/>
+                <line x1="210" y1="70" x2="350" y2="100" stroke="#6b7280" stroke-width="1.5"/>
+                <line x1="290" y1="70" x2="150" y2="100" stroke="#6b7280" stroke-width="1.5"/>
+                <line x1="290" y1="70" x2="350" y2="100" stroke="#6b7280" stroke-width="1.5"/>
+                
+                <!-- ToR Layer -->
+                <text x="250" y="95" text-anchor="middle" fill="#9ca3af" font-size="10">ToR Layer (${r.torSwitches} switches, 2 per scalable unit)</text>
+                <rect x="100" y="100" width="100" height="25" rx="4" fill="#059669" stroke="#10b981" stroke-width="2"/>
+                <text x="150" y="117" text-anchor="middle" fill="white" font-size="9">ToR A</text>
+                <rect x="300" y="100" width="100" height="25" rx="4" fill="#059669" stroke="#10b981" stroke-width="2"/>
+                <text x="350" y="117" text-anchor="middle" fill="white" font-size="9">ToR B</text>
+                
+                <!-- Connection lines ToR to servers -->
+                <line x1="150" y1="125" x2="100" y2="155" stroke="#0891b2" stroke-width="1"/>
+                <line x1="150" y1="125" x2="150" y2="155" stroke="#0891b2" stroke-width="1"/>
+                <line x1="150" y1="125" x2="200" y2="155" stroke="#0891b2" stroke-width="1"/>
+                <line x1="350" y1="125" x2="300" y2="155" stroke="#0891b2" stroke-width="1"/>
+                <line x1="350" y1="125" x2="350" y2="155" stroke="#0891b2" stroke-width="1"/>
+                <line x1="350" y1="125" x2="400" y2="155" stroke="#0891b2" stroke-width="1"/>
+                
+                <!-- Server Layer -->
+                <text x="250" y="150" text-anchor="middle" fill="#9ca3af" font-size="10">Servers (${i.totalServers.toLocaleString()} total, ${r.serversPerRack}/rack)</text>
+                
+                <!-- Server icons - left rack -->
+                <rect x="80" y="155" width="40" height="20" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
+                <rect x="130" y="155" width="40" height="20" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
+                <rect x="180" y="155" width="40" height="20" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
+                
+                <!-- Server icons - right rack -->
+                <rect x="280" y="155" width="40" height="20" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
+                <rect x="330" y="155" width="40" height="20" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
+                <rect x="380" y="155" width="40" height="20" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
+                
+                <!-- Rack labels -->
+                ${isSplit ? `
+                <text x="150" y="195" text-anchor="middle" fill="#9ca3af" font-size="9">Rack A (${r.serversPerRack} servers)</text>
+                <text x="350" y="195" text-anchor="middle" fill="#9ca3af" font-size="9">Rack B (${r.serversPerRack} servers)</text>
+                ` : `
+                <text x="250" y="195" text-anchor="middle" fill="#9ca3af" font-size="9">Single Rack (${r.serversPerRack} servers + 2 ToRs)</text>
+                `}
+                
+                <!-- Legend -->
+                <text x="50" y="215" fill="#6b7280" font-size="8">Uplinks: ${i.uplinksPerTor || 4}/ToR | Scalable Units: ${r.scalableUnits} | Racks: ${r.totalRacks}</text>
+            </svg>
+        </div>
+    `;
 }
 
 function updateScalableUnitsSection() {
@@ -1729,6 +1880,10 @@ function updateSavedConfigsList() {
 }
 
 function shareConfiguration() {
+    copyShareableURL();
+}
+
+function copyShareableURL() {
     const config = {
         inputs: getInputs(),
         workloadType: document.getElementById('workloadType').value,
@@ -1738,8 +1893,27 @@ function shareConfiguration() {
     const encoded = btoa(JSON.stringify(config));
     const url = `${window.location.origin}${window.location.pathname}?config=${encoded}`;
     navigator.clipboard.writeText(url).then(() => {
-        alert('Configuration URL copied to clipboard!');
+        const btn = document.getElementById('shareBtn');
+        if (btn) {
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Copied!';
+            btn.classList.add('bg-green-600');
+            btn.classList.remove('bg-cyan-700');
+            lucide.createIcons();
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('bg-green-600');
+                btn.classList.add('bg-cyan-700');
+                lucide.createIcons();
+            }, 2000);
+        }
     });
+}
+
+function setPresetServers(count) {
+    document.getElementById('totalServers').value = count;
+    document.getElementById('wizardTotalServers').value = count;
+    calculate();
 }
 
 function loadFromURL() {
