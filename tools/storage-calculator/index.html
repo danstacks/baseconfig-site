@@ -114,6 +114,39 @@
         .cursor-blink {
             animation: blink 1s infinite;
         }
+        .tooltip {
+            position: relative;
+            cursor: help;
+            border-bottom: 1px dotted #6b7280;
+        }
+        .tooltip:hover::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            max-width: 300px;
+            white-space: normal;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .tooltip:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(100%);
+            border: 6px solid transparent;
+            border-top-color: #475569;
+            z-index: 100;
+        }
     </style>
 </head>
 <body class="gradient-bg min-h-screen font-sans text-gray-100">
@@ -360,9 +393,14 @@
             </h1>
             <p class="text-gray-400">Calculate storage capacity, pricing, and infrastructure requirements for VAST EBox deployments</p>
             <p class="text-xs text-gray-500 mt-2">* Pricing reflects standard conservative discounts</p>
-            <button onclick="showWizard()" class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm inline-flex items-center gap-2">
-                <i data-lucide="wand-2" class="w-4 h-4"></i>Re-run Configuration Wizard
-            </button>
+            <div class="flex justify-center gap-3 mt-4">
+                <button onclick="showWizard()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm inline-flex items-center gap-2">
+                    <i data-lucide="wand-2" class="w-4 h-4"></i>Re-run Wizard
+                </button>
+                <button id="shareBtn" onclick="copyShareableURL()" class="px-4 py-2 bg-cyan-700 hover:bg-cyan-600 rounded-lg text-sm inline-flex items-center gap-2 transition-colors">
+                    <i data-lucide="share-2" class="w-4 h-4"></i>Share Config
+                </button>
+            </div>
         </header>
 
         <!-- Input Controls -->
@@ -383,16 +421,27 @@
                                 <option value="PB">PB</option>
                             </select>
                         </div>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <button type="button" onclick="setPresetCapacity(1)" class="preset-cap-btn px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded transition-colors">1 PB</button>
+                            <button type="button" onclick="setPresetCapacity(5)" class="preset-cap-btn px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded transition-colors">5 PB</button>
+                            <button type="button" onclick="setPresetCapacity(10)" class="preset-cap-btn px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded transition-colors">10 PB</button>
+                            <button type="button" onclick="setPresetCapacity(50)" class="preset-cap-btn px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded transition-colors">50 PB</button>
+                            <button type="button" onclick="setPresetCapacity(100)" class="preset-cap-btn px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded transition-colors">100 PB</button>
+                        </div>
                     </div>
                     <div>
-                        <label class="block text-sm text-gray-400 mb-1">Capacity Type</label>
+                        <label class="block text-sm text-gray-400 mb-1">
+                            <span class="tooltip" data-tip="Usable = capacity after VAST data protection (~82% of raw). Raw = total drive capacity before protection.">Capacity Type</span>
+                        </label>
                         <select id="capacity-type" class="input-field w-full px-4 py-2 rounded-lg text-white">
                             <option value="usable">Usable</option>
                             <option value="raw">Raw</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm text-gray-400 mb-1">Drive Option</label>
+                        <label class="block text-sm text-gray-400 mb-1">
+                            <span class="tooltip" data-tip="Larger drives = fewer servers needed but higher cost per server. Smaller drives = more servers, better performance distribution.">Drive Option</span>
+                        </label>
                         <select id="drive-option" class="input-field w-full px-4 py-2 rounded-lg text-white">
                             <option value="0">15.3TB (100TB usable/server)</option>
                             <option value="1" selected>30.7TB (200TB usable/server)</option>
@@ -405,7 +454,7 @@
                 <div class="space-y-4">
                     <h3 class="text-lg font-semibold flex items-center gap-2">
                         <i data-lucide="network" class="w-5 h-5 text-green-400"></i>
-                        Network Design
+                        <span class="tooltip" data-tip="Dedicated = separate switch pairs for frontend (client) and backend (cluster) traffic. Unified = single switch pair handles both, limited to single ToR.">Network Design</span>
                     </h3>
                     <div class="grid grid-cols-2 gap-3">
                         <button type="button" id="netDesignDedicated" onclick="selectNetworkDesign('dedicated')" class="net-design-btn p-3 rounded-lg border-2 border-green-500 bg-green-900/30 transition-all text-left">
@@ -448,7 +497,7 @@
                 <div class="space-y-4">
                     <h3 class="text-lg font-semibold flex items-center gap-2">
                         <i data-lucide="layout-grid" class="w-5 h-5 text-purple-400"></i>
-                        Rack Layout
+                        <span class="tooltip" data-tip="Single = all switches + servers in one rack (power-limited). Split = switches in 2 racks with cross-cabling, fits more servers per scalable unit.">Rack Layout</span>
                     </h3>
                     <div class="grid grid-cols-2 gap-3">
                         <button type="button" id="layoutSingle" onclick="selectRackLayout('single')" class="rack-layout-btn p-3 rounded-lg border-2 border-cyan-500 bg-cyan-900/30 transition-all text-left">
@@ -589,93 +638,15 @@
             </div>
         </div>
 
-        <!-- Comparison Table -->
-        <div class="card rounded-xl overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm" id="bomTable">
-                    <thead>
-                        <tr class="bg-slate-800">
-                            <th class="text-left py-4 px-4 text-gray-300 font-semibold">Component</th>
-                            <th class="text-center py-4 px-4 text-cyan-400 font-semibold">15.3TB Drive Option</th>
-                            <th class="text-center py-4 px-4 text-purple-400 font-semibold">30.7TB Drive Option</th>
-                            <th class="text-center py-4 px-4 text-green-400 font-semibold">61.4TB Drive Option</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="border-b border-slate-700">
-                            <td class="py-3 px-4 text-gray-300">Drive Configuration</td>
-                            <td class="py-3 px-4 text-center">8 × 15.3TB + 2 × 960GB</td>
-                            <td class="py-3 px-4 text-center">8 × 30.7TB + 2 × 1.92TB</td>
-                            <td class="py-3 px-4 text-center">7 × 61.4TB + 3 × 1.92TB</td>
-                        </tr>
-                        <tr class="capacity-row border-b border-slate-700">
-                            <td class="py-3 px-4 text-gray-300">Raw Capacity per Server (TB)</td>
-                            <td class="py-3 px-4 text-center raw-capacity">122.40</td>
-                            <td class="py-3 px-4 text-center raw-capacity">249.44</td>
-                            <td class="py-3 px-4 text-center raw-capacity">428.84</td>
-                        </tr>
-                        <tr class="capacity-row border-b border-slate-700">
-                            <td class="py-3 px-4 text-gray-300">Usable Capacity per Server (TB)</td>
-                            <td class="py-3 px-4 text-center usable-capacity">100.00</td>
-                            <td class="py-3 px-4 text-center usable-capacity">200.00</td>
-                            <td class="py-3 px-4 text-center usable-capacity">370.00</td>
-                        </tr>
-                        <tr class="capacity-row border-b border-slate-700">
-                            <td class="py-3 px-4 text-gray-300">Servers Required (min. 8)</td>
-                            <td class="py-3 px-4 text-center servers-required font-semibold">12</td>
-                            <td class="py-3 px-4 text-center servers-required font-semibold">12</td>
-                            <td class="py-3 px-4 text-center servers-required font-semibold">12</td>
-                        </tr>
-                        <tr class="capacity-row border-b border-slate-700">
-                            <td class="py-3 px-4 text-gray-300">Racks Required</td>
-                            <td class="py-3 px-4 text-center racks-required">1</td>
-                            <td class="py-3 px-4 text-center racks-required">1</td>
-                            <td class="py-3 px-4 text-center racks-required">1</td>
-                        </tr>
-                        <tr class="capacity-row border-b border-slate-700">
-                            <td class="py-3 px-4 text-gray-300">Total Rack Units (U)</td>
-                            <td class="py-3 px-4 text-center total-rack-units">14</td>
-                            <td class="py-3 px-4 text-center total-rack-units">14</td>
-                            <td class="py-3 px-4 text-center total-rack-units">14</td>
-                        </tr>
-                        <tr class="networking-row border-b border-slate-700">
-                            <td class="py-3 px-4 text-gray-300">Network Switches (2 per rack)</td>
-                            <td class="py-3 px-4 text-center network-switches">2</td>
-                            <td class="py-3 px-4 text-center network-switches">2</td>
-                            <td class="py-3 px-4 text-center network-switches">2</td>
-                        </tr>
-                        <tr class="networking-row border-b border-slate-700">
-                            <td class="py-3 px-4 text-gray-300">Server Optics (2 per server)</td>
-                            <td class="py-3 px-4 text-center optics-count">24</td>
-                            <td class="py-3 px-4 text-center optics-count">24</td>
-                            <td class="py-3 px-4 text-center optics-count">24</td>
-                        </tr>
-                        <tr class="networking-row border-b border-slate-700">
-                            <td class="py-3 px-4 text-gray-300">Leaf-Spine Optics (4 per switch)</td>
-                            <td class="py-3 px-4 text-center spine-optics-count">8</td>
-                            <td class="py-3 px-4 text-center spine-optics-count">8</td>
-                            <td class="py-3 px-4 text-center spine-optics-count">8</td>
-                        </tr>
-                        <tr class="total-row border-b border-slate-700">
-                            <td class="py-3 px-4 text-gray-300 font-semibold">Total Solution Price ($)</td>
-                            <td class="py-3 px-4 text-center total-solution-price font-semibold text-cyan-400">3,033,988.10</td>
-                            <td class="py-3 px-4 text-center total-solution-price font-semibold text-purple-400">4,085,026.10</td>
-                            <td class="py-3 px-4 text-center total-solution-price font-semibold text-green-400">5,865,694.10</td>
-                        </tr>
-                        <tr class="price-row border-b border-slate-700">
-                            <td class="py-3 px-4 text-gray-300">Price per Usable TB ($/TB)</td>
-                            <td class="py-3 px-4 text-center price-per-usable-tb">2,528.32</td>
-                            <td class="py-3 px-4 text-center price-per-usable-tb">1,702.09</td>
-                            <td class="py-3 px-4 text-center price-per-usable-tb">1,319.03</td>
-                        </tr>
-                        <tr class="total-row">
-                            <td class="py-3 px-4 text-gray-300 font-semibold">Cost Breakdown ($)</td>
-                            <td class="py-3 px-4 text-center cost-breakdown text-xs">Servers: 937,785.00<br>Drives: 1,806,570.00<br>Network: 275,161.10<br>Optics: 14,472.00</td>
-                            <td class="py-3 px-4 text-center cost-breakdown text-xs">Servers: 937,785.00<br>Drives: 2,857,608.00<br>Network: 275,161.10<br>Optics: 14,472.00</td>
-                            <td class="py-3 px-4 text-center cost-breakdown text-xs">Servers: 937,785.00<br>Drives: 4,638,276.00<br>Network: 275,161.10<br>Optics: 14,472.00</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <!-- Bill of Materials -->
+        <div class="card rounded-xl p-6 mb-8">
+            <h3 class="text-lg font-semibold flex items-center gap-2 mb-4">
+                <i data-lucide="clipboard-list" class="w-5 h-5 text-cyan-400"></i>
+                Bill of Materials
+                <span id="bom-drive-label" class="text-sm font-normal text-purple-400 ml-2">(30.7TB drives)</span>
+            </h3>
+            <div id="bom-content" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Will be populated by JavaScript -->
             </div>
         </div>
 
@@ -1230,47 +1201,107 @@
                 sizingResults.textContent = `Enter capacity to see the number of servers and racks required (minimum ${CONFIG.minServers} servers per cluster).`;
             }
 
-            // Get table cells
-            const rawCapacityCells = document.querySelectorAll('.raw-capacity');
-            const usableCapacityCells = document.querySelectorAll('.usable-capacity');
-            const serversRequiredCells = document.querySelectorAll('.servers-required');
-            const racksRequiredCells = document.querySelectorAll('.racks-required');
-            const totalRackUnitsCells = document.querySelectorAll('.total-rack-units');
-            const networkSwitchesCells = document.querySelectorAll('.network-switches');
-            const opticsCountCells = document.querySelectorAll('.optics-count');
-            const spineOpticsCountCells = document.querySelectorAll('.spine-optics-count');
-            const totalSolutionPriceCells = document.querySelectorAll('.total-solution-price');
-            const pricePerUsableTbCells = document.querySelectorAll('.price-per-usable-tb');
-            const costBreakdownCells = document.querySelectorAll('.cost-breakdown');
-
-            // Calculate for each option
-            for (let i = 0; i < 3; i++) {
-                const servers = serversRequired[i];
-                const racks = racksRequired[i];
-                const switches = racks * CONFIG.switchesPerRack;
-                const serverOptics = servers * CONFIG.opticsPerServer;
-                const spineOptics = switches * CONFIG.spineOpticsPerSwitch;
+            // Update BOM for selected drive option only
+            const driveOptionIndex = parseInt(document.getElementById('drive-option').value) || 1;
+            const driveLabels = ['15.3TB', '30.7TB', '61.4TB'];
+            const driveColors = ['cyan', 'purple', 'green'];
+            const driveConfigs = ['8 × 15.3TB + 2 × 960GB', '8 × 30.7TB + 2 × 1.92TB', '7 × 61.4TB + 3 × 1.92TB'];
+            
+            const i = driveOptionIndex;
+            const servers = serversRequired[i];
+            const racks = racksRequired[i];
+            const switches = racks * CONFIG.switchesPerRack;
+            const serverOptics = servers * CONFIG.opticsPerServer;
+            const spineOptics = switches * CONFIG.spineOpticsPerSwitch;
+            
+            const serverCostTotal = PRICING.serverCost * servers;
+            const driveCostTotal = driveCosts[i] * servers;
+            const switchesCostTotal = switches * PRICING.switchCost;
+            const serverOpticsCostTotal = serverOptics * PRICING.serverOpticsCost;
+            const spineOpticsCostTotal = spineOptics * PRICING.spineOpticsCost;
+            const totalPrice = serverCostTotal + driveCostTotal + switchesCostTotal + serverOpticsCostTotal + spineOpticsCostTotal;
+            const pricePerTB = totalPrice / (servers * capacities[i].usable);
+            const totalUsableCapacity = servers * capacities[i].usable;
+            
+            // Update BOM label
+            document.getElementById('bom-drive-label').textContent = `(${driveLabels[i]} drives)`;
+            document.getElementById('bom-drive-label').className = `text-sm font-normal text-${driveColors[i]}-400 ml-2`;
+            
+            // Generate BOM content
+            document.getElementById('bom-content').innerHTML = `
+                <!-- Hardware -->
+                <div class="space-y-3">
+                    <h4 class="font-medium text-gray-300 flex items-center gap-2">
+                        <i data-lucide="server" class="w-4 h-4 text-cyan-400"></i>
+                        Hardware
+                    </h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between p-2 bg-slate-800/50 rounded">
+                            <span class="text-gray-400">EBox Servers</span>
+                            <span class="font-medium">${servers.toLocaleString()}</span>
+                        </div>
+                        <div class="flex justify-between p-2 bg-slate-800/50 rounded">
+                            <span class="text-gray-400">Drive Config (per server)</span>
+                            <span class="font-medium text-${driveColors[i]}-400">${driveConfigs[i]}</span>
+                        </div>
+                        <div class="flex justify-between p-2 bg-slate-800/50 rounded">
+                            <span class="text-gray-400">Leaf Switches</span>
+                            <span class="font-medium">${switches}</span>
+                        </div>
+                        <div class="flex justify-between p-2 bg-slate-800/50 rounded">
+                            <span class="text-gray-400">Server Optics</span>
+                            <span class="font-medium">${serverOptics}</span>
+                        </div>
+                        <div class="flex justify-between p-2 bg-slate-800/50 rounded">
+                            <span class="text-gray-400">Spine Optics</span>
+                            <span class="font-medium">${spineOptics}</span>
+                        </div>
+                        <div class="flex justify-between p-2 bg-slate-800/50 rounded">
+                            <span class="text-gray-400">Total Rack Units</span>
+                            <span class="font-medium">${servers + switches}U</span>
+                        </div>
+                    </div>
+                </div>
                 
-                const serverCostTotal = PRICING.serverCost * servers;
-                const driveCostTotal = driveCosts[i] * servers;
-                const switchesCostTotal = switches * PRICING.switchCost;
-                const serverOpticsCostTotal = serverOptics * PRICING.serverOpticsCost;
-                const spineOpticsCostTotal = spineOptics * PRICING.spineOpticsCost;
-
-                const totalPrice = serverCostTotal + driveCostTotal + switchesCostTotal + serverOpticsCostTotal + spineOpticsCostTotal;
-
-                rawCapacityCells[i].textContent = capacities[i].raw.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                usableCapacityCells[i].textContent = capacities[i].usable.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                serversRequiredCells[i].textContent = servers.toLocaleString('en-US');
-                racksRequiredCells[i].textContent = racks.toLocaleString('en-US');
-                totalRackUnitsCells[i].textContent = (servers + switches).toLocaleString('en-US');
-                networkSwitchesCells[i].textContent = switches.toLocaleString('en-US');
-                opticsCountCells[i].textContent = serverOptics.toLocaleString('en-US');
-                spineOpticsCountCells[i].textContent = spineOptics.toLocaleString('en-US');
-                totalSolutionPriceCells[i].textContent = totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                pricePerUsableTbCells[i].textContent = (totalPrice / (servers * capacities[i].usable)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                costBreakdownCells[i].innerHTML = `Servers: ${serverCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Drives: ${driveCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Switches: ${switchesCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Server Optics: ${serverOpticsCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Spine Optics: ${spineOpticsCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            }
+                <!-- Pricing -->
+                <div class="space-y-3">
+                    <h4 class="font-medium text-gray-300 flex items-center gap-2">
+                        <i data-lucide="dollar-sign" class="w-4 h-4 text-green-400"></i>
+                        Pricing
+                    </h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between p-2 bg-slate-800/50 rounded">
+                            <span class="text-gray-400">Servers</span>
+                            <span class="font-medium">$${serverCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div class="flex justify-between p-2 bg-slate-800/50 rounded">
+                            <span class="text-gray-400">Drives</span>
+                            <span class="font-medium">$${driveCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div class="flex justify-between p-2 bg-slate-800/50 rounded">
+                            <span class="text-gray-400">Switches</span>
+                            <span class="font-medium">$${switchesCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div class="flex justify-between p-2 bg-slate-800/50 rounded">
+                            <span class="text-gray-400">Optics (Server + Spine)</span>
+                            <span class="font-medium">$${(serverOpticsCostTotal + spineOpticsCostTotal).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div class="flex justify-between p-3 bg-${driveColors[i]}-900/30 border border-${driveColors[i]}-500/30 rounded font-semibold">
+                            <span>Total Solution</span>
+                            <span class="text-${driveColors[i]}-400">$${totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div class="flex justify-between p-2 bg-slate-800/50 rounded text-xs">
+                            <span class="text-gray-400">Price per Usable TB</span>
+                            <span class="font-medium">$${pricePerTB.toLocaleString('en-US', { minimumFractionDigits: 2 })}/TB</span>
+                        </div>
+                        <div class="flex justify-between p-2 bg-slate-800/50 rounded text-xs">
+                            <span class="text-gray-400">Total Usable Capacity</span>
+                            <span class="font-medium">${(totalUsableCapacity / 1000).toFixed(2)} PB</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
         }
 
         // Generate rack visualization
@@ -1958,6 +1989,71 @@
             updateNetworkDiagram(selectedServers, result.actualRacks, result);
         }
 
+        // Preset capacity function
+        function setPresetCapacity(pb) {
+            document.getElementById('capacity').value = pb;
+            document.getElementById('capacity-unit').value = 'PB';
+            calculateMetrics();
+            updateVisualizations();
+        }
+        
+        // Shareable URL functions
+        function getConfigFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('cap')) {
+                document.getElementById('capacity').value = params.get('cap');
+                document.getElementById('capacity-unit').value = params.get('unit') || 'PB';
+                document.getElementById('capacity-type').value = params.get('type') || 'usable';
+                document.getElementById('drive-option').value = params.get('drive') || '1';
+                document.getElementById('rack-power').value = params.get('power') || '20';
+                document.getElementById('connectionType').value = params.get('conn') || 'direct';
+                document.getElementById('switchType').value = params.get('sw') || '32port';
+                
+                const netDesign = params.get('net') || 'dedicated';
+                selectedNetworkDesign = netDesign;
+                selectNetworkDesign(netDesign);
+                
+                const layout = params.get('layout') || 'single';
+                selectedRackLayout = layout;
+                selectRackLayout(layout);
+                
+                // Skip wizard if URL has config
+                document.getElementById('wizardOverlay').style.display = 'none';
+            }
+        }
+        
+        function generateShareableURL() {
+            const params = new URLSearchParams();
+            params.set('cap', document.getElementById('capacity').value);
+            params.set('unit', document.getElementById('capacity-unit').value);
+            params.set('type', document.getElementById('capacity-type').value);
+            params.set('drive', document.getElementById('drive-option').value);
+            params.set('power', document.getElementById('rack-power').value);
+            params.set('conn', document.getElementById('connectionType').value);
+            params.set('sw', document.getElementById('switchType').value);
+            params.set('net', selectedNetworkDesign);
+            params.set('layout', selectedRackLayout);
+            
+            const url = window.location.origin + window.location.pathname + '?' + params.toString();
+            return url;
+        }
+        
+        function copyShareableURL() {
+            const url = generateShareableURL();
+            navigator.clipboard.writeText(url).then(() => {
+                const btn = document.getElementById('shareBtn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Copied!';
+                btn.classList.add('bg-green-600');
+                lucide.createIcons();
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('bg-green-600');
+                    lucide.createIcons();
+                }, 2000);
+            });
+        }
+
         // Add event listeners
         document.getElementById('capacity').addEventListener('input', () => { calculateMetrics(); updateVisualizations(); });
         document.getElementById('capacity-unit').addEventListener('change', () => { calculateMetrics(); updateVisualizations(); });
@@ -1965,6 +2061,9 @@
         document.getElementById('drive-option').addEventListener('change', () => { calculateMetrics(); updateVisualizations(); });
         document.getElementById('rack-power').addEventListener('input', () => { calculateMetrics(); updateVisualizations(); });
 
+        // Load config from URL if present
+        getConfigFromURL();
+        
         // Initial calculation
         calculateMetrics();
         updateVisualizations();
