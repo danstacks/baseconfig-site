@@ -430,8 +430,17 @@
                             <option value="breakout">Breakout 400G→2×200G</option>
                         </select>
                     </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Leaf Switch Type</label>
+                        <select id="switchType" class="input-field w-full px-3 py-2 rounded-lg text-white text-sm" onchange="updateVisualizations()">
+                            <option value="32port">32-port 400G (1U)</option>
+                            <option value="64port">64-port 400G (2U)</option>
+                        </select>
+                    </div>
                     <div id="network-design-description" class="text-xs text-gray-400 p-2 bg-slate-800/30 rounded">
                         Dedicated: Separate frontend and backend switch pairs. Maximum isolation and bandwidth.
+                    </div>
+                    <div id="port-density-warning" class="hidden text-xs p-2 bg-red-900/30 border border-red-500/50 rounded">
                     </div>
                 </div>
 
@@ -492,6 +501,17 @@
             </div>
         </div>
 
+        <!-- Deployment Scale Summary -->
+        <div class="card rounded-xl p-6 mb-8 border-2 border-cyan-500/30">
+            <h3 class="text-lg font-semibold flex items-center gap-2 mb-4">
+                <i data-lucide="layout-grid" class="w-5 h-5 text-cyan-400"></i>
+                Deployment Scale
+            </h3>
+            <div id="deployment-scale-summary" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+
         <!-- Rack Layout Visualization -->
         <div class="card rounded-xl p-6 mb-8">
             <h3 class="text-lg font-semibold flex items-center gap-2 mb-4">
@@ -499,6 +519,7 @@
                 Rack Layout Visualization
                 <span id="rack-viz-drive-label" class="text-sm font-normal text-purple-400 ml-2">(30.7TB drives)</span>
             </h3>
+            <p class="text-xs text-gray-500 mb-4">Showing 1 scalable unit (representative sample of full deployment)</p>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
                     <div id="rack-viz-selected" class="bg-slate-900 rounded-lg p-2"></div>
@@ -1662,6 +1683,96 @@
                 ${unifiedWarning}
             `;
             lucide.createIcons();
+            
+            // Update deployment scale summary
+            const totalUsableCapacity = selectedServers * selectedCapacity.usable;
+            const totalSwitches = isUnified ? result.actualRacks : result.actualRacks * 2;
+            const scalableUnits = Math.ceil(selectedServers / result.serversPerScalableUnit);
+            
+            document.getElementById('deployment-scale-summary').innerHTML = `
+                <div class="p-4 bg-gradient-to-br from-cyan-900/40 to-cyan-900/20 rounded-lg border border-cyan-500/30">
+                    <div class="text-3xl font-bold text-cyan-400">${selectedServers}</div>
+                    <div class="text-sm text-gray-400">Total Servers</div>
+                </div>
+                <div class="p-4 bg-gradient-to-br from-purple-900/40 to-purple-900/20 rounded-lg border border-purple-500/30">
+                    <div class="text-3xl font-bold text-purple-400">${result.actualRacks}</div>
+                    <div class="text-sm text-gray-400">Total Racks</div>
+                </div>
+                <div class="p-4 bg-gradient-to-br from-green-900/40 to-green-900/20 rounded-lg border border-green-500/30">
+                    <div class="text-3xl font-bold text-green-400">${totalSwitches}</div>
+                    <div class="text-sm text-gray-400">Leaf Switches</div>
+                </div>
+                <div class="p-4 bg-gradient-to-br from-yellow-900/40 to-yellow-900/20 rounded-lg border border-yellow-500/30">
+                    <div class="text-3xl font-bold text-yellow-400">${(totalUsableCapacity / 1000).toFixed(1)}</div>
+                    <div class="text-sm text-gray-400">Usable PB</div>
+                </div>
+                <div class="col-span-2 md:col-span-4 mt-2 p-3 bg-slate-800/50 rounded-lg text-sm">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div><span class="text-gray-400">Scalable Units:</span> <span class="font-medium text-cyan-400">${scalableUnits}</span></div>
+                        <div><span class="text-gray-400">Racks per Unit:</span> <span class="font-medium">${isSplit ? 2 : 1}</span></div>
+                        <div><span class="text-gray-400">Servers per Unit:</span> <span class="font-medium">${result.serversPerScalableUnit}</span></div>
+                        <div><span class="text-gray-400">Total Power:</span> <span class="font-medium">${(result.powerPerRack * result.actualRacks).toFixed(0)} kW</span></div>
+                    </div>
+                </div>
+            `;
+            
+            // Port density validation
+            const switchType = document.getElementById('switchType')?.value || '32port';
+            const switchPorts = switchType === '64port' ? 64 : 32;
+            const switchRackUnits = switchType === '64port' ? 2 : 1;
+            
+            // Calculate port requirements per leaf switch
+            // Backend: 5x400G uplinks to each spine (10 total for 2 spines)
+            // Frontend: 2x400G uplinks to each spine for redundancy (4 total for 2 spines)
+            const beSpineUplinks = 10; // 5 to each of 2 spines
+            const feSpineUplinks = 4;  // 2 to each of 2 spines (standard redundancy)
+            
+            // Server ports per leaf (depends on connection type and split/single)
+            // Each server has 2 ports to FE and 2 ports to BE
+            // In split design, servers connect to switches in BOTH racks
+            const serversPerLeafSwitch = isSplit ? result.serversPerScalableUnit : result.serversPerRack;
+            const serverPortsPerSwitch = connectionType === 'breakout' 
+                ? serversPerLeafSwitch // 1 port per server (400G breakout to 2x200G)
+                : serversPerLeafSwitch * 2; // 2 ports per server (direct 200G)
+            
+            // Total ports needed per BE leaf
+            const bePortsNeeded = serverPortsPerSwitch + beSpineUplinks;
+            // Total ports needed per FE leaf  
+            const fePortsNeeded = serverPortsPerSwitch + feSpineUplinks;
+            
+            // Check if ports exceed switch capacity
+            const bePortsExceeded = bePortsNeeded > switchPorts;
+            const fePortsExceeded = fePortsNeeded > switchPorts;
+            
+            const portWarningEl = document.getElementById('port-density-warning');
+            if (bePortsExceeded || fePortsExceeded) {
+                let warningMsg = '<div class="flex items-start gap-2"><i data-lucide="alert-triangle" class="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0"></i><div>';
+                warningMsg += '<div class="text-red-400 font-medium">Switch port density exceeded</div>';
+                warningMsg += '<div class="text-gray-400 mt-1">';
+                if (bePortsExceeded) {
+                    warningMsg += `<div>BE Leaf: ${bePortsNeeded} ports needed (${serverPortsPerSwitch} server + ${beSpineUplinks} spine uplinks) > ${switchPorts} available</div>`;
+                }
+                if (fePortsExceeded) {
+                    warningMsg += `<div>FE Leaf: ${fePortsNeeded} ports needed (${serverPortsPerSwitch} server + ${feSpineUplinks} spine uplinks) > ${switchPorts} available</div>`;
+                }
+                warningMsg += `<div class="mt-1 text-yellow-400">→ ${switchType === '32port' ? 'Switch to 64-port switches or reduce servers per rack' : 'Reduce servers per rack or use split rack design'}</div>`;
+                warningMsg += '</div></div></div>';
+                portWarningEl.innerHTML = warningMsg;
+                portWarningEl.classList.remove('hidden');
+                lucide.createIcons();
+            } else {
+                // Show port utilization info
+                portWarningEl.innerHTML = `
+                    <div class="text-green-400 text-xs">
+                        <div class="font-medium mb-1">✓ Port density OK (${switchPorts}-port ${switchRackUnits}U switches)</div>
+                        <div class="grid grid-cols-2 gap-2 text-gray-400">
+                            <div>BE Leaf: ${bePortsNeeded}/${switchPorts} ports (${serverPortsPerSwitch} server + ${beSpineUplinks} spine)</div>
+                            <div>FE Leaf: ${fePortsNeeded}/${switchPorts} ports (${serverPortsPerSwitch} server + ${feSpineUplinks} spine)</div>
+                        </div>
+                    </div>
+                `;
+                portWarningEl.classList.remove('hidden');
+            }
             
             // Update power summary
             updatePowerSummary(result);
