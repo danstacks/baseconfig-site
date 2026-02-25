@@ -832,14 +832,56 @@ function updatePowerPreview() {
         `;
     }
     
+    // Check for power issues
+    const powerUtilization = (powerPerRack / rackPower) * 100;
+    const hasPowerIssue = powerUtilization > 100;
+    const hasNegativePower = availablePowerForServers <= 0;
+    
+    // Calculate what split layout would give us for comparison
+    const splitAvailablePower = rackPower - torPowerKw;
+    const splitServersPerRack = Math.floor((splitAvailablePower * 1000) / serverPower);
+    const splitPowerPerRack = (splitServersPerRack * serverPower / 1000) + torPowerKw;
+    const splitPowerUtilization = (splitPowerPerRack / rackPower) * 100;
+    
+    let warningHtml = '';
+    if (hasNegativePower) {
+        const minPowerNeeded = isSplit ? torPowerKw + (serverPower / 1000) : (torPowerKw * 2) + (serverPower / 1000);
+        warningHtml = `
+            <div class="mt-3 p-3 bg-red-900/50 border border-red-500 rounded-lg">
+                <div class="text-red-400 font-semibold flex items-center gap-2">⚠️ Configuration Invalid</div>
+                <div class="text-sm text-red-300 mt-1">Rack power (${rackPower}kW) is too low. Minimum needed: ${minPowerNeeded.toFixed(1)}kW</div>
+                <button onclick="document.getElementById('wizardRackPower').value=${Math.ceil(minPowerNeeded + 1)}; updatePowerPreview();" class="mt-2 px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-xs">Set to ${Math.ceil(minPowerNeeded + 1)}kW</button>
+            </div>
+        `;
+    } else if (hasPowerIssue && !isSplit && splitPowerUtilization <= 100) {
+        // Suggest split layout if it would fix the issue
+        warningHtml = `
+            <div class="mt-3 p-3 bg-yellow-900/50 border border-yellow-500 rounded-lg">
+                <div class="text-yellow-400 font-semibold flex items-center gap-2">⚠️ Power Over Budget (${powerUtilization.toFixed(0)}%)</div>
+                <div class="text-sm text-yellow-300 mt-1">Split layout would use ${splitPowerUtilization.toFixed(0)}% per rack with ${splitServersPerRack} servers/rack.</div>
+                <button onclick="selectRackLayout('split');" class="mt-2 px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-xs">Switch to Split Layout</button>
+            </div>
+        `;
+    } else if (hasPowerIssue) {
+        const minPowerNeeded = powerPerRack;
+        warningHtml = `
+            <div class="mt-3 p-3 bg-yellow-900/50 border border-yellow-500 rounded-lg">
+                <div class="text-yellow-400 font-semibold flex items-center gap-2">⚠️ Power Over Budget (${powerUtilization.toFixed(0)}%)</div>
+                <div class="text-sm text-yellow-300 mt-1">Need ${minPowerNeeded.toFixed(1)}kW per rack. Increase rack power budget.</div>
+                <button onclick="document.getElementById('wizardRackPower').value=${Math.ceil(minPowerNeeded)}; updatePowerPreview();" class="mt-2 px-3 py-1 bg-yellow-600 hover:bg-yellow-700 rounded text-xs">Set to ${Math.ceil(minPowerNeeded)}kW</button>
+            </div>
+        `;
+    }
+    
     document.getElementById('powerPreview').innerHTML = `
         <div class="flex justify-between"><span class="text-gray-400">Server Power:</span><span>${serverPower}W each</span></div>
         <div class="flex justify-between"><span class="text-gray-400">ToR Switch Power:</span><span>${torPower}W each (×2 = ${torPower * 2}W)</span></div>
-        <div class="flex justify-between"><span class="text-gray-400">Available for Servers:</span><span>${(availablePowerForServers).toFixed(1)} kW</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Available for Servers:</span><span class="${availablePowerForServers <= 0 ? 'text-red-400' : ''}">${(availablePowerForServers).toFixed(1)} kW</span></div>
         ${layoutInfo}
         <div class="flex justify-between"><span class="text-gray-400">Limited by:</span><span class="${limitedBy === 'Power' ? 'text-yellow-400' : 'text-blue-400'}">${limitedBy}</span></div>
         <div class="flex justify-between"><span class="text-gray-400">Total Racks Needed:</span><span class="font-semibold">${formatNumber(totalRacks)}</span></div>
-        <div class="flex justify-between"><span class="text-gray-400">Power per Rack:</span><span>${powerPerRack.toFixed(1)} kW</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Power per Rack:</span><span class="${hasPowerIssue ? 'text-red-400 font-semibold' : ''}">${powerPerRack.toFixed(1)} kW ${hasPowerIssue ? '(' + powerUtilization.toFixed(0) + '%)' : ''}</span></div>
+        ${warningHtml}
     `;
 }
 
@@ -1018,7 +1060,7 @@ function getInputs() {
         vastDriveOption: document.getElementById('vastDriveOption')?.value || '61.4TB',
         runRate: parseInt(document.getElementById('runRate').value) || 250,
         rackRollRate: parseInt(document.getElementById('rackRollRate').value) || 1000,
-        rackRollPremium: parseFloat(document.getElementById('rackRollPremium').value) || 25,
+        rackRollPremium: parseFloat(document.getElementById('rackRollPremium').value) || 5,
         laborCostPerServer: parseFloat(document.getElementById('laborCostPerServer').value) || 50
     };
 }
