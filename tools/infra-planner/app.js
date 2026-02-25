@@ -2889,10 +2889,21 @@ function renderRackDiagram() {
         else if (layout === 'split') torU = 2;
         else if (layout === 'supersplit') torU = isToRRack ? 2 : 0;
         
-        // For super split, server-only racks can fit more servers
+        // Use actual calculated servers per rack (power-limited), not just space
         let maxServersThisRack;
         if (layout === 'supersplit') {
-            maxServersThisRack = Math.floor((42 - torU) / serverHeight);
+            // For super split, use the actual serversPerRack from calculations
+            // serversPerRack is the ToR rack count, server-only racks get slightly more
+            const spaceLimit = Math.floor((42 - torU) / serverHeight);
+            if (isToRRack) {
+                maxServersThisRack = Math.min(serversPerRack, spaceLimit);
+            } else {
+                // Server-only racks: use power-based calculation (full rack power available)
+                const rackPower = r.inputs.rackPower || 10;
+                const serverPower = r.inputs.serverPower || 500;
+                const powerLimit = Math.floor((rackPower * 1000) / serverPower);
+                maxServersThisRack = Math.min(powerLimit, spaceLimit);
+            }
         } else {
             maxServersThisRack = Math.min(serversPerRack, Math.floor((42 - torU) / serverHeight));
         }
@@ -2900,9 +2911,13 @@ function renderRackDiagram() {
         // Calculate server numbering offset
         let serverOffset = 0;
         if (layout === 'supersplit') {
-            // ToR racks: 0, maxServers; Server racks: 2*maxServers, 3*maxServers
-            const torRackServers = Math.floor((42 - 2) / serverHeight);
-            const serverRackServers = Math.floor(42 / serverHeight);
+            // Use actual server counts per rack type
+            const torRackServers = Math.min(serversPerRack, Math.floor((42 - 2) / serverHeight));
+            const rackPower = r.inputs.rackPower || 10;
+            const serverPower = r.inputs.serverPower || 500;
+            const serverRackPowerLimit = Math.floor((rackPower * 1000) / serverPower);
+            const serverRackServers = Math.min(serverRackPowerLimit, Math.floor(42 / serverHeight));
+            
             if (rack === 0) serverOffset = 0;
             else if (rack === 1) serverOffset = torRackServers;
             else if (rack === 2) serverOffset = torRackServers * 2;
@@ -2969,8 +2984,12 @@ function renderRackDiagram() {
     // Add summary
     let summaryText;
     if (layout === 'supersplit') {
-        const torRackServers = Math.floor((42 - 2) / serverHeight);
-        const serverRackServers = Math.floor(42 / serverHeight);
+        // Use actual power-limited server counts
+        const torRackServers = Math.min(serversPerRack, Math.floor((42 - 2) / serverHeight));
+        const rackPower = r.inputs.rackPower || 10;
+        const serverPower = r.inputs.serverPower || 500;
+        const serverRackPowerLimit = Math.floor((rackPower * 1000) / serverPower);
+        const serverRackServers = Math.min(serverRackPowerLimit, Math.floor(42 / serverHeight));
         const totalPerUnit = (torRackServers * 2) + (serverRackServers * 2);
         summaryText = `2 ToR racks (${torRackServers} servers each) + 2 server racks (${serverRackServers} each) = ${totalPerUnit} servers/unit`;
     } else {
