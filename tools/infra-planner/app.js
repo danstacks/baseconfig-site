@@ -686,6 +686,16 @@ function setRackPower(kw) {
 }
 
 function selectRackLayout(layout) {
+    // Validate super split against ToR port capacity
+    if (layout === 'supersplit') {
+        const validation = validateSuperSplitPorts();
+        if (!validation.valid) {
+            const desc = document.getElementById('layoutDescription');
+            desc.innerHTML = `<span class="text-red-400">${validation.message}</span>`;
+            return; // Don't allow selection
+        }
+    }
+    
     selectedRackLayout = layout;
     document.querySelectorAll('.rack-layout-btn').forEach(btn => {
         btn.classList.remove('border-cyan-500', 'border-purple-500', 'border-orange-500', 'bg-cyan-500/30', 'bg-purple-500/30', 'bg-orange-500/30');
@@ -722,6 +732,51 @@ function selectRackLayout(layout) {
         desc.textContent = 'Super Split: 2 ToRs serve 4 racks. Maximum servers per scalable unit.';
     }
     updatePowerPreview();
+}
+
+// Validate if super split is possible given ToR port constraints
+function validateSuperSplitPorts() {
+    const workloadType = document.getElementById('wizardWorkloadType')?.value;
+    const rackPower = parseFloat(document.getElementById('wizardRackPower')?.value) || 10;
+    
+    let serverPower = 500;
+    let serverHeight = 1;
+    if (workloadType && workloadPresets[workloadType]) {
+        serverPower = workloadPresets[workloadType].serverPower;
+        serverHeight = workloadPresets[workloadType].serverHeight;
+    }
+    
+    const networkPreset = networkPresets[selectedNetworkSpeed];
+    const torPorts = networkPreset.torPorts; // 48 for 25G
+    const torPower = networkPreset.torPower;
+    const torPowerKw = torPower / 1000;
+    const uplinksPerTor = networkPreset.uplinksPerTor || 4;
+    const availableServerPorts = torPorts - uplinksPerTor; // Ports available for servers
+    
+    // Calculate servers per scalable unit for super split
+    // 2 ToR racks + 2 server-only racks
+    const torRackAvailablePower = rackPower - torPowerKw;
+    const serverOnlyRackPower = rackPower;
+    const serversPerTorRackByPower = Math.floor((torRackAvailablePower * 1000) / serverPower);
+    const serversPerServerRackByPower = Math.floor((serverOnlyRackPower * 1000) / serverPower);
+    const serversPerTorRackBySpace = Math.floor((42 - 2) / serverHeight);
+    const serversPerServerRackBySpace = Math.floor(42 / serverHeight);
+    const serversPerTorRack = Math.min(serversPerTorRackByPower, serversPerTorRackBySpace);
+    const serversPerServerRack = Math.min(serversPerServerRackByPower, serversPerServerRackBySpace);
+    const totalServersPerUnit = (serversPerTorRack * 2) + (serversPerServerRack * 2);
+    
+    // Each server needs 1 port on each ToR (dual-homed)
+    // In super split, each ToR connects to half the servers (they're split across 2 ToRs)
+    const serversPerTor = totalServersPerUnit; // Each server connects to BOTH ToRs
+    
+    if (serversPerTor > availableServerPorts) {
+        return {
+            valid: false,
+            message: `Super Split needs ${serversPerTor} ports/ToR but only ${availableServerPorts} available (${torPorts} - ${uplinksPerTor} uplinks). Try Split layout instead.`
+        };
+    }
+    
+    return { valid: true };
 }
 
 function updateWorkloadDefaults() {
@@ -1311,13 +1366,20 @@ function calculate() {
     const runRateTotalCost = baseInfraCost + runRateLaborCost;
     const rackRollTotalCost = baseInfraCost + rackRollLaborCost;
     
+    // Validate super split port capacity
+    const availableTorPorts = networkPresets[selectedNetworkSpeed]?.torPorts || 48;
+    const uplinksPerTor = inputs.uplinksPerTor || 4;
+    const availableServerPorts = availableTorPorts - uplinksPerTor;
+    const superSplitPortsNeeded = isSuperSplit ? serversPerScalableUnit : 0;
+    const superSplitPortsValid = !isSuperSplit || superSplitPortsNeeded <= availableServerPorts;
+    
     calculationResults = {
         inputs, scalableUnits, serversPerRack, serversPerScalableUnit, racksPerScalableUnit,
         totalRacks, torSwitches, spineSwitches, totalNetworkDevices, serverOptics, 
         uplinkOptics, totalOptics, storageNodes, totalStorageNeeded, totalServerPower, 
         networkPowerEstimate, storagePowerEstimate, totalPower, serversCost, racksCost, 
         torCost, spinesCost, networkCost, serverOpticsCostTotal, uplinkOpticsCostTotal,
-        isSuperSplit, 
+        isSuperSplit, superSplitPortsNeeded, superSplitPortsValid, availableServerPorts,
         opticsCost, storageCost, baseInfraCost, runRateMonths, rackRollMonths, 
         runRateLaborCost, rackRollLaborCost, runRateTotalCost, rackRollTotalCost, 
         rackLimitedBy, torSwitchPower, actualPowerPerRack, availablePowerForServers, 
@@ -1432,6 +1494,17 @@ function updateDeploymentScaleSummary() {
                 <div><span class="text-gray-400">Limited by:</span> <span class="font-medium ${r.rackLimitedBy === 'Power' ? 'text-yellow-400' : 'text-blue-400'}">${r.rackLimitedBy}</span></div>
             </div>
         </div>
+        ${r.isSuperSplit && !r.superSplitPortsValid ? `
+        <div class="col-span-2 md:col-span-5 mt-2 p-3 bg-red-900/30 border border-red-500/50 rounded-lg text-sm">
+            <div class="flex items-start gap-2">
+                <span class="text-red-400">⚠️</span>
+                <div>
+                    <div class="text-red-400 font-medium">Super Split Exceeds ToR Port Capacity</div>
+                    <div class="text-gray-400 mt-1">Need ${r.superSplitPortsNeeded} ports/ToR but only ${r.availableServerPorts} available. Switch to Split layout or reduce servers per unit.</div>
+                </div>
+            </div>
+        </div>
+        ` : ''}
         ${networkValidation}
     `;
 }
