@@ -974,9 +974,8 @@ function getInputs() {
         uplinkOpticsCost: parseFloat(document.getElementById('uplinkOpticsCost').value) || 500,
         uplinksPerTor: parseInt(document.getElementById('uplinksPerTor').value) || 4,
         storagePerServer: parseFloat(document.getElementById('storagePerServer').value) || 10,
-        storageNodeCapacity: parseFloat(document.getElementById('storageNodeCapacity').value) || 500,
-        storageNodeCost: parseFloat(document.getElementById('storageNodeCost').value) || 75000,
         replicationFactor: parseInt(document.getElementById('replicationFactor').value) || 3,
+        vastDriveOption: document.getElementById('vastDriveOption')?.value || '61.4TB',
         runRate: parseInt(document.getElementById('runRate').value) || 250,
         rackRollRate: parseInt(document.getElementById('rackRollRate').value) || 1000,
         rackRollPremium: parseFloat(document.getElementById('rackRollPremium').value) || 25,
@@ -1033,9 +1032,32 @@ function calculate() {
     const uplinkOptics = torSwitches * inputs.uplinksPerTor * 2;
     const totalOptics = serverOptics + uplinkOptics;
     
-    // Calculate storage
+    // Calculate VAST EBox storage
     const totalStorageNeeded = inputs.totalServers * inputs.storagePerServer * inputs.replicationFactor;
-    const storageNodes = inputs.storagePerServer > 0 ? Math.ceil(totalStorageNeeded / inputs.storageNodeCapacity) : 0;
+    
+    // VAST EBox capacities per server (usable TB)
+    const vastCapacities = {
+        '15.3TB': 100,
+        '30.7TB': 200,
+        '61.4TB': 350
+    };
+    const vastUsablePerServer = vastCapacities[inputs.vastDriveOption] || 350;
+    const vastServers = inputs.storagePerServer > 0 ? Math.max(STORAGE_CONFIG.minServers, Math.ceil(totalStorageNeeded / vastUsablePerServer)) : 0;
+    const vastRacks = Math.ceil(vastServers / STORAGE_CONFIG.serversPerRack);
+    const vastSwitches = vastRacks * STORAGE_CONFIG.switchesPerRack;
+    const vastServerOptics = vastServers * STORAGE_CONFIG.opticsPerServer;
+    const vastSpineOptics = vastSwitches * STORAGE_CONFIG.spineOpticsPerSwitch;
+    
+    // VAST drive costs per server
+    const vastDriveCostsMap = {
+        '15.3TB': (8 * STORAGE_PRICING.drives['15.3TB'] + 2 * STORAGE_PRICING.drives['960GB']),
+        '30.7TB': (8 * STORAGE_PRICING.drives['30.7TB'] + 2 * STORAGE_PRICING.drives['1.92TB']),
+        '61.4TB': (7 * STORAGE_PRICING.drives['61.4TB'] + 3 * STORAGE_PRICING.drives['1.92TB'])
+    };
+    const vastDriveCostPerServer = vastDriveCostsMap[inputs.vastDriveOption] || vastDriveCostsMap['61.4TB'];
+    
+    // Legacy compatibility
+    const storageNodes = vastServers;
     
     // Calculate power with detailed breakdown
     const totalServerPower = inputs.totalServers * inputs.serverPower / 1000;
@@ -1057,7 +1079,14 @@ function calculate() {
     const serverOpticsCostTotal = serverOptics * inputs.serverOpticsCost;
     const uplinkOpticsCostTotal = uplinkOptics * inputs.uplinkOpticsCost;
     const opticsCost = serverOpticsCostTotal + uplinkOpticsCostTotal;
-    const storageCost = storageNodes * inputs.storageNodeCost;
+    
+    // VAST EBox storage costs
+    const vastServersCost = vastServers * STORAGE_PRICING.serverCost;
+    const vastDrivesCost = vastServers * vastDriveCostPerServer;
+    const vastSwitchesCost = vastSwitches * STORAGE_PRICING.switchCost;
+    const vastServerOpticsCost = vastServerOptics * STORAGE_PRICING.serverOpticsCost;
+    const vastSpineOpticsCost = vastSpineOptics * STORAGE_PRICING.spineOpticsCost;
+    const storageCost = vastServersCost + vastDrivesCost + vastSwitchesCost + vastServerOpticsCost + vastSpineOpticsCost;
     
     const baseInfraCost = serversCost + racksCost + networkCost + opticsCost + storageCost;
     
@@ -1082,8 +1111,20 @@ function calculate() {
         opticsCost, storageCost, baseInfraCost, runRateMonths, rackRollMonths, 
         runRateLaborCost, rackRollLaborCost, runRateTotalCost, rackRollTotalCost, 
         rackLimitedBy, torSwitchPower, actualPowerPerRack, availablePowerForServers, 
-        torPowerKw, isSplit
+        torPowerKw, isSplit,
+        // VAST EBox storage details
+        vastServers, vastRacks, vastSwitches, vastServerOptics, vastSpineOptics,
+        vastUsablePerServer, vastServersCost, vastDrivesCost, vastSwitchesCost,
+        vastServerOpticsCost, vastSpineOpticsCost
     };
+    
+    // Update VAST EBox display in config section
+    const vastServersDisplay = document.getElementById('vastServersDisplay');
+    const vastRacksDisplay = document.getElementById('vastRacksDisplay');
+    const vastCapacityDisplay = document.getElementById('vastCapacityDisplay');
+    if (vastServersDisplay) vastServersDisplay.textContent = vastServers.toLocaleString();
+    if (vastRacksDisplay) vastRacksDisplay.textContent = vastRacks.toLocaleString();
+    if (vastCapacityDisplay) vastCapacityDisplay.textContent = (vastServers * vastUsablePerServer).toLocaleString() + ' TB';
     
     updateScalableUnitsSection();
     updateTimelineSection();
@@ -1109,7 +1150,7 @@ function updateScalableUnitsSection() {
         { component: 'Spine Switches', perUnit: '-', total: r.spineSwitches, unitCost: i.spineCost, totalCost: r.spinesCost },
         { component: 'Server Optics', perUnit: r.serversPerScalableUnit * i.opticsPerServer, total: r.serverOptics, unitCost: i.serverOpticsCost, totalCost: r.serverOpticsCostTotal },
         { component: 'Uplink Optics', perUnit: '-', total: r.uplinkOptics, unitCost: i.uplinkOpticsCost, totalCost: r.uplinkOpticsCostTotal },
-        { component: 'Storage Nodes', perUnit: '-', total: r.storageNodes, unitCost: i.storageNodeCost, totalCost: r.storageCost }
+        { component: 'VAST EBox Servers', perUnit: '-', total: r.vastServers, unitCost: STORAGE_PRICING.serverCost, totalCost: r.storageCost }
     ];
     
     document.getElementById('scalableUnitTable').innerHTML = tableData.map(row => `
@@ -1270,7 +1311,7 @@ function updateCostsSection() {
         { label: 'Spine Switches', cost: r.spinesCost },
         { label: 'Server Optics', cost: r.serverOpticsCostTotal },
         { label: 'Uplink Optics', cost: r.uplinkOpticsCostTotal },
-        { label: 'Storage Nodes', cost: r.storageCost }
+        { label: 'VAST EBox Storage', cost: r.storageCost }
     ];
     
     const costItemsHTML = costItems.map(item => `

@@ -361,17 +361,24 @@
 
                 <div class="card rounded-xl p-6">
                     <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <i data-lucide="hard-drive" class="w-5 h-5 text-red-400"></i>Storage Configuration
+                        <i data-lucide="hard-drive" class="w-5 h-5 text-red-400"></i>VAST EBox Storage
                     </h2>
                     <div class="space-y-4">
                         <div><label class="block text-sm text-gray-400 mb-1">Storage per Server (TB)</label>
                         <input type="number" id="storagePerServer" value="10" min="0" step="0.1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
-                        <div><label class="block text-sm text-gray-400 mb-1">Storage Node Capacity (TB)</label>
-                        <input type="number" id="storageNodeCapacity" value="500" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
-                        <div><label class="block text-sm text-gray-400 mb-1">Storage Node Cost ($)</label>
-                        <input type="number" id="storageNodeCost" value="75000" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                         <div><label class="block text-sm text-gray-400 mb-1">Replication Factor</label>
                         <input type="number" id="replicationFactor" value="3" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div><label class="block text-sm text-gray-400 mb-1">VAST Drive Option</label>
+                        <select id="vastDriveOption" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()">
+                            <option value="15.3TB">15.3TB (100TB usable/server)</option>
+                            <option value="30.7TB">30.7TB (200TB usable/server)</option>
+                            <option value="61.4TB" selected>61.4TB (350TB usable/server)</option>
+                        </select></div>
+                        <div class="p-3 bg-slate-800/50 rounded-lg text-xs text-gray-400">
+                            <div class="flex justify-between mb-1"><span>VAST EBox Servers:</span><span id="vastServersDisplay" class="text-cyan-400 font-medium">0</span></div>
+                            <div class="flex justify-between mb-1"><span>VAST Racks:</span><span id="vastRacksDisplay" class="text-cyan-400 font-medium">0</span></div>
+                            <div class="flex justify-between"><span>Total Usable Capacity:</span><span id="vastCapacityDisplay" class="text-cyan-400 font-medium">0 TB</span></div>
+                        </div>
                     </div>
                 </div>
 
