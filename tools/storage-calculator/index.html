@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAST EBox Storage Calculator | BaseConfig</title>
+    <meta name="description" content="VAST Data EBox on Cisco UCS Storage Calculator - Plan storage capacity, pricing, and infrastructure requirements for VAST EBox deployments.">
+    <link rel="canonical" href="https://baseconfig.tech/tools/storage-calculator/">
+    
+    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/logo.jpg">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfeff',
+                            100: '#cffafe',
+                            200: '#a5f3fc',
+                            300: '#67e8f9',
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                            700: '#0e7490',
+                            800: '#155e75',
+                            900: '#164e63',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+        }
+        .input-field {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #22d3ee;
+            box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.2);
+        }
+        .capacity-row {
+            background-color: rgba(34, 197, 94, 0.1);
+        }
+        .price-row {
+            background-color: rgba(251, 146, 60, 0.1);
+        }
+        .networking-row {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        .total-row {
+            background-color: rgba(148, 163, 184, 0.2);
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        .cursor-blink {
+            animation: blink 1s infinite;
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen font-sans text-gray-100">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-700/50">
+        <div class="max-w-6xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <a href="/" class="flex items-center gap-2 font-mono font-bold text-cyan-400">
+                    <span class="text-lg">&gt;BASE CONFIG</span><span class="cursor-blink">_</span>
+                </a>
+                <div class="flex items-center gap-4">
+                    <a href="/tools/infra-planner/" class="text-gray-300 hover:text-cyan-400 transition-colors text-sm">Infrastructure Planner</a>
+                    <a href="/" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-colors">
+                        ← Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8 max-w-7xl pt-24">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold mb-2">
+                <span class="text-cyan-500">&gt;</span> VAST Data EBox on Cisco UCS <span class="gradient-text">Storage Calculator</span>
+            </h1>
+            <p class="text-gray-400">Calculate storage capacity, pricing, and infrastructure requirements for VAST EBox deployments</p>
+        </header>
+
+        <!-- Input Controls -->
+        <div class="card rounded-xl p-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Capacity -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold flex items-center gap-2">
+                        <i data-lucide="hard-drive" class="w-5 h-5 text-cyan-400"></i>
+                        Capacity Requirements
+                    </h3>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Target Capacity</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="capacity" value="0" min="0" step="0.01" class="input-field flex-1 px-4 py-2 rounded-lg text-white">
+                            <select id="capacity-unit" class="input-field px-3 py-2 rounded-lg text-white">
+                                <option value="TB">TB</option>
+                                <option value="PB">PB</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Capacity Type</label>
+                        <select id="capacity-type" class="input-field w-full px-4 py-2 rounded-lg text-white">
+                            <option value="usable">Usable</option>
+                            <option value="raw">Raw</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Sizing Results -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold flex items-center gap-2">
+                        <i data-lucide="calculator" class="w-5 h-5 text-cyan-400"></i>
+                        Sizing Summary
+                    </h3>
+                    <div id="sizing-results" class="p-4 bg-slate-800/50 rounded-lg text-sm text-gray-300">
+                        Enter capacity to see the number of servers and racks required (minimum 8 servers per cluster).
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparison Table -->
+        <div class="card rounded-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm" id="bomTable">
+                    <thead>
+                        <tr class="bg-slate-800">
+                            <th class="text-left py-4 px-4 text-gray-300 font-semibold">Component</th>
+                            <th class="text-center py-4 px-4 text-cyan-400 font-semibold">15.3TB Drive Option</th>
+                            <th class="text-center py-4 px-4 text-purple-400 font-semibold">30.7TB Drive Option</th>
+                            <th class="text-center py-4 px-4 text-green-400 font-semibold">61.4TB Drive Option</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-slate-700">
+                            <td class="py-3 px-4 text-gray-300">Drive Configuration</td>
+                            <td class="py-3 px-4 text-center">8 × 15.3TB + 2 × 960GB</td>
+                            <td class="py-3 px-4 text-center">8 × 30.7TB + 2 × 1.92TB</td>
+                            <td class="py-3 px-4 text-center">7 × 61.4TB + 3 × 1.92TB</td>
+                        </tr>
+                        <tr class="capacity-row border-b border-slate-700">
+                            <td class="py-3 px-4 text-gray-300">Raw Capacity per Server (TB)</td>
+                            <td class="py-3 px-4 text-center raw-capacity">122.40</td>
+                            <td class="py-3 px-4 text-center raw-capacity">249.44</td>
+                            <td class="py-3 px-4 text-center raw-capacity">428.84</td>
+                        </tr>
+                        <tr class="capacity-row border-b border-slate-700">
+                            <td class="py-3 px-4 text-gray-300">Usable Capacity per Server (TB)</td>
+                            <td class="py-3 px-4 text-center usable-capacity">100.00</td>
+                            <td class="py-3 px-4 text-center usable-capacity">200.00</td>
+                            <td class="py-3 px-4 text-center usable-capacity">370.00</td>
+                        </tr>
+                        <tr class="capacity-row border-b border-slate-700">
+                            <td class="py-3 px-4 text-gray-300">Servers Required (min. 8)</td>
+                            <td class="py-3 px-4 text-center servers-required font-semibold">12</td>
+                            <td class="py-3 px-4 text-center servers-required font-semibold">12</td>
+                            <td class="py-3 px-4 text-center servers-required font-semibold">12</td>
+                        </tr>
+                        <tr class="capacity-row border-b border-slate-700">
+                            <td class="py-3 px-4 text-gray-300">Racks Required</td>
+                            <td class="py-3 px-4 text-center racks-required">1</td>
+                            <td class="py-3 px-4 text-center racks-required">1</td>
+                            <td class="py-3 px-4 text-center racks-required">1</td>
+                        </tr>
+                        <tr class="capacity-row border-b border-slate-700">
+                            <td class="py-3 px-4 text-gray-300">Total Rack Units (U)</td>
+                            <td class="py-3 px-4 text-center total-rack-units">14</td>
+                            <td class="py-3 px-4 text-center total-rack-units">14</td>
+                            <td class="py-3 px-4 text-center total-rack-units">14</td>
+                        </tr>
+                        <tr class="networking-row border-b border-slate-700">
+                            <td class="py-3 px-4 text-gray-300">Network Switches (2 per rack)</td>
+                            <td class="py-3 px-4 text-center network-switches">2</td>
+                            <td class="py-3 px-4 text-center network-switches">2</td>
+                            <td class="py-3 px-4 text-center network-switches">2</td>
+                        </tr>
+                        <tr class="networking-row border-b border-slate-700">
+                            <td class="py-3 px-4 text-gray-300">Server Optics (2 per server)</td>
+                            <td class="py-3 px-4 text-center optics-count">24</td>
+                            <td class="py-3 px-4 text-center optics-count">24</td>
+                            <td class="py-3 px-4 text-center optics-count">24</td>
+                        </tr>
+                        <tr class="networking-row border-b border-slate-700">
+                            <td class="py-3 px-4 text-gray-300">Leaf-Spine Optics (4 per switch)</td>
+                            <td class="py-3 px-4 text-center spine-optics-count">8</td>
+                            <td class="py-3 px-4 text-center spine-optics-count">8</td>
+                            <td class="py-3 px-4 text-center spine-optics-count">8</td>
+                        </tr>
+                        <tr class="total-row border-b border-slate-700">
+                            <td class="py-3 px-4 text-gray-300 font-semibold">Total Solution List Price ($)</td>
+                            <td class="py-3 px-4 text-center total-solution-list-price font-semibold text-cyan-400">3,033,988.10</td>
+                            <td class="py-3 px-4 text-center total-solution-list-price font-semibold text-purple-400">4,085,026.10</td>
+                            <td class="py-3 px-4 text-center total-solution-list-price font-semibold text-green-400">5,865,694.10</td>
+                        </tr>
+                        <tr class="total-row border-b border-slate-700">
+                            <td class="py-3 px-4 text-gray-300 font-semibold">Total Solution Customer Price ($)</td>
+                            <td class="py-3 px-4 text-center total-solution-customer-price font-semibold text-cyan-400">3,033,988.10</td>
+                            <td class="py-3 px-4 text-center total-solution-customer-price font-semibold text-purple-400">4,085,026.10</td>
+                            <td class="py-3 px-4 text-center total-solution-customer-price font-semibold text-green-400">5,865,694.10</td>
+                        </tr>
+                        <tr class="price-row border-b border-slate-700">
+                            <td class="py-3 px-4 text-gray-300">Price per Usable TB ($/TB, after discounts)</td>
+                            <td class="py-3 px-4 text-center price-per-usable-tb">2,528.32</td>
+                            <td class="py-3 px-4 text-center price-per-usable-tb">1,702.09</td>
+                            <td class="py-3 px-4 text-center price-per-usable-tb">1,319.03</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td class="py-3 px-4 text-gray-300 font-semibold">Cost Breakdown ($)</td>
+                            <td class="py-3 px-4 text-center cost-breakdown text-xs">Servers: 937,785.00<br>Drives: 1,806,570.00<br>Network: 275,161.10<br>Optics: 14,472.00</td>
+                            <td class="py-3 px-4 text-center cost-breakdown text-xs">Servers: 937,785.00<br>Drives: 2,857,608.00<br>Network: 275,161.10<br>Optics: 14,472.00</td>
+                            <td class="py-3 px-4 text-center cost-breakdown text-xs">Servers: 937,785.00<br>Drives: 4,638,276.00<br>Network: 275,161.10<br>Optics: 14,472.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center text-gray-500 text-sm">
+            <p>Prepared by Dan Stacks | <a href="/" class="text-cyan-400 hover:text-cyan-300">BaseConfig</a></p>
+        </footer>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Pricing constants (75% discount already applied)
+        const PRICING = {
+            serverCost: 26066.39,
+            switchCost: 19475.05,
+            serverOpticsCost: 155.88,
+            spineOpticsCost: 875.00,
+            drives: {
+                '15.3TB': 5488.12,
+                '30.7TB': 8291.25,
+                '61.4TB': 15451.88,
+                '960GB': 1870.51,
+                '1.92TB': 3481.22
+            }
+        };
+
+        const CONFIG = {
+            serversPerRack: 30,
+            switchesPerRack: 2,
+            opticsPerServer: 2,
+            spineOpticsPerSwitch: 4,
+            minServers: 8
+        };
+
+        // Drive costs per server for each option
+        const driveCosts = [
+            (8 * PRICING.drives['15.3TB'] + 2 * PRICING.drives['960GB']),
+            (8 * PRICING.drives['30.7TB'] + 2 * PRICING.drives['1.92TB']),
+            (7 * PRICING.drives['61.4TB'] + 3 * PRICING.drives['1.92TB'])
+        ];
+
+        // Capacity per server (raw and usable)
+        const capacities = [
+            { raw: 122.40, usable: 100.00 },
+            { raw: 245.60, usable: 200.00 },
+            { raw: 429.80, usable: 350.00 }
+        ];
+
+        function calculateMetrics() {
+            const capacity = parseFloat(document.getElementById('capacity').value) || 0;
+            const capacityUnit = document.getElementById('capacity-unit').value;
+            const capacityType = document.getElementById('capacity-type').value;
+
+            const capacityInTB = capacityUnit === 'PB' ? capacity * 1000 : capacity;
+            const capacityKey = capacityType === 'raw' ? 'raw' : 'usable';
+
+            const serversRequired = capacities.map(cap => 
+                Math.max(CONFIG.minServers, Math.ceil(capacityInTB / cap[capacityKey] || 0))
+            );
+            const racksRequired = serversRequired.map(servers => 
+                Math.ceil(servers / CONFIG.serversPerRack)
+            );
+
+            // Update sizing results
+            const sizingResults = document.getElementById('sizing-results');
+            if (capacity > 0) {
+                sizingResults.innerHTML = `
+                    <div class="space-y-2">
+                        <p><strong>For ${capacity} ${capacityUnit} of ${capacityType} capacity:</strong></p>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="p-2 bg-cyan-900/30 rounded">
+                                <div class="text-cyan-400 font-bold">${serversRequired[0]}</div>
+                                <div class="text-xs">15.3TB servers</div>
+                            </div>
+                            <div class="p-2 bg-purple-900/30 rounded">
+                                <div class="text-purple-400 font-bold">${serversRequired[1]}</div>
+                                <div class="text-xs">30.7TB servers</div>
+                            </div>
+                            <div class="p-2 bg-green-900/30 rounded">
+                                <div class="text-green-400 font-bold">${serversRequired[2]}</div>
+                                <div class="text-xs">60.44TB servers</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                sizingResults.textContent = `Enter capacity to see the number of servers and racks required (minimum ${CONFIG.minServers} servers per cluster).`;
+            }
+
+            // Get table cells
+            const rawCapacityCells = document.querySelectorAll('.raw-capacity');
+            const usableCapacityCells = document.querySelectorAll('.usable-capacity');
+            const serversRequiredCells = document.querySelectorAll('.servers-required');
+            const racksRequiredCells = document.querySelectorAll('.racks-required');
+            const totalRackUnitsCells = document.querySelectorAll('.total-rack-units');
+            const networkSwitchesCells = document.querySelectorAll('.network-switches');
+            const opticsCountCells = document.querySelectorAll('.optics-count');
+            const spineOpticsCountCells = document.querySelectorAll('.spine-optics-count');
+            const totalSolutionListPriceCells = document.querySelectorAll('.total-solution-list-price');
+            const totalSolutionCustomerPriceCells = document.querySelectorAll('.total-solution-customer-price');
+            const pricePerUsableTbCells = document.querySelectorAll('.price-per-usable-tb');
+            const costBreakdownCells = document.querySelectorAll('.cost-breakdown');
+
+            // Calculate for each option
+            for (let i = 0; i < 3; i++) {
+                const servers = serversRequired[i];
+                const racks = racksRequired[i];
+                const switches = racks * CONFIG.switchesPerRack;
+                const serverOptics = servers * CONFIG.opticsPerServer;
+                const spineOptics = switches * CONFIG.spineOpticsPerSwitch;
+                
+                const serverCostTotal = PRICING.serverCost * servers;
+                const driveCostTotal = driveCosts[i] * servers;
+                const switchesCostTotal = switches * PRICING.switchCost;
+                const serverOpticsCostTotal = serverOptics * PRICING.serverOpticsCost;
+                const spineOpticsCostTotal = spineOptics * PRICING.spineOpticsCost;
+
+                const totalPrice = serverCostTotal + driveCostTotal + switchesCostTotal + serverOpticsCostTotal + spineOpticsCostTotal;
+
+                rawCapacityCells[i].textContent = capacities[i].raw.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                usableCapacityCells[i].textContent = capacities[i].usable.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                serversRequiredCells[i].textContent = servers.toLocaleString('en-US');
+                racksRequiredCells[i].textContent = racks.toLocaleString('en-US');
+                totalRackUnitsCells[i].textContent = (servers + switches).toLocaleString('en-US');
+                networkSwitchesCells[i].textContent = switches.toLocaleString('en-US');
+                opticsCountCells[i].textContent = serverOptics.toLocaleString('en-US');
+                spineOpticsCountCells[i].textContent = spineOptics.toLocaleString('en-US');
+                totalSolutionListPriceCells[i].textContent = totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                totalSolutionCustomerPriceCells[i].textContent = totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                pricePerUsableTbCells[i].textContent = (totalPrice / (servers * capacities[i].usable)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                costBreakdownCells[i].innerHTML = `Servers: ${serverCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Drives: ${driveCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Switches: ${switchesCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Server Optics: ${serverOpticsCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Spine Optics: ${spineOpticsCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+        }
+
+        // Add event listeners
+        document.getElementById('capacity').addEventListener('input', calculateMetrics);
+        document.getElementById('capacity-unit').addEventListener('change', calculateMetrics);
+        document.getElementById('capacity-type').addEventListener('change', calculateMetrics);
+
+        // Initial calculation
+        calculateMetrics();
+    </script>
+</body>
+</html>

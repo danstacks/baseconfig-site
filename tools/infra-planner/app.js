@@ -3343,6 +3343,154 @@ function calculateMigrationEfficiency() {
 }
 
 // ============================================
+// STORAGE CALCULATOR
+// ============================================
+
+// Storage Calculator Pricing (75% discount already applied)
+const STORAGE_PRICING = {
+    serverCost: 26066.39,
+    switchCost: 19475.05,
+    serverOpticsCost: 155.88,
+    spineOpticsCost: 875.00,
+    drives: {
+        '15.3TB': 5488.12,
+        '30.7TB': 8291.25,
+        '61.4TB': 15451.88,
+        '960GB': 1870.51,
+        '1.92TB': 3481.22
+    }
+};
+
+const STORAGE_CONFIG = {
+    serversPerRack: 30,
+    switchesPerRack: 2,
+    opticsPerServer: 2,
+    spineOpticsPerSwitch: 4,
+    minServers: 8
+};
+
+// Drive costs per server for each option
+const storageDriveCosts = [
+    (8 * STORAGE_PRICING.drives['15.3TB'] + 2 * STORAGE_PRICING.drives['960GB']),
+    (8 * STORAGE_PRICING.drives['30.7TB'] + 2 * STORAGE_PRICING.drives['1.92TB']),
+    (7 * STORAGE_PRICING.drives['61.4TB'] + 3 * STORAGE_PRICING.drives['1.92TB'])
+];
+
+// Capacity per server (raw and usable)
+const storageCapacities = [
+    { raw: 122.40, usable: 100.00 },
+    { raw: 245.60, usable: 200.00 },
+    { raw: 429.80, usable: 350.00 }
+];
+
+function calculateStorageMetrics() {
+    const capacity = parseFloat(document.getElementById('storage-capacity')?.value) || 0;
+    const capacityUnit = document.getElementById('storage-capacity-unit')?.value || 'TB';
+    const capacityType = document.getElementById('storage-capacity-type')?.value || 'usable';
+
+    const capacityInTB = capacityUnit === 'PB' ? capacity * 1000 : capacity;
+    const capacityKey = capacityType === 'raw' ? 'raw' : 'usable';
+
+    const serversRequired = storageCapacities.map(cap => 
+        Math.max(STORAGE_CONFIG.minServers, Math.ceil(capacityInTB / cap[capacityKey] || 0))
+    );
+    const racksRequired = serversRequired.map(servers => 
+        Math.ceil(servers / STORAGE_CONFIG.serversPerRack)
+    );
+
+    // Update sizing results
+    const sizingResults = document.getElementById('storage-sizing-results');
+    if (sizingResults) {
+        if (capacity > 0) {
+            sizingResults.innerHTML = `
+                <div class="space-y-2">
+                    <p><strong>For ${capacity} ${capacityUnit} of ${capacityType} capacity:</strong></p>
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="p-2 bg-cyan-900/30 rounded">
+                            <div class="text-cyan-400 font-bold">${serversRequired[0]}</div>
+                            <div class="text-xs">15.3TB servers</div>
+                        </div>
+                        <div class="p-2 bg-purple-900/30 rounded">
+                            <div class="text-purple-400 font-bold">${serversRequired[1]}</div>
+                            <div class="text-xs">30.7TB servers</div>
+                        </div>
+                        <div class="p-2 bg-green-900/30 rounded">
+                            <div class="text-green-400 font-bold">${serversRequired[2]}</div>
+                            <div class="text-xs">60.44TB servers</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            sizingResults.textContent = `Enter capacity to see the number of servers and racks required (minimum ${STORAGE_CONFIG.minServers} servers per cluster).`;
+        }
+    }
+
+    // Get table cells
+    const rawCapacityCells = document.querySelectorAll('.storage-raw-capacity');
+    const usableCapacityCells = document.querySelectorAll('.storage-usable-capacity');
+    const serversRequiredCells = document.querySelectorAll('.storage-servers-required');
+    const racksRequiredCells = document.querySelectorAll('.storage-racks-required');
+    const totalRackUnitsCells = document.querySelectorAll('.storage-total-rack-units');
+    const networkSwitchesCells = document.querySelectorAll('.storage-network-switches');
+    const opticsCountCells = document.querySelectorAll('.storage-optics-count');
+    const spineOpticsCountCells = document.querySelectorAll('.storage-spine-optics-count');
+    const totalSolutionListPriceCells = document.querySelectorAll('.storage-total-solution-list-price');
+    const totalSolutionCustomerPriceCells = document.querySelectorAll('.storage-total-solution-customer-price');
+    const pricePerUsableTbCells = document.querySelectorAll('.storage-price-per-usable-tb');
+    const costBreakdownCells = document.querySelectorAll('.storage-cost-breakdown');
+
+    // Calculate for each option
+    for (let i = 0; i < 3; i++) {
+        const servers = serversRequired[i];
+        const racks = racksRequired[i];
+        
+        const switches = racks * STORAGE_CONFIG.switchesPerRack;
+        const serverOptics = servers * STORAGE_CONFIG.opticsPerServer;
+        const spineOptics = switches * STORAGE_CONFIG.spineOpticsPerSwitch;
+        
+        const serverCostTotal = STORAGE_PRICING.serverCost * servers;
+        const driveCostTotal = storageDriveCosts[i] * servers;
+        const switchesCostTotal = switches * STORAGE_PRICING.switchCost;
+        const serverOpticsCostTotal = serverOptics * STORAGE_PRICING.serverOpticsCost;
+        const spineOpticsCostTotal = spineOptics * STORAGE_PRICING.spineOpticsCost;
+
+        const totalPrice = serverCostTotal + driveCostTotal + switchesCostTotal + serverOpticsCostTotal + spineOpticsCostTotal;
+
+        if (rawCapacityCells[i]) rawCapacityCells[i].textContent = storageCapacities[i].raw.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (usableCapacityCells[i]) usableCapacityCells[i].textContent = storageCapacities[i].usable.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (serversRequiredCells[i]) serversRequiredCells[i].textContent = servers.toLocaleString('en-US');
+        if (racksRequiredCells[i]) racksRequiredCells[i].textContent = racks.toLocaleString('en-US');
+        if (totalRackUnitsCells[i]) totalRackUnitsCells[i].textContent = (servers + switches).toLocaleString('en-US');
+        if (networkSwitchesCells[i]) networkSwitchesCells[i].textContent = switches.toLocaleString('en-US');
+        if (opticsCountCells[i]) opticsCountCells[i].textContent = serverOptics.toLocaleString('en-US');
+        if (spineOpticsCountCells[i]) spineOpticsCountCells[i].textContent = spineOptics.toLocaleString('en-US');
+        if (totalSolutionListPriceCells[i]) totalSolutionListPriceCells[i].textContent = totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (totalSolutionCustomerPriceCells[i]) totalSolutionCustomerPriceCells[i].textContent = totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (pricePerUsableTbCells[i]) pricePerUsableTbCells[i].textContent = (totalPrice / (servers * storageCapacities[i].usable)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (costBreakdownCells[i]) costBreakdownCells[i].innerHTML = `Servers: ${serverCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Drives: ${driveCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Switches: ${switchesCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Server Optics: ${serverOpticsCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>Spine Optics: ${spineOpticsCostTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+}
+
+// Initialize storage calculator event listeners
+function initStorageCalculator() {
+    const storageInputs = [
+        'storage-capacity', 'storage-capacity-unit', 'storage-capacity-type'
+    ];
+    
+    storageInputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', calculateStorageMetrics);
+            el.addEventListener('change', calculateStorageMetrics);
+        }
+    });
+    
+    // Initial calculation
+    calculateStorageMetrics();
+}
+
+// ============================================
 // INITIALIZATION
 // ============================================
 
@@ -3350,6 +3498,9 @@ function calculateMigrationEfficiency() {
 document.addEventListener('DOMContentLoaded', () => {
     // Load custom workloads from localStorage
     loadCustomWorkloads();
+    
+    // Initialize storage calculator
+    initStorageCalculator();
     
     // Check for config in URL
     loadFromURL();
