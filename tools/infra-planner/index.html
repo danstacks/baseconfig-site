@@ -106,20 +106,27 @@
                     
                     <div>
                         <label class="block text-sm text-gray-400 mb-2">Scalable Unit Layout</label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <button type="button" id="layoutSingle" onclick="selectRackLayout('single')" class="rack-layout-btn p-4 rounded-lg border-2 border-cyan-500 bg-cyan-500/30 transition-all text-left">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <i data-lucide="square" class="w-5 h-5 text-cyan-400"></i>
-                                    <span class="font-semibold">Single Rack</span>
+                        <div class="grid grid-cols-3 gap-3">
+                            <button type="button" id="layoutSingle" onclick="selectRackLayout('single')" class="rack-layout-btn p-3 rounded-lg border-2 border-cyan-500 bg-cyan-500/30 transition-all text-left">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <i data-lucide="square" class="w-4 h-4 text-cyan-400"></i>
+                                    <span class="font-semibold text-sm">Single</span>
                                 </div>
-                                <div class="text-xs text-gray-400">2 ToRs in 1 rack, servers connect to both</div>
+                                <div class="text-xs text-gray-400">2 ToRs, 1 rack</div>
                             </button>
-                            <button type="button" id="layoutSplit" onclick="selectRackLayout('split')" class="rack-layout-btn p-4 rounded-lg border-2 border-slate-600 hover:border-purple-500 transition-all text-left">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <i data-lucide="columns" class="w-5 h-5 text-purple-400"></i>
-                                    <span class="font-semibold">Split (2 Racks)</span>
+                            <button type="button" id="layoutSplit" onclick="selectRackLayout('split')" class="rack-layout-btn p-3 rounded-lg border-2 border-slate-600 hover:border-purple-500 transition-all text-left">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <i data-lucide="columns" class="w-4 h-4 text-purple-400"></i>
+                                    <span class="font-semibold text-sm">Split</span>
                                 </div>
-                                <div class="text-xs text-gray-400">1 ToR per rack, servers cross-cabled between racks</div>
+                                <div class="text-xs text-gray-400">2 ToRs, 2 racks</div>
+                            </button>
+                            <button type="button" id="layoutSuperSplit" onclick="selectRackLayout('supersplit')" class="rack-layout-btn p-3 rounded-lg border-2 border-slate-600 hover:border-orange-500 transition-all text-left">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <i data-lucide="layout-grid" class="w-4 h-4 text-orange-400"></i>
+                                    <span class="font-semibold text-sm">Super Split</span>
+                                </div>
+                                <div class="text-xs text-gray-400">2 ToRs, 4 racks</div>
                             </button>
                         </div>
                         <p class="text-xs text-gray-500 mt-2" id="layoutDescription">Standard layout: each scalable unit fits in one rack.</p>
@@ -339,8 +346,9 @@
                         <div>
                             <label class="block text-sm text-gray-400 mb-1"><span class="tooltip" data-tip="Single = 2 ToRs in 1 rack (power-limited). Split = 1 ToR per rack across 2 racks (more servers per unit).">Scalable Unit Layout</span></label>
                             <select id="rackLayout" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()">
-                                <option value="single">Single Rack (2 ToRs per rack)</option>
-                                <option value="split">Split (2 Racks, 1 ToR each)</option>
+                                <option value="single">Single Rack (2 ToRs, 1 rack)</option>
+                                <option value="split">Split (2 ToRs, 2 racks)</option>
+                                <option value="supersplit">Super Split (2 ToRs, 4 racks)</option>
                             </select>
                         </div>
                         <div><label class="block text-sm text-gray-400 mb-1">Rack Units (U) Available</label>

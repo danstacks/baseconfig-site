@@ -688,19 +688,38 @@ function setRackPower(kw) {
 function selectRackLayout(layout) {
     selectedRackLayout = layout;
     document.querySelectorAll('.rack-layout-btn').forEach(btn => {
-        btn.classList.remove('border-blue-500', 'border-purple-500', 'bg-blue-900/30', 'bg-purple-900/30');
+        btn.classList.remove('border-cyan-500', 'border-purple-500', 'border-orange-500', 'bg-cyan-500/30', 'bg-purple-500/30', 'bg-orange-500/30');
         btn.classList.add('border-slate-600');
     });
-    const btn = document.getElementById(layout === 'single' ? 'layoutSingle' : 'layoutSplit');
-    btn.classList.remove('border-slate-600');
-    btn.classList.add(layout === 'single' ? 'border-blue-500' : 'border-purple-500');
-    btn.classList.add(layout === 'single' ? 'bg-blue-900/30' : 'bg-purple-900/30');
+    
+    let btnId, borderColor, bgColor;
+    if (layout === 'single') {
+        btnId = 'layoutSingle';
+        borderColor = 'border-cyan-500';
+        bgColor = 'bg-cyan-500/30';
+    } else if (layout === 'split') {
+        btnId = 'layoutSplit';
+        borderColor = 'border-purple-500';
+        bgColor = 'bg-purple-500/30';
+    } else {
+        btnId = 'layoutSuperSplit';
+        borderColor = 'border-orange-500';
+        bgColor = 'bg-orange-500/30';
+    }
+    
+    const btn = document.getElementById(btnId);
+    if (btn) {
+        btn.classList.remove('border-slate-600');
+        btn.classList.add(borderColor, bgColor);
+    }
     
     const desc = document.getElementById('layoutDescription');
     if (layout === 'single') {
-        desc.textContent = 'Single rack: 2 ToRs + servers in one rack. More compact but power-limited.';
+        desc.textContent = 'Single rack: 2 ToRs + servers in one rack. Most compact but power-limited.';
+    } else if (layout === 'split') {
+        desc.textContent = 'Split: 1 ToR per rack across 2 racks. More servers when power-constrained.';
     } else {
-        desc.textContent = 'Split: 1 ToR per rack, servers cross-cabled to both ToRs across racks. More servers when power-constrained.';
+        desc.textContent = 'Super Split: 2 ToRs serve 4 racks. Maximum servers per scalable unit.';
     }
     updatePowerPreview();
 }
@@ -767,6 +786,7 @@ function updatePowerPreview() {
     const rackPower = parseFloat(document.getElementById('wizardRackPower').value) || 10;
     const totalServers = parseInt(document.getElementById('wizardTotalServers').value) || 6000;
     const isSplit = selectedRackLayout === 'split';
+    const isSuperSplit = selectedRackLayout === 'supersplit';
     
     let serverPower = 500;
     let serverHeight = 1;
@@ -779,13 +799,31 @@ function updatePowerPreview() {
     const torPower = networkPreset.torPower;
     const torPowerKw = torPower / 1000;
     
-    // Both layouts have 2 ToRs per scalable unit
-    // Single: 2 ToRs in 1 rack (need to account for 2x ToR power in one rack)
+    // All layouts have 2 ToRs per scalable unit
+    // Single: 2 ToRs in 1 rack
     // Split: 1 ToR per rack across 2 racks
+    // Super Split: 2 ToRs shared across 4 racks (ToRs in 2 racks, servers in all 4)
     
     let serversPerRack, serversPerScalableUnit, racksPerScalableUnit, availablePowerForServers;
     
-    if (isSplit) {
+    if (isSuperSplit) {
+        // Super Split: 2 ToRs in 2 racks (1 each), 4 server racks total
+        // 2 racks have ToR + servers, 2 racks have only servers
+        // ToR racks: power for ToR + servers
+        // Server-only racks: full power for servers
+        const torRackAvailablePower = rackPower - torPowerKw;
+        const serverOnlyRackPower = rackPower;
+        const serversPerTorRackByPower = Math.floor((torRackAvailablePower * 1000) / serverPower);
+        const serversPerServerRackByPower = Math.floor((serverOnlyRackPower * 1000) / serverPower);
+        const serversPerRackBySpace = Math.floor((42 - 2) / serverHeight); // Reserve 2U for ToR in ToR racks
+        const serversPerServerRackBySpace = Math.floor(42 / serverHeight); // Full space in server-only racks
+        const serversPerTorRack = Math.max(1, Math.min(serversPerTorRackByPower, serversPerRackBySpace));
+        const serversPerServerRack = Math.max(1, Math.min(serversPerServerRackByPower, serversPerServerRackBySpace));
+        serversPerRack = serversPerTorRack; // Use ToR rack as reference
+        serversPerScalableUnit = (serversPerTorRack * 2) + (serversPerServerRack * 2); // 2 ToR racks + 2 server racks
+        racksPerScalableUnit = 4;
+        availablePowerForServers = torRackAvailablePower; // For power check, use ToR rack
+    } else if (isSplit) {
         // Split: 1 ToR per rack, scalable unit spans 2 racks
         availablePowerForServers = rackPower - torPowerKw;
         const serversPerRackByPower = Math.floor((availablePowerForServers * 1000) / serverPower);
@@ -806,18 +844,37 @@ function updatePowerPreview() {
     const scalableUnits = Math.ceil(totalServers / serversPerScalableUnit);
     const totalRacks = scalableUnits * racksPerScalableUnit;
     
-    const serversPerRackByPower = isSplit ? 
-        Math.floor(((rackPower - torPowerKw) * 1000) / serverPower) :
-        Math.floor(((rackPower - torPowerKw * 2) * 1000) / serverPower);
-    const serversPerRackBySpace = isSplit ? Math.floor((42 - 2) / serverHeight) : Math.floor((42 - 4) / serverHeight);
+    let serversPerRackByPower, serversPerRackBySpace;
+    if (isSuperSplit) {
+        serversPerRackByPower = Math.floor(((rackPower - torPowerKw) * 1000) / serverPower);
+        serversPerRackBySpace = Math.floor((42 - 2) / serverHeight);
+    } else if (isSplit) {
+        serversPerRackByPower = Math.floor(((rackPower - torPowerKw) * 1000) / serverPower);
+        serversPerRackBySpace = Math.floor((42 - 2) / serverHeight);
+    } else {
+        serversPerRackByPower = Math.floor(((rackPower - torPowerKw * 2) * 1000) / serverPower);
+        serversPerRackBySpace = Math.floor((42 - 4) / serverHeight);
+    }
     const limitedBy = serversPerRackByPower <= serversPerRackBySpace ? 'Power' : 'Space';
     
-    const powerPerRack = isSplit ? 
-        (serversPerRack * serverPower / 1000) + torPowerKw :
-        (serversPerRack * serverPower / 1000) + (torPowerKw * 2);
+    let powerPerRack;
+    if (isSuperSplit) {
+        powerPerRack = (serversPerRack * serverPower / 1000) + torPowerKw; // ToR rack power
+    } else if (isSplit) {
+        powerPerRack = (serversPerRack * serverPower / 1000) + torPowerKw;
+    } else {
+        powerPerRack = (serversPerRack * serverPower / 1000) + (torPowerKw * 2);
+    }
     
     let layoutInfo = '';
-    if (isSplit) {
+    if (isSuperSplit) {
+        layoutInfo = `
+            <div class="flex justify-between border-t border-slate-600 pt-2 mt-2"><span class="text-gray-400">Layout:</span><span class="text-orange-400 font-semibold">Super Split (4 Racks)</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">ToR Racks:</span><span>2 (with servers)</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Server-Only Racks:</span><span>2</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Servers per Scalable Unit:</span><span class="font-semibold">${serversPerScalableUnit}</span></div>
+        `;
+    } else if (isSplit) {
         layoutInfo = `
             <div class="flex justify-between border-t border-slate-600 pt-2 mt-2"><span class="text-gray-400">Layout:</span><span class="text-purple-400 font-semibold">Split (2 Racks)</span></div>
             <div class="flex justify-between"><span class="text-gray-400">ToRs per Rack:</span><span>1</span></div>
@@ -826,7 +883,7 @@ function updatePowerPreview() {
         `;
     } else {
         layoutInfo = `
-            <div class="flex justify-between border-t border-slate-600 pt-2 mt-2"><span class="text-gray-400">Layout:</span><span class="text-blue-400 font-semibold">Single Rack</span></div>
+            <div class="flex justify-between border-t border-slate-600 pt-2 mt-2"><span class="text-gray-400">Layout:</span><span class="text-cyan-400 font-semibold">Single Rack</span></div>
             <div class="flex justify-between"><span class="text-gray-400">ToRs per Rack:</span><span>2</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Servers per Scalable Unit:</span><span class="font-semibold">${serversPerScalableUnit}</span></div>
         `;
@@ -1069,16 +1126,35 @@ function getInputs() {
 function calculate() {
     const inputs = getInputs();
     const isSplit = inputs.rackLayout === 'split';
+    const isSuperSplit = inputs.rackLayout === 'supersplit';
     
-    // Both layouts have 2 ToRs per scalable unit
+    // All layouts have 2 ToRs per scalable unit
     // Single: 2 ToRs in 1 rack
     // Split: 1 ToR per rack across 2 racks
+    // Super Split: 2 ToRs shared across 4 racks (ToRs in 2 racks, servers in all 4)
     const torPowerKw = inputs.torPower / 1000;
     
     let serversPerRack, serversPerScalableUnit, racksPerScalableUnit, availablePowerForServers;
     let serversPerRackByPower, serversPerRackBySpace;
     
-    if (isSplit) {
+    if (isSuperSplit) {
+        // Super Split: 2 ToRs in 2 racks (1 each), 4 racks total per scalable unit
+        // 2 racks have ToR + servers, 2 racks have only servers
+        const torRackAvailablePower = inputs.rackPower - torPowerKw;
+        const serverOnlyRackPower = inputs.rackPower;
+        const serversPerTorRackByPower = Math.floor((torRackAvailablePower * 1000) / inputs.serverPower);
+        const serversPerServerRackByPower = Math.floor((serverOnlyRackPower * 1000) / inputs.serverPower);
+        const serversPerTorRackBySpace = Math.floor((inputs.rackUnits - 2) / inputs.serverHeight);
+        const serversPerServerRackBySpace = Math.floor(inputs.rackUnits / inputs.serverHeight);
+        const serversPerTorRack = Math.max(1, Math.min(serversPerTorRackByPower, serversPerTorRackBySpace));
+        const serversPerServerRack = Math.max(1, Math.min(serversPerServerRackByPower, serversPerServerRackBySpace));
+        serversPerRack = serversPerTorRack; // Reference for display
+        serversPerScalableUnit = (serversPerTorRack * 2) + (serversPerServerRack * 2);
+        racksPerScalableUnit = 4;
+        availablePowerForServers = torRackAvailablePower;
+        serversPerRackByPower = serversPerTorRackByPower;
+        serversPerRackBySpace = serversPerTorRackBySpace;
+    } else if (isSplit) {
         // Split: 1 ToR per rack, scalable unit spans 2 racks
         availablePowerForServers = inputs.rackPower - torPowerKw;
         serversPerRackByPower = Math.floor((availablePowerForServers * 1000) / inputs.serverPower);
@@ -1240,7 +1316,8 @@ function calculate() {
         totalRacks, torSwitches, spineSwitches, totalNetworkDevices, serverOptics, 
         uplinkOptics, totalOptics, storageNodes, totalStorageNeeded, totalServerPower, 
         networkPowerEstimate, storagePowerEstimate, totalPower, serversCost, racksCost, 
-        torCost, spinesCost, networkCost, serverOpticsCostTotal, uplinkOpticsCostTotal, 
+        torCost, spinesCost, networkCost, serverOpticsCostTotal, uplinkOpticsCostTotal,
+        isSuperSplit, 
         opticsCost, storageCost, baseInfraCost, runRateMonths, rackRollMonths, 
         runRateLaborCost, rackRollLaborCost, runRateTotalCost, rackRollTotalCost, 
         rackLimitedBy, torSwitchPower, actualPowerPerRack, availablePowerForServers, 
@@ -1351,7 +1428,7 @@ function updateDeploymentScaleSummary() {
                 <div><span class="text-gray-400">Scalable Units:</span> <span class="font-medium text-cyan-400">${r.scalableUnits.toLocaleString()}</span></div>
                 <div><span class="text-gray-400">Racks/Unit:</span> <span class="font-medium">${r.racksPerScalableUnit}</span></div>
                 <div><span class="text-gray-400">Servers/Rack:</span> <span class="font-medium">${r.serversPerRack}</span></div>
-                <div><span class="text-gray-400">Layout:</span> <span class="font-medium ${r.isSplit ? 'text-purple-400' : 'text-cyan-400'}">${r.isSplit ? 'Split' : 'Single'}</span></div>
+                <div><span class="text-gray-400">Layout:</span> <span class="font-medium ${r.isSuperSplit ? 'text-orange-400' : r.isSplit ? 'text-purple-400' : 'text-cyan-400'}">${r.isSuperSplit ? 'Super Split' : r.isSplit ? 'Split' : 'Single'}</span></div>
                 <div><span class="text-gray-400">Limited by:</span> <span class="font-medium ${r.rackLimitedBy === 'Power' ? 'text-yellow-400' : 'text-blue-400'}">${r.rackLimitedBy}</span></div>
             </div>
         </div>
@@ -1482,7 +1559,9 @@ function updateNetworkTopologyDiagram() {
                 <rect x="380" y="155" width="40" height="20" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
                 
                 <!-- Rack labels -->
-                ${isSplit ? `
+                ${r.isSuperSplit ? `
+                <text x="250" y="195" text-anchor="middle" fill="#f97316" font-size="9">Super Split: 4 Racks per Unit (2 ToR + 2 Server-only)</text>
+                ` : isSplit ? `
                 <text x="150" y="195" text-anchor="middle" fill="#9ca3af" font-size="9">Rack A (${r.serversPerRack} servers)</text>
                 <text x="350" y="195" text-anchor="middle" fill="#9ca3af" font-size="9">Rack B (${r.serversPerRack} servers)</text>
                 ` : `
