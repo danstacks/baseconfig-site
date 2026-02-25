@@ -180,9 +180,27 @@
                         </div>
                     </div>
                     
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Drive Option</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" onclick="selectWizardDriveOption(0)" id="wizardDrive15" class="wizard-drive-btn p-3 rounded-lg border-2 border-slate-600 hover:border-cyan-500 text-center">
+                                <div class="font-semibold text-cyan-400">15.3TB</div>
+                                <div class="text-xs text-gray-400">100TB/server</div>
+                            </button>
+                            <button type="button" onclick="selectWizardDriveOption(1)" id="wizardDrive30" class="wizard-drive-btn p-3 rounded-lg border-2 border-purple-500 bg-purple-900/30 text-center">
+                                <div class="font-semibold text-purple-400">30.7TB</div>
+                                <div class="text-xs text-gray-400">200TB/server</div>
+                            </button>
+                            <button type="button" onclick="selectWizardDriveOption(2)" id="wizardDrive61" class="wizard-drive-btn p-3 rounded-lg border-2 border-slate-600 hover:border-green-500 text-center">
+                                <div class="font-semibold text-green-400">61.4TB</div>
+                                <div class="text-xs text-gray-400">350TB/server</div>
+                            </button>
+                        </div>
+                    </div>
+                    
                     <div class="p-4 bg-slate-800/50 rounded-lg">
                         <div class="text-sm text-gray-400">Quick sizing estimate:</div>
-                        <div id="wizardSizingPreview" class="text-cyan-400 font-medium mt-1">~29 EBox servers (61.4TB drives)</div>
+                        <div id="wizardSizingPreview" class="text-purple-400 font-medium mt-1">~50 EBox servers (30.7TB drives)</div>
                     </div>
                 </div>
 
@@ -373,6 +391,14 @@
                             <option value="raw">Raw</option>
                         </select>
                     </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Drive Option</label>
+                        <select id="drive-option" class="input-field w-full px-4 py-2 rounded-lg text-white">
+                            <option value="0">15.3TB (100TB usable/server)</option>
+                            <option value="1" selected>30.7TB (200TB usable/server)</option>
+                            <option value="2">61.4TB (350TB usable/server)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Network Design -->
@@ -471,22 +497,18 @@
             <h3 class="text-lg font-semibold flex items-center gap-2 mb-4">
                 <i data-lucide="server" class="w-5 h-5 text-cyan-400"></i>
                 Rack Layout Visualization
+                <span id="rack-viz-drive-label" class="text-sm font-normal text-purple-400 ml-2">(30.7TB drives)</span>
             </h3>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                    <h4 class="text-sm font-medium text-cyan-400 mb-2 text-center">15.3TB Option</h4>
-                    <div id="rack-viz-15" class="bg-slate-900 rounded-lg p-2"></div>
-                    <div id="rack-info-15" class="mt-2 text-xs text-gray-400 text-center"></div>
+                    <div id="rack-viz-selected" class="bg-slate-900 rounded-lg p-2"></div>
+                    <div id="rack-info-selected" class="mt-2 text-xs text-gray-400 text-center"></div>
                 </div>
-                <div>
-                    <h4 class="text-sm font-medium text-purple-400 mb-2 text-center">30.7TB Option</h4>
-                    <div id="rack-viz-30" class="bg-slate-900 rounded-lg p-2"></div>
-                    <div id="rack-info-30" class="mt-2 text-xs text-gray-400 text-center"></div>
-                </div>
-                <div>
-                    <h4 class="text-sm font-medium text-green-400 mb-2 text-center">61.4TB Option</h4>
-                    <div id="rack-viz-61" class="bg-slate-900 rounded-lg p-2"></div>
-                    <div id="rack-info-61" class="mt-2 text-xs text-gray-400 text-center"></div>
+                <div class="space-y-4">
+                    <div class="p-4 bg-slate-800/50 rounded-lg">
+                        <h4 class="text-sm font-medium text-gray-300 mb-3">Configuration Summary</h4>
+                        <div id="rack-config-summary" class="text-sm space-y-2"></div>
+                    </div>
                 </div>
             </div>
             <div class="mt-4 flex flex-wrap gap-4 justify-center text-xs">
@@ -648,6 +670,7 @@
         // Wizard state
         let wizardStep = 1;
         let wizardCapacityType = 'usable';
+        let wizardDriveOption = 1; // Default to 30.7TB (index 1)
         let wizardNetworkDesign = 'dedicated';
         let wizardConnectionType = 'direct';
         let wizardRackLayout = 'single';
@@ -706,6 +729,23 @@
             updateWizardSizingPreview();
         }
 
+        function selectWizardDriveOption(index) {
+            wizardDriveOption = index;
+            const driveIds = ['wizardDrive15', 'wizardDrive30', 'wizardDrive61'];
+            const borderColors = ['border-cyan-500', 'border-purple-500', 'border-green-500'];
+            const bgColors = ['bg-cyan-900/30', 'bg-purple-900/30', 'bg-green-900/30'];
+            
+            document.querySelectorAll('.wizard-drive-btn').forEach(btn => {
+                btn.classList.remove('border-cyan-500', 'border-purple-500', 'border-green-500', 'bg-cyan-900/30', 'bg-purple-900/30', 'bg-green-900/30');
+                btn.classList.add('border-slate-600');
+            });
+            
+            const btn = document.getElementById(driveIds[index]);
+            btn.classList.remove('border-slate-600');
+            btn.classList.add(borderColors[index], bgColors[index]);
+            updateWizardSizingPreview();
+        }
+
         function selectWizardNetworkDesign(design) {
             wizardNetworkDesign = design;
             document.querySelectorAll('.wizard-net-btn').forEach(btn => {
@@ -758,10 +798,19 @@
             const capacity = parseFloat(document.getElementById('wizardCapacity').value) || 10;
             const unit = document.getElementById('wizardCapacityUnit').value;
             const capacityTB = unit === 'PB' ? capacity * 1000 : capacity;
-            const usablePerServer = 350; // 61.4TB option
-            const capKey = wizardCapacityType === 'usable' ? 350 : 429.8;
-            const servers = Math.max(8, Math.ceil(capacityTB / capKey));
-            document.getElementById('wizardSizingPreview').textContent = `~${servers} EBox servers (61.4TB drives)`;
+            
+            // Capacity per server based on drive option
+            const driveLabels = ['15.3TB', '30.7TB', '61.4TB'];
+            const driveColors = ['cyan', 'purple', 'green'];
+            const usableCapacities = [100, 200, 350];
+            const rawCapacities = [122.4, 245.6, 429.8];
+            
+            const capPerServer = wizardCapacityType === 'usable' ? usableCapacities[wizardDriveOption] : rawCapacities[wizardDriveOption];
+            const servers = Math.max(8, Math.ceil(capacityTB / capPerServer));
+            
+            const preview = document.getElementById('wizardSizingPreview');
+            preview.textContent = `~${servers} EBox servers (${driveLabels[wizardDriveOption]} drives)`;
+            preview.className = `text-${driveColors[wizardDriveOption]}-400 font-medium mt-1`;
         }
 
         function updateWizardRackPreview() {
@@ -811,6 +860,7 @@
                 document.getElementById('capacity').value = document.getElementById('wizardCapacity').value;
                 document.getElementById('capacity-unit').value = document.getElementById('wizardCapacityUnit').value;
                 document.getElementById('capacity-type').value = wizardCapacityType;
+                document.getElementById('drive-option').value = wizardDriveOption;
                 document.getElementById('connectionType').value = wizardConnectionType;
                 document.getElementById('rack-power').value = document.getElementById('wizardRackPower').value;
                 
@@ -972,25 +1022,63 @@
             // Update sizing results
             const sizingResults = document.getElementById('sizing-results');
             if (capacity > 0) {
+                // Check if capacity is below minimum cluster size for each drive option
+                const minClusterCapacities = capacities.map(cap => CONFIG.minServers * cap[capacityKey]);
+                const driveLabels = ['15.3TB', '30.7TB', '61.4TB'];
+                const driveColors = ['cyan', 'purple', 'green'];
+                
+                // Calculate actual servers needed (before min enforcement)
+                const actualServersNeeded = capacities.map(cap => Math.ceil(capacityInTB / cap[capacityKey] || 0));
+                
+                let warningHTML = '';
+                const warnings = [];
+                for (let i = 0; i < 3; i++) {
+                    if (actualServersNeeded[i] < CONFIG.minServers && capacityInTB > 0) {
+                        const minCapacity = minClusterCapacities[i];
+                        warnings.push(`<span class="text-${driveColors[i]}-400">${driveLabels[i]}</span>: min ${minCapacity.toLocaleString()} TB ${capacityType} (${CONFIG.minServers} servers)`);
+                    }
+                }
+                
+                if (warnings.length > 0) {
+                    warningHTML = `
+                        <div class="mt-3 p-3 bg-yellow-900/30 border border-yellow-500/50 rounded-lg">
+                            <div class="flex items-start gap-2">
+                                <i data-lucide="alert-triangle" class="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0"></i>
+                                <div class="text-xs">
+                                    <div class="text-yellow-400 font-medium mb-1">Below minimum cluster size (${CONFIG.minServers} servers)</div>
+                                    <div class="text-gray-400">Minimum usable capacity by drive option:</div>
+                                    <div class="mt-1">${warnings.join('<br>')}</div>
+                                    <div class="text-gray-500 mt-2">Cluster will be sized to minimum ${CONFIG.minServers} servers with excess capacity.</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
                 sizingResults.innerHTML = `
                     <div class="space-y-2">
                         <p><strong>For ${capacity} ${capacityUnit} of ${capacityType} capacity:</strong></p>
                         <div class="grid grid-cols-3 gap-2 text-center">
-                            <div class="p-2 bg-cyan-900/30 rounded">
+                            <div class="p-2 bg-cyan-900/30 rounded ${actualServersNeeded[0] < CONFIG.minServers ? 'border border-yellow-500/50' : ''}">
                                 <div class="text-cyan-400 font-bold">${serversRequired[0]}</div>
                                 <div class="text-xs">15.3TB servers</div>
+                                ${actualServersNeeded[0] < CONFIG.minServers ? '<div class="text-yellow-400 text-xs mt-1">⚠ oversized</div>' : ''}
                             </div>
-                            <div class="p-2 bg-purple-900/30 rounded">
+                            <div class="p-2 bg-purple-900/30 rounded ${actualServersNeeded[1] < CONFIG.minServers ? 'border border-yellow-500/50' : ''}">
                                 <div class="text-purple-400 font-bold">${serversRequired[1]}</div>
                                 <div class="text-xs">30.7TB servers</div>
+                                ${actualServersNeeded[1] < CONFIG.minServers ? '<div class="text-yellow-400 text-xs mt-1">⚠ oversized</div>' : ''}
                             </div>
-                            <div class="p-2 bg-green-900/30 rounded">
+                            <div class="p-2 bg-green-900/30 rounded ${actualServersNeeded[2] < CONFIG.minServers ? 'border border-yellow-500/50' : ''}">
                                 <div class="text-green-400 font-bold">${serversRequired[2]}</div>
-                                <div class="text-xs">60.44TB servers</div>
+                                <div class="text-xs">61.4TB servers</div>
+                                ${actualServersNeeded[2] < CONFIG.minServers ? '<div class="text-yellow-400 text-xs mt-1">⚠ oversized</div>' : ''}
                             </div>
                         </div>
+                        ${warningHTML}
                     </div>
                 `;
+                lucide.createIcons();
             } else {
                 sizingResults.textContent = `Enter capacity to see the number of servers and racks required (minimum ${CONFIG.minServers} servers per cluster).`;
             }
@@ -1247,7 +1335,8 @@
             } else {
                 totalSwitches = racks * 2; // 2 per rack (FE + BE) for dedicated
             }
-            const switchesPerNetwork = isUnified ? totalSwitches : totalSwitches; // Unified shares, dedicated splits
+            // switches = number of leaf switches per network (FE or BE)
+            const switches = isUnified ? totalSwitches : totalSwitches / 2;
             
             const connectionDesc = connectionType === 'breakout' ? '400G→2×200G breakout' : '2×200G direct';
             const totalPorts = servers * CONFIG.nicsPerServer * CONFIG.portsPerNic;
@@ -1508,6 +1597,7 @@
             const capacity = parseFloat(document.getElementById('capacity').value) || 0;
             const capacityUnit = document.getElementById('capacity-unit').value;
             const capacityType = document.getElementById('capacity-type').value;
+            const driveOptionIndex = parseInt(document.getElementById('drive-option').value) || 1;
             
             const capacityInTB = capacityUnit === 'PB' ? capacity * 1000 : capacity;
             const capacityKey = capacityType === 'raw' ? 'raw' : 'usable';
@@ -1516,22 +1606,48 @@
                 Math.max(CONFIG.minServers, Math.ceil(capacityInTB / cap[capacityKey] || 0))
             );
             
-            // Generate rack visualizations
-            generateRackVisualization(serversRequired[0], Math.ceil(serversRequired[0] / CONFIG.serversPerRack), 'rack-viz-15', 'rack-info-15', 'cyan');
-            generateRackVisualization(serversRequired[1], Math.ceil(serversRequired[1] / CONFIG.serversPerRack), 'rack-viz-30', 'rack-info-30', 'purple');
-            const result = generateRackVisualization(serversRequired[2], Math.ceil(serversRequired[2] / CONFIG.serversPerRack), 'rack-viz-61', 'rack-info-61', 'green');
+            // Get selected drive option
+            const driveLabels = ['15.3TB', '30.7TB', '61.4TB'];
+            const driveColors = ['cyan', 'purple', 'green'];
+            const selectedServers = serversRequired[driveOptionIndex];
+            const selectedCapacity = capacities[driveOptionIndex];
+            
+            // Update drive label
+            document.getElementById('rack-viz-drive-label').textContent = `(${driveLabels[driveOptionIndex]} drives)`;
+            document.getElementById('rack-viz-drive-label').className = `text-sm font-normal text-${driveColors[driveOptionIndex]}-400 ml-2`;
+            
+            // Generate single rack visualization for selected drive option
+            const result = generateRackVisualization(selectedServers, Math.ceil(selectedServers / CONFIG.serversPerRack), 'rack-viz-selected', 'rack-info-selected', driveColors[driveOptionIndex]);
+            
+            // Update config summary
+            const isUnified = selectedNetworkDesign === 'unified';
+            const isSplit = selectedRackLayout === 'split';
+            const connectionType = document.getElementById('connectionType')?.value || 'direct';
+            document.getElementById('rack-config-summary').innerHTML = `
+                <div class="flex justify-between"><span class="text-gray-400">Drive Option:</span><span class="text-${driveColors[driveOptionIndex]}-400 font-medium">${driveLabels[driveOptionIndex]}</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Usable per Server:</span><span>${selectedCapacity.usable} TB</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Servers Required:</span><span class="font-medium">${selectedServers}</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Racks Required:</span><span class="font-medium">${result.actualRacks}</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Servers per Rack:</span><span>${result.serversPerRack}</span></div>
+                ${isSplit ? `<div class="flex justify-between"><span class="text-gray-400">Servers per Scalable Unit:</span><span>${result.serversPerScalableUnit}</span></div>` : ''}
+                <div class="flex justify-between"><span class="text-gray-400">Network Design:</span><span class="${isUnified ? 'text-yellow-400' : 'text-green-400'}">${isUnified ? 'Unified' : 'Dedicated'}</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Rack Layout:</span><span class="${isSplit ? 'text-purple-400' : 'text-cyan-400'}">${isSplit ? 'Split (2 Racks)' : 'Single Rack'}</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Connection:</span><span>${connectionType === 'breakout' ? '400G→2×200G' : 'Direct 200G'}</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Power per Rack:</span><span>${result.powerPerRack.toFixed(1)} kW</span></div>
+            `;
             
             // Update power summary
             updatePowerSummary(result);
             
-            // Update network diagram (use 61.4TB option as reference)
-            updateNetworkDiagram(serversRequired[2], result.actualRacks, result);
+            // Update network diagram using selected drive option
+            updateNetworkDiagram(selectedServers, result.actualRacks, result);
         }
 
         // Add event listeners
         document.getElementById('capacity').addEventListener('input', () => { calculateMetrics(); updateVisualizations(); });
         document.getElementById('capacity-unit').addEventListener('change', () => { calculateMetrics(); updateVisualizations(); });
         document.getElementById('capacity-type').addEventListener('change', () => { calculateMetrics(); updateVisualizations(); });
+        document.getElementById('drive-option').addEventListener('change', () => { calculateMetrics(); updateVisualizations(); });
         document.getElementById('rack-power').addEventListener('input', () => { calculateMetrics(); updateVisualizations(); });
 
         // Initial calculation
