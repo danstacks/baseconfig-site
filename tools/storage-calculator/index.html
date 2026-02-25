@@ -803,27 +803,31 @@
         }
 
         function finishWizard() {
-            // Apply wizard settings to main calculator
-            document.getElementById('capacity').value = document.getElementById('wizardCapacity').value;
-            document.getElementById('capacity-unit').value = document.getElementById('wizardCapacityUnit').value;
-            document.getElementById('capacity-type').value = wizardCapacityType;
-            document.getElementById('connectionType').value = wizardConnectionType;
-            document.getElementById('rack-power').value = document.getElementById('wizardRackPower').value;
-            
-            // Apply network design
-            selectedNetworkDesign = wizardNetworkDesign;
-            selectNetworkDesign(wizardNetworkDesign);
-            
-            // Apply rack layout
-            selectedRackLayout = wizardRackLayout;
-            selectRackLayout(wizardRackLayout);
-            
-            // Hide wizard
+            // Hide wizard FIRST
             document.getElementById('wizardOverlay').style.display = 'none';
             
-            // Calculate
-            calculateMetrics();
-            updateVisualizations();
+            try {
+                // Apply wizard settings to main calculator
+                document.getElementById('capacity').value = document.getElementById('wizardCapacity').value;
+                document.getElementById('capacity-unit').value = document.getElementById('wizardCapacityUnit').value;
+                document.getElementById('capacity-type').value = wizardCapacityType;
+                document.getElementById('connectionType').value = wizardConnectionType;
+                document.getElementById('rack-power').value = document.getElementById('wizardRackPower').value;
+                
+                // Apply network design
+                selectedNetworkDesign = wizardNetworkDesign;
+                selectNetworkDesign(wizardNetworkDesign);
+                
+                // Apply rack layout
+                selectedRackLayout = wizardRackLayout;
+                selectRackLayout(wizardRackLayout);
+                
+                // Calculate
+                calculateMetrics();
+                updateVisualizations();
+            } catch (e) {
+                console.error('Error applying wizard settings:', e);
+            }
         }
 
         function skipWizard() {
