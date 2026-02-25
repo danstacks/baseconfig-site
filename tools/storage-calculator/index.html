@@ -1500,12 +1500,42 @@
             const connectionDesc = connectionType === 'breakout' ? '400G→2×200G breakout' : '2×200G direct';
             const totalPorts = servers * CONFIG.nicsPerServer * CONFIG.portsPerNic;
             
+            // Calculate cabling details
+            // Each server has 2 ports per NIC (FE and BE each have 1 NIC with 2×200G ports)
+            const serverPortsPerNetwork = servers * 2; // 2 ports per server per network
+            const cablesPerNetwork = connectionType === 'breakout' 
+                ? servers  // 1 breakout cable per server (splits to 2×200G)
+                : servers * 2; // 2 direct cables per server
+            const switchPortsPerNetwork = connectionType === 'breakout'
+                ? servers  // 1×400G port per server (breakout to 2×200G)
+                : servers * 2; // 2×200G ports per server
+            
+            // Breakout detail explanation
+            const breakoutDetail = connectionType === 'breakout' 
+                ? `<div class="mt-2 p-2 bg-cyan-900/20 border border-cyan-500/30 rounded text-xs">
+                    <div class="text-cyan-400 font-medium">Breakout Cabling:</div>
+                    <div class="text-gray-400 mt-1">
+                        <div>• ${servers} breakout cables (400G→2×200G each)</div>
+                        <div>• ${switchPortsPerNetwork} switch ports used (400G)</div>
+                        <div>• ${serverPortsPerNetwork} server connections (2×200G per server)</div>
+                    </div>
+                   </div>`
+                : `<div class="mt-2 p-2 bg-purple-900/20 border border-purple-500/30 rounded text-xs">
+                    <div class="text-purple-400 font-medium">Direct Cabling:</div>
+                    <div class="text-gray-400 mt-1">
+                        <div>• ${cablesPerNetwork} cables (200G each)</div>
+                        <div>• ${switchPortsPerNetwork} switch ports used (200G)</div>
+                        <div>• ${serverPortsPerNetwork} server connections</div>
+                    </div>
+                   </div>`;
+            
             // Frontend network info
             document.getElementById('frontend-network-info').innerHTML = `
                 <div class="space-y-1">
                     <div class="flex justify-between"><span class="text-gray-400">Leaf Switches:</span><span class="text-purple-400">${isUnified ? totalSwitches + ' (shared)' : totalSwitches / 2}</span></div>
                     <div class="flex justify-between"><span class="text-gray-400">Connection:</span><span>${connectionDesc}</span></div>
                     ${isSplit ? '<div class="text-purple-400 text-xs mt-1">Cross-cabled to both racks</div>' : ''}
+                    ${breakoutDetail}
                 </div>
             `;
             
@@ -1515,6 +1545,7 @@
                     <div class="flex justify-between"><span class="text-gray-400">Leaf Switches:</span><span class="text-green-400">${isUnified ? totalSwitches + ' (shared)' : totalSwitches / 2}</span></div>
                     <div class="flex justify-between"><span class="text-gray-400">Connection:</span><span>${connectionDesc}</span></div>
                     ${isSplit ? '<div class="text-green-400 text-xs mt-1">Cross-cabled to both racks</div>' : ''}
+                    ${breakoutDetail}
                 </div>
             `;
             
