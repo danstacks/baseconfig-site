@@ -727,8 +727,77 @@
             if (wizardStep < 4) {
                 wizardStep++;
                 updateWizardStep();
+                if (wizardStep === 2) updateWizardNetworkOptions();
                 if (wizardStep === 4) updateWizardRackPreview();
             }
+        }
+        
+        function updateWizardNetworkOptions() {
+            // Calculate if unified is available based on servers needed
+            const servers = window.wizardServersNeeded || 8;
+            const rackPower = 20; // Default rack power for estimation
+            const switchPower = 638;
+            const serverPower = 900;
+            
+            // Calculate max servers per scalable unit for single rack layout
+            // Unified: 2 switches, Dedicated: 4 switches
+            const unifiedSwitches = 2;
+            const unifiedSwitchPower = unifiedSwitches * switchPower / 1000;
+            const unifiedAvailPower = rackPower - unifiedSwitchPower;
+            const unifiedMaxServers = Math.min(Math.floor(unifiedAvailPower * 1000 / serverPower), 42 - unifiedSwitches);
+            
+            // For split layout, unified can handle 2 racks worth
+            const unifiedMaxServersSplit = unifiedMaxServers * 2;
+            
+            // Unified is only valid if servers fit in single ToR pair
+            const unifiedValid = servers <= unifiedMaxServersSplit;
+            
+            const unifiedBtn = document.getElementById('wizardNetUnified');
+            if (!unifiedValid) {
+                unifiedBtn.disabled = true;
+                unifiedBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                unifiedBtn.classList.remove('hover:border-yellow-500');
+                // Update the button content to show why it's disabled
+                unifiedBtn.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="combine" class="w-6 h-6 text-gray-500"></i>
+                        <div>
+                            <div class="font-semibold text-gray-500">Unified Network</div>
+                            <div class="text-xs text-gray-500">Single ToR pair only - no spine layer support</div>
+                        </div>
+                    </div>
+                    <div class="mt-3 p-3 bg-red-900/20 border border-red-500/30 rounded text-xs">
+                        <div class="text-red-400 font-medium">Not available for this configuration</div>
+                        <div class="text-gray-400 mt-1">${servers} servers requires spine layer (max ${unifiedMaxServersSplit} for unified)</div>
+                    </div>
+                `;
+                // If unified was selected, switch to dedicated
+                if (wizardNetworkDesign === 'unified') {
+                    selectWizardNetworkDesign('dedicated');
+                }
+            } else {
+                unifiedBtn.disabled = false;
+                unifiedBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                unifiedBtn.classList.add('hover:border-yellow-500');
+                unifiedBtn.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="combine" class="w-6 h-6 text-yellow-400"></i>
+                        <div>
+                            <div class="font-semibold">Unified Network</div>
+                            <div class="text-xs text-gray-400">Single ToR pair only - no spine layer support</div>
+                        </div>
+                    </div>
+                    <div class="mt-3 p-3 bg-slate-800/50 rounded text-xs text-gray-400">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>✓ Fewer switches</div>
+                            <div>✓ Lower cost</div>
+                            <div>✓ Simpler cabling</div>
+                            <div>• Shared bandwidth</div>
+                        </div>
+                    </div>
+                `;
+            }
+            lucide.createIcons();
         }
 
         function wizardPrevStep() {
@@ -823,15 +892,66 @@
             // Capacity per server based on drive option
             const driveLabels = ['15.3TB', '30.7TB', '61.4TB'];
             const driveColors = ['cyan', 'purple', 'green'];
+            const driveIds = ['wizardDrive15', 'wizardDrive30', 'wizardDrive61'];
             const usableCapacities = [100, 200, 350];
             const rawCapacities = [122.4, 245.6, 429.8];
+            const minServers = 8;
+            
+            // Calculate servers needed for each drive option
+            const serversNeeded = [];
+            const driveValid = [];
+            for (let i = 0; i < 3; i++) {
+                const capPerServer = wizardCapacityType === 'usable' ? usableCapacities[i] : rawCapacities[i];
+                const minCapacity = minServers * capPerServer;
+                serversNeeded[i] = Math.max(minServers, Math.ceil(capacityTB / capPerServer));
+                // Drive is valid if requested capacity doesn't exceed what min cluster can provide
+                // (i.e., user isn't asking for less than min cluster can hold)
+                driveValid[i] = capacityTB <= 0 || capacityTB >= minCapacity * 0.5; // Allow some flexibility
+            }
+            
+            // Update drive option buttons - grey out invalid ones
+            for (let i = 0; i < 3; i++) {
+                const btn = document.getElementById(driveIds[i]);
+                const capPerServer = wizardCapacityType === 'usable' ? usableCapacities[i] : rawCapacities[i];
+                const minCapacity = minServers * capPerServer;
+                
+                if (!driveValid[i] && capacityTB > 0) {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    btn.innerHTML = `
+                        <div class="font-semibold text-gray-500">${driveLabels[i]}</div>
+                        <div class="text-xs text-gray-500">${usableCapacities[i]}TB/server</div>
+                        <div class="text-xs text-red-400 mt-1">Min: ${minCapacity}TB</div>
+                    `;
+                } else {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btn.innerHTML = `
+                        <div class="font-semibold text-${driveColors[i]}-400">${driveLabels[i]}</div>
+                        <div class="text-xs text-gray-400">${usableCapacities[i]}TB/server</div>
+                    `;
+                }
+            }
+            
+            // If current selection is invalid, switch to first valid option
+            if (!driveValid[wizardDriveOption] && capacityTB > 0) {
+                for (let i = 0; i < 3; i++) {
+                    if (driveValid[i]) {
+                        selectWizardDriveOption(i);
+                        return;
+                    }
+                }
+            }
             
             const capPerServer = wizardCapacityType === 'usable' ? usableCapacities[wizardDriveOption] : rawCapacities[wizardDriveOption];
-            const servers = Math.max(8, Math.ceil(capacityTB / capPerServer));
+            const servers = Math.max(minServers, Math.ceil(capacityTB / capPerServer));
             
             const preview = document.getElementById('wizardSizingPreview');
             preview.textContent = `~${servers} EBox servers (${driveLabels[wizardDriveOption]} drives)`;
             preview.className = `text-${driveColors[wizardDriveOption]}-400 font-medium mt-1`;
+            
+            // Store servers needed for network design validation
+            window.wizardServersNeeded = servers;
         }
 
         function updateWizardRackPreview() {
