@@ -6,6 +6,7 @@ let calculationResults = {};
 let wizardStep = 1;
 let selectedNetworkSpeed = '25g';
 let selectedRackLayout = 'single';
+let spineUplinkMode = 'breakout'; // 'breakout' or 'direct'
 let comparisonMode = false;
 let comparisonWorkload = null;
 let savedConfigurations = JSON.parse(localStorage.getItem('infraPlannerConfigs') || '[]');
@@ -532,28 +533,44 @@ const workloadPresets = {
 };
 
 // Network speed presets
+// ToR: N9K-C93180YC-FX3 (48x 1/10/25G SFP28 + 6x 40/100G QSFP28)
+// Spine: N9K-C9364D-GX2A (64x 400G QSFP-DD, 2U)
 const networkPresets = {
     '25g': {
-        torPorts: 48,
-        torCost: 15000,
-        torPower: 350,
-        serverOpticsCost: 80,
+        // ToR: N9K-C93180YC-FX3 - 48x25G + 6x100G
+        // List: $65,800.08, 75% discount = $16,450.02
+        torPorts: 48,           // 48 server-facing 25G ports
+        torUplinkPorts: 6,      // 6x 100G uplink ports
+        torCost: 16450.02,      // $65,800.08 list @ 75% discount
+        torPower: 450,          // Watts
+        // Optics: SFP-H25G-CU3M (DAC) $152.89 list @ 75% = $38.22
+        // Or SFP-25G-SR-S (SR) $1,216.99 list @ 75% = $304.25
+        serverOpticsCost: 38.22,  // 25G DAC (SFP-H25G-CU3M) @ 75% discount
         opticsPerServer: 2,
-        uplinkOpticsCost: 300,
-        uplinksPerTor: 4,
-        spineCost: 45000,
-        serversPerSpine: 500
+        // QSFP-100G-SR1.2 $2,073.14 list @ 75% = $518.29
+        uplinkOpticsCost: 518.29, // 100G QSFP28 (QSFP-100G-SR1.2) @ 75% discount
+        uplinksPerTor: 4,       // Use 4 of 6 uplinks to spine (100G each)
+        // Spine: N9K-C9364D-GX2A - 64x 400G (use 4:1 breakout for 100G ToR uplinks)
+        // Or could use N9K-C9332D-GX2B - 32x 400G for smaller deployments
+        // Price from storage calc: $19,475.05 (75% discount)
+        spinePorts: 64,         // 64 ports per spine switch (or 256 with 4:1 breakout to 100G)
+        spineCost: 19475.05,    // Same as storage calc (75% discount)
+        spinePower: 950         // Watts (same as storage calc 64-port)
     },
     '100g': {
-        torPorts: 32,
-        torCost: 35000,
-        torPower: 500,
-        serverOpticsCost: 250,
+        // ToR: N9K-C9336C-FX2 - 36x 40/100G QSFP28
+        torPorts: 36,           // 36 ports total
+        torUplinkPorts: 8,      // Reserve 8 for uplinks
+        torCost: 42000,         // ~$42K with discount
+        torPower: 650,          // Watts
+        serverOpticsCost: 250,  // 100G QSFP28 optics
         opticsPerServer: 2,
-        uplinkOpticsCost: 800,
-        uplinksPerTor: 8,
-        spineCost: 85000,
-        serversPerSpine: 400
+        uplinkOpticsCost: 350,  // 100G QSFP28 optics
+        uplinksPerTor: 8,       // 8 uplinks to spine
+        // Spine: N9K-C9364D-GX2A - 64x 400G
+        spinePorts: 64,
+        spineCost: 45000,
+        spinePower: 950
     }
 };
 
@@ -935,9 +952,33 @@ function applyNetworkPreset() {
         document.getElementById('uplinkOpticsCost').value = preset.uplinkOpticsCost;
         document.getElementById('uplinksPerTor').value = preset.uplinksPerTor;
         document.getElementById('spineCost').value = preset.spineCost;
-        document.getElementById('serversPerSpine').value = preset.serversPerSpine;
+        // Spine switches now calculated based on port capacity, not servers per spine
     }
     updateConfigBadges();
+}
+
+function updateSpineUplinkMode() {
+    spineUplinkMode = document.getElementById('spineUplinkMode')?.value || 'breakout';
+    const breakoutDiv = document.getElementById('breakoutOpticsCostDiv');
+    if (breakoutDiv) {
+        breakoutDiv.style.display = spineUplinkMode === 'breakout' ? 'block' : 'none';
+    }
+    
+    // Update cost summary
+    const breakoutCost = parseFloat(document.getElementById('breakoutOpticsCost')?.value) || 1558.76;
+    const torOpticCost = parseFloat(document.getElementById('uplinkOpticsCost')?.value) || 518.29;
+    const costPerLink = spineUplinkMode === 'breakout' 
+        ? (breakoutCost / 4) + torOpticCost 
+        : torOpticCost * 2; // Both ends need optics in direct mode
+    
+    const summaryEl = document.getElementById('breakoutCostSummary');
+    if (summaryEl) {
+        if (spineUplinkMode === 'breakout') {
+            summaryEl.innerHTML = `Breakout: $${breakoutCost.toFixed(2)} ÷ 4 = $${(breakoutCost/4).toFixed(2)}/port + ToR optic $${torOpticCost.toFixed(2)} = <span class="text-green-400">$${costPerLink.toFixed(2)}/link</span>`;
+        } else {
+            summaryEl.innerHTML = `Direct: ToR optic $${torOpticCost.toFixed(2)} + Spine optic $${torOpticCost.toFixed(2)} = <span class="text-yellow-400">$${costPerLink.toFixed(2)}/link</span>`;
+        }
+    }
 }
 
 function updateConfigBadges() {
@@ -971,8 +1012,9 @@ function getInputs() {
         serversPerSpine: parseInt(document.getElementById('serversPerSpine').value) || 500,
         serverOpticsCost: parseFloat(document.getElementById('serverOpticsCost').value) || 150,
         opticsPerServer: parseInt(document.getElementById('opticsPerServer').value) || 2,
-        uplinkOpticsCost: parseFloat(document.getElementById('uplinkOpticsCost').value) || 500,
+        uplinkOpticsCost: parseFloat(document.getElementById('uplinkOpticsCost').value) || 518.29,
         uplinksPerTor: parseInt(document.getElementById('uplinksPerTor').value) || 4,
+        breakoutOpticsCost: parseFloat(document.getElementById('breakoutOpticsCost')?.value) || 1558.76,
         storagePerServer: parseFloat(document.getElementById('storagePerServer').value) || 10,
         vastDriveOption: document.getElementById('vastDriveOption')?.value || '61.4TB',
         runRate: parseInt(document.getElementById('runRate').value) || 250,
@@ -1022,8 +1064,19 @@ function calculate() {
     // 2 ToRs per scalable unit in both layouts
     const torSwitches = scalableUnits * 2;
     
-    // Calculate network devices
-    const spineSwitches = Math.ceil(inputs.totalServers / inputs.serversPerSpine);
+    // Calculate spine switches based on actual port capacity
+    // Each ToR has uplinksPerTor connections to spine layer (100G each for 25G network)
+    // Spine switches are N9K-C9364D-GX2A with 64x 400G ports
+    // Using 4:1 breakout: each 400G port handles 4x 100G ToR uplinks
+    // So effective spine capacity = 64 ports * 4 = 256 x 100G connections per spine
+    // For redundancy, we need 2 spine switches minimum (each ToR connects to both)
+    const spinePhysicalPorts = networkPresets[selectedNetworkSpeed]?.spinePorts || 64;
+    const breakoutRatio = selectedNetworkSpeed === '25g' ? 4 : 1; // 4:1 breakout for 100G uplinks from 400G
+    const effectiveSpinePorts = spinePhysicalPorts * breakoutRatio;
+    const totalUplinkPorts = torSwitches * inputs.uplinksPerTor;
+    const uplinksPerSpine = totalUplinkPorts / 2; // Split across 2 spine switches for redundancy
+    const spinesNeededByPorts = Math.ceil(uplinksPerSpine / effectiveSpinePorts) * 2; // Multiply by 2 for pair
+    const spineSwitches = Math.max(2, spinesNeededByPorts); // Minimum 2 for redundancy
     const totalNetworkDevices = torSwitches + spineSwitches;
     
     // Calculate optics
@@ -1061,7 +1114,8 @@ function calculate() {
     // Calculate power with detailed breakdown
     const totalServerPower = inputs.totalServers * inputs.serverPower / 1000;
     const torSwitchPower = torSwitches * inputs.torPower / 1000;
-    const spineSwitchPower = spineSwitches * 0.5; // Estimate 500W per spine
+    const spinePower = networkPresets[selectedNetworkSpeed]?.spinePower || 950;
+    const spineSwitchPower = spineSwitches * spinePower / 1000; // Use actual spine power (950W for N9K-C9364D-GX2A)
     const networkPowerEstimate = torSwitchPower + spineSwitchPower;
     const storagePowerEstimate = storageNodes * 2;
     const totalPower = totalServerPower + networkPowerEstimate + storagePowerEstimate;
@@ -1076,7 +1130,20 @@ function calculate() {
     const spinesCost = spineSwitches * inputs.spineCost;
     const networkCost = torCost + spinesCost;
     const serverOpticsCostTotal = serverOptics * inputs.serverOpticsCost;
-    const uplinkOpticsCostTotal = uplinkOptics * inputs.uplinkOpticsCost;
+    
+    // Uplink optics cost depends on breakout mode
+    // Breakout: spine side uses QDD-400G-SR4.2-BD (1 per 4 uplinks), ToR side uses QSFP-100G-SR1.2
+    // Direct: both sides use QSFP-100G-SR1.2
+    const totalUplinkConnections = torSwitches * inputs.uplinksPerTor;
+    let uplinkOpticsCostTotal;
+    if (spineUplinkMode === 'breakout') {
+        const breakoutOpticsNeeded = Math.ceil(totalUplinkConnections / 4); // 1 breakout per 4 connections
+        const torSideOptics = totalUplinkConnections; // Each ToR uplink needs a 100G optic
+        uplinkOpticsCostTotal = (breakoutOpticsNeeded * inputs.breakoutOpticsCost) + (torSideOptics * inputs.uplinkOpticsCost);
+    } else {
+        // Direct mode: both ends need 100G optics
+        uplinkOpticsCostTotal = totalUplinkConnections * inputs.uplinkOpticsCost * 2;
+    }
     const opticsCost = serverOpticsCostTotal + uplinkOpticsCostTotal;
     
     // VAST EBox storage costs

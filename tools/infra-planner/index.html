@@ -373,8 +373,12 @@
                         <input type="number" id="torPower" value="350" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                         <div><label class="block text-sm text-gray-400 mb-1">Spine Switch Cost ($)</label>
                         <input type="number" id="spineCost" value="45000" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
-                        <div><label class="block text-sm text-gray-400 mb-1">Servers per Spine Switch</label>
-                        <input type="number" id="serversPerSpine" value="500" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <div class="p-3 bg-slate-800/50 rounded-lg text-xs text-gray-400 mt-2">
+                            <div class="font-medium text-cyan-400 mb-1">Switch Models:</div>
+                            <div>ToR: N9K-C93180YC-FX3 (48x25G + 6x100G)</div>
+                            <div>Spine: N9K-C9364D-GX2A (64x400G, 2U)</div>
+                            <div class="text-gray-500 mt-1">Spine count auto-calculated from ToR uplinks</div>
+                        </div>
                     </div>
                 </div>
 
@@ -831,6 +835,43 @@
         <!-- Advanced Tab -->
         <section id="section-advanced" class="tab-section hidden animate-fade-in">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Spine Breakout Configuration -->
+                <div class="card rounded-xl p-6 lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="cable" class="w-5 h-5 text-orange-400"></i>Spine Uplink Configuration
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">Spine Uplink Mode</label>
+                                <select id="spineUplinkMode" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="updateSpineUplinkMode(); calculate()">
+                                    <option value="breakout" selected>4:1 Breakout (400G → 4x100G)</option>
+                                    <option value="direct">Direct 100G (no breakout)</option>
+                                </select>
+                            </div>
+                            <div id="breakoutOpticsCostDiv">
+                                <label class="block text-sm text-gray-400 mb-1">Breakout Optic Cost ($)</label>
+                                <input type="number" id="breakoutOpticsCost" value="1558.76" min="0" step="0.01" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()">
+                                <p class="text-xs text-gray-500 mt-1">QDD-400G-SR4.2-BD: $6,235.02 list @ 75% = $1,558.76</p>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-slate-800/50 rounded-lg">
+                            <h4 class="font-medium text-cyan-400 mb-2">Breakout Cable Details</h4>
+                            <div class="text-sm space-y-2 text-gray-400">
+                                <div><span class="text-gray-300">Spine Port:</span> QDD-400G-SR4.2-BD (400G QSFP-DD)</div>
+                                <div><span class="text-gray-300">Breakout:</span> 4x QSFP-100G-SR1.2 (100G each)</div>
+                                <div><span class="text-gray-300">ToR Side:</span> QSFP-100G-SR1.2 ($518.29 each)</div>
+                                <div class="pt-2 border-t border-slate-600 mt-2">
+                                    <span class="text-gray-300">Per Connection Cost:</span>
+                                    <div class="text-xs mt-1" id="breakoutCostSummary">
+                                        Breakout: $1,558.76 ÷ 4 = $389.69/port + ToR optic $518.29 = <span class="text-green-400">$907.98/link</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Saved Configurations -->
                 <div class="card rounded-xl p-6">
                     <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
