@@ -1227,6 +1227,18 @@
             document.getElementById('bom-drive-label').textContent = `(${driveLabels[i]} drives)`;
             document.getElementById('bom-drive-label').className = `text-sm font-normal text-${driveColors[i]}-400 ml-2`;
             
+            // Drive SKUs for each option
+            const driveSKUs = [
+                { data: 'PM1733a 15.36TB (MZWLJ15THALA)', nvram: 'PM9A3 960GB (MZQL2960HCJR)' },
+                { data: 'PM1733a 30.72TB (MZWLJ30THALA)', nvram: 'PM9A3 1.92TB (MZQL21T9HCJR)' },
+                { data: 'PM1733a 61.44TB (MZWLR61THALA)', nvram: 'PM9A3 1.92TB (MZQL21T9HCJR)' }
+            ];
+            const driveQtys = [
+                { data: 8, nvram: 2 },
+                { data: 8, nvram: 2 },
+                { data: 7, nvram: 3 }
+            ];
+            
             // Generate BOM content
             document.getElementById('bom-content').innerHTML = `
                 <!-- Hardware -->
@@ -1236,29 +1248,56 @@
                         Hardware
                     </h4>
                     <div class="space-y-2 text-sm">
-                        <div class="flex justify-between p-2 bg-slate-800/50 rounded">
-                            <span class="text-gray-400">EBox Servers</span>
-                            <span class="font-medium">${servers.toLocaleString()}</span>
+                        <div class="p-2 bg-slate-800/50 rounded">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">EBox Servers</span>
+                                <span class="font-medium">${servers.toLocaleString()}</span>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">SKU: VAST-EBOX-1U</div>
                         </div>
-                        <div class="flex justify-between p-2 bg-slate-800/50 rounded">
-                            <span class="text-gray-400">Drive Config (per server)</span>
-                            <span class="font-medium text-${driveColors[i]}-400">${driveConfigs[i]}</span>
+                        <div class="p-2 bg-slate-800/50 rounded">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Data Drives (per server)</span>
+                                <span class="font-medium text-${driveColors[i]}-400">${driveQtys[i].data}× ${driveLabels[i]}</span>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">SKU: ${driveSKUs[i].data}</div>
+                            <div class="text-xs text-gray-500">Total: ${(servers * driveQtys[i].data).toLocaleString()} drives</div>
                         </div>
-                        <div class="flex justify-between p-2 bg-slate-800/50 rounded">
-                            <span class="text-gray-400">Leaf Switches</span>
-                            <span class="font-medium">${switches}</span>
+                        <div class="p-2 bg-slate-800/50 rounded">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">NVRAM Drives (per server)</span>
+                                <span class="font-medium">${driveQtys[i].nvram}× ${i === 0 ? '960GB' : '1.92TB'}</span>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">SKU: ${driveSKUs[i].nvram}</div>
+                            <div class="text-xs text-gray-500">Total: ${(servers * driveQtys[i].nvram).toLocaleString()} drives</div>
                         </div>
-                        <div class="flex justify-between p-2 bg-slate-800/50 rounded">
-                            <span class="text-gray-400">Server Optics</span>
-                            <span class="font-medium">${serverOptics}</span>
+                        <div class="p-2 bg-slate-800/50 rounded">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Leaf Switches</span>
+                                <span class="font-medium">${switches}</span>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">SKU: N9K-C9336C-FX2 (36×100G/40G)</div>
                         </div>
-                        <div class="flex justify-between p-2 bg-slate-800/50 rounded">
-                            <span class="text-gray-400">Spine Optics</span>
-                            <span class="font-medium">${spineOptics}</span>
+                        <div class="p-2 bg-slate-800/50 rounded">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Server Optics (2 per server)</span>
+                                <span class="font-medium">${serverOptics}</span>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">SKU: QSFP-100G-SR4-S (100G SR4)</div>
                         </div>
-                        <div class="flex justify-between p-2 bg-slate-800/50 rounded">
-                            <span class="text-gray-400">Total Rack Units</span>
-                            <span class="font-medium">${servers + switches}U</span>
+                        <div class="p-2 bg-slate-800/50 rounded">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Spine Optics (4 per switch)</span>
+                                <span class="font-medium">${spineOptics}</span>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">SKU: QSFP-100G-SR4-S (100G SR4)</div>
+                        </div>
+                        <div class="p-2 bg-slate-800/50 rounded">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Total Rack Units</span>
+                                <span class="font-medium">${servers + switches}U</span>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">${servers}U servers + ${switches}U switches</div>
                         </div>
                     </div>
                 </div>
