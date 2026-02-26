@@ -3111,19 +3111,36 @@ function renderNetworkTopology() {
     }
     
     // === RACK LAYER (Mini rack diagrams) ===
+    // Group racks by scalable unit - show the correct topology:
+    // Single: 1 rack → 2 ToRs
+    // Split: 2 racks → 2 ToRs  
+    // Super Split: 4 racks → 2 ToRs
+    
     const rackWidth = racksToShow * 65;
     const rackStartX = (width - rackWidth) / 2 + 32;
     
-    html += `<text x="${width/2}" y="${rackY - 55}" text-anchor="middle" fill="#0891b2" font-size="12" font-weight="bold">Racks (${r.totalRacks}) - ${r.serversPerRack} servers each</text>`;
+    // Add scalable unit grouping boxes
+    for (let unit = 0; unit < unitsToShow; unit++) {
+        const unitStartX = rackStartX + unit * racksPerUnit * 65 - 30;
+        const unitWidth = racksPerUnit * 65 + 10;
+        html += `<rect x="${unitStartX}" y="${rackY - 50}" width="${unitWidth}" height="100" rx="6" fill="none" stroke="#475569" stroke-width="1" stroke-dasharray="4"/>`;
+        html += `<text x="${unitStartX + unitWidth/2}" y="${rackY + 55}" text-anchor="middle" fill="#64748b" font-size="8">Unit ${unit + 1}</text>`;
+    }
+    
+    html += `<text x="${width/2}" y="${rackY - 65}" text-anchor="middle" fill="#0891b2" font-size="12" font-weight="bold">Racks (${r.totalRacks}) - ${r.serversPerRack} servers each</text>`;
     
     for (let rack = 0; rack < racksToShow; rack++) {
         const x = rackStartX + rack * 65;
         const unitIdx = Math.floor(rack / racksPerUnit);
-        const torIdx = unitIdx * 2; // First ToR of this unit
+        const torIdx = unitIdx * 2; // First ToR of this scalable unit
+        
+        // Determine rack type for super split
+        const rackInUnit = rack % racksPerUnit;
+        const isServerOnlyRack = isSuperSplit && rackInUnit >= 2;
         
         // Mini rack diagram
         html += `
-            <rect x="${x - 25}" y="${rackY - 40}" width="50" height="70" rx="3" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+            <rect x="${x - 25}" y="${rackY - 40}" width="50" height="70" rx="3" fill="#1e293b" stroke="${isServerOnlyRack ? '#f97316' : '#334155'}" stroke-width="${isServerOnlyRack ? 2 : 1}" ${isServerOnlyRack ? 'stroke-dasharray="3"' : ''}/>
         `;
         
         // Draw servers inside rack (simplified)
@@ -3139,16 +3156,17 @@ function renderNetworkTopology() {
         }
         
         // Rack label
-        html += `<text x="${x}" y="${rackY + 40}" text-anchor="middle" fill="#94a3b8" font-size="8">R${rack + 1}</text>`;
+        const rackLabel = isSuperSplit 
+            ? (isServerOnlyRack ? `S${rackInUnit - 1}` : `T${rackInUnit + 1}`)
+            : `R${rack + 1}`;
+        html += `<text x="${x}" y="${rackY + 40}" text-anchor="middle" fill="${isServerOnlyRack ? '#f97316' : '#94a3b8'}" font-size="8">${rackLabel}</text>`;
         
-        // Connect rack to its ToRs (dual-homed)
-        if (torIdx < torsToShow) {
+        // Connect rack to its 2 ToRs (all racks in a unit connect to the same 2 ToRs)
+        if (torIdx < torsToShow && torIdx + 1 < torsToShow) {
             const tor1X = torStartX + torIdx * 70;
             const tor2X = torStartX + (torIdx + 1) * 70;
             html += `<line x1="${x}" y1="${rackY - 40}" x2="${tor1X}" y2="${torY + 28}" stroke="#0891b2" stroke-width="1.5" opacity="0.6"/>`;
-            if (torIdx + 1 < torsToShow) {
-                html += `<line x1="${x}" y1="${rackY - 40}" x2="${tor2X}" y2="${torY + 28}" stroke="#0891b2" stroke-width="1.5" opacity="0.6"/>`;
-            }
+            html += `<line x1="${x}" y1="${rackY - 40}" x2="${tor2X}" y2="${torY + 28}" stroke="#0891b2" stroke-width="1.5" opacity="0.6"/>`;
         }
     }
     if (r.totalRacks > racksToShow) {
