@@ -3015,129 +3015,129 @@ function renderNetworkTopology() {
     const isSplit = layout === 'split';
     const hasSuperSpine = r.needsSuperSpine || false;
     const networkSpeed = selectedNetworkSpeed === '100g' ? '100G' : '25G';
+    const layoutLabel = isSuperSplit ? 'Super Split' : isSplit ? 'Split' : 'Single';
     
-    // Use the same style as Config tab's updateNetworkTopologyDiagram
-    // This ensures consistency between both views
-    container.innerHTML = hasSuperSpine ? `
-        <svg viewBox="0 0 500 280" class="w-full max-w-2xl mx-auto">
-            <!-- Super Spine Layer -->
-            <text x="250" y="18" text-anchor="middle" fill="#a855f7" font-size="11" font-weight="bold">Super Spine (${r.superSpineSwitches})</text>
-            <rect x="180" y="25" width="60" height="28" rx="4" fill="#9333ea" stroke="#a855f7" stroke-width="2"/>
-            <text x="210" y="43" text-anchor="middle" fill="white" font-size="10">Super</text>
-            <rect x="260" y="25" width="60" height="28" rx="4" fill="#9333ea" stroke="#a855f7" stroke-width="2"/>
-            <text x="290" y="43" text-anchor="middle" fill="white" font-size="10">Super</text>
-            
-            <!-- Connection lines super spine to spine (400G) -->
-            <line x1="210" y1="53" x2="210" y2="78" stroke="#a855f7" stroke-width="2"/>
-            <line x1="210" y1="53" x2="290" y2="78" stroke="#a855f7" stroke-width="1" stroke-dasharray="3,2"/>
-            <line x1="290" y1="53" x2="290" y2="78" stroke="#a855f7" stroke-width="2"/>
-            <line x1="290" y1="53" x2="210" y2="78" stroke="#a855f7" stroke-width="1" stroke-dasharray="3,2"/>
-            
-            <!-- Spine Layer -->
-            <text x="250" y="75" text-anchor="middle" fill="#f97316" font-size="10">Spine (${r.spineSwitches})</text>
-            <rect x="180" y="80" width="60" height="28" rx="4" fill="#ea580c" stroke="#f97316" stroke-width="2"/>
-            <text x="210" y="98" text-anchor="middle" fill="white" font-size="10">Spine</text>
-            <rect x="260" y="80" width="60" height="28" rx="4" fill="#ea580c" stroke="#f97316" stroke-width="2"/>
-            <text x="290" y="98" text-anchor="middle" fill="white" font-size="10">Spine</text>
-            
-            <!-- Connection lines spine to ToR -->
-            <line x1="210" y1="108" x2="150" y2="138" stroke="#6b7280" stroke-width="1.5"/>
-            <line x1="210" y1="108" x2="350" y2="138" stroke="#6b7280" stroke-width="1.5"/>
-            <line x1="290" y1="108" x2="150" y2="138" stroke="#6b7280" stroke-width="1.5"/>
-            <line x1="290" y1="108" x2="350" y2="138" stroke="#6b7280" stroke-width="1.5"/>
-            
-            <!-- ToR Layer -->
-            <text x="250" y="135" text-anchor="middle" fill="#10b981" font-size="10">ToR (${r.torSwitches})</text>
-            <rect x="100" y="140" width="100" height="28" rx="4" fill="#059669" stroke="#10b981" stroke-width="2"/>
-            <text x="150" y="158" text-anchor="middle" fill="white" font-size="10">ToR A</text>
-            <rect x="300" y="140" width="100" height="28" rx="4" fill="#059669" stroke="#10b981" stroke-width="2"/>
-            <text x="350" y="158" text-anchor="middle" fill="white" font-size="10">ToR B</text>
-            
-            <!-- Connection lines ToR to servers -->
-            <line x1="150" y1="168" x2="100" y2="198" stroke="#0891b2" stroke-width="1"/>
-            <line x1="150" y1="168" x2="150" y2="198" stroke="#0891b2" stroke-width="1"/>
-            <line x1="150" y1="168" x2="200" y2="198" stroke="#0891b2" stroke-width="1"/>
-            <line x1="350" y1="168" x2="300" y2="198" stroke="#0891b2" stroke-width="1"/>
-            <line x1="350" y1="168" x2="350" y2="198" stroke="#0891b2" stroke-width="1"/>
-            <line x1="350" y1="168" x2="400" y2="198" stroke="#0891b2" stroke-width="1"/>
-            
-            <!-- Server Layer -->
-            <text x="250" y="195" text-anchor="middle" fill="#0891b2" font-size="10">Servers (${i.totalServers.toLocaleString()})</text>
-            <rect x="80" y="200" width="40" height="22" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
-            <rect x="130" y="200" width="40" height="22" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
-            <rect x="180" y="200" width="40" height="22" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
-            <rect x="280" y="200" width="40" height="22" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
-            <rect x="330" y="200" width="40" height="22" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
-            <rect x="380" y="200" width="40" height="22" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
-            
-            <!-- Rack labels -->
-            ${isSuperSplit ? `
-            <text x="250" y="240" text-anchor="middle" fill="#f97316" font-size="9">Super Split: 4 Racks/Unit (2 ToR + 2 Server-only)</text>
-            ` : isSplit ? `
-            <text x="150" y="240" text-anchor="middle" fill="#9ca3af" font-size="9">Rack A (${r.serversPerRack}/rack)</text>
-            <text x="350" y="240" text-anchor="middle" fill="#9ca3af" font-size="9">Rack B (${r.serversPerRack}/rack)</text>
-            ` : `
-            <text x="250" y="240" text-anchor="middle" fill="#9ca3af" font-size="9">${r.serversPerRack} servers/rack + 2 ToRs</text>
-            `}
-            
-            <!-- Legend -->
-            <text x="250" y="258" text-anchor="middle" fill="#6b7280" font-size="9">${isSuperSplit ? 'Super Split' : isSplit ? 'Split' : 'Single'} Layout | ${networkSpeed} | ${r.scalableUnits} Units | ${r.totalRacks} Racks</text>
-            <text x="250" y="273" text-anchor="middle" fill="#a855f7" font-size="9">3-Tier: ${r.superSpineSwitches} Super + ${r.spineSwitches} Spine + ${r.torSwitches} ToR</text>
-        </svg>
-    ` : `
-        <svg viewBox="0 0 500 250" class="w-full max-w-2xl mx-auto">
+    // Generate scale visualization bars
+    const maxServers = 50000;
+    const maxRacks = 500;
+    const maxTors = 1000;
+    const maxSpines = 100;
+    
+    const serverPct = Math.min(100, (i.totalServers / maxServers) * 100);
+    const rackPct = Math.min(100, (r.totalRacks / maxRacks) * 100);
+    const torPct = Math.min(100, (r.torSwitches / maxTors) * 100);
+    const spinePct = Math.min(100, (r.spineSwitches / maxSpines) * 100);
+    
+    // Generate rack grid visualization (show proportional representation)
+    const rackGridSize = Math.min(r.totalRacks, 100); // Show up to 100 rack icons
+    const rackCols = 20;
+    const rackRows = Math.ceil(rackGridSize / rackCols);
+    
+    let rackGridHtml = '';
+    for (let row = 0; row < rackRows; row++) {
+        for (let col = 0; col < rackCols; col++) {
+            const idx = row * rackCols + col;
+            if (idx < rackGridSize) {
+                const x = 50 + col * 20;
+                const y = 320 + row * 25;
+                rackGridHtml += `<rect x="${x}" y="${y}" width="16" height="20" rx="2" fill="#0891b2" opacity="0.7"/>`;
+            }
+        }
+    }
+    
+    container.innerHTML = `
+        <svg viewBox="0 0 500 ${hasSuperSpine ? 520 : 480}" class="w-full max-w-3xl mx-auto">
             <!-- Title -->
-            <text x="250" y="18" text-anchor="middle" fill="${isSuperSplit ? '#f97316' : '#22d3ee'}" font-size="12" font-weight="bold">${isSuperSplit ? 'Super Split Layout (4 Racks/Unit)' : isSplit ? 'Split Rack Layout' : 'Single Rack Layout'} - ${networkSpeed}</text>
+            <text x="250" y="20" text-anchor="middle" fill="#f8fafc" font-size="14" font-weight="bold">${networkSpeed} Network Topology - ${layoutLabel} Layout</text>
+            
+            <!-- Network Hierarchy Diagram -->
+            ${hasSuperSpine ? `
+            <!-- Super Spine Layer -->
+            <text x="250" y="50" text-anchor="middle" fill="#a855f7" font-size="10" font-weight="bold">Super Spine (${r.superSpineSwitches})</text>
+            <rect x="190" y="55" width="50" height="24" rx="4" fill="#9333ea"/>
+            <text x="215" y="71" text-anchor="middle" fill="white" font-size="8">SS</text>
+            <rect x="260" y="55" width="50" height="24" rx="4" fill="#9333ea"/>
+            <text x="285" y="71" text-anchor="middle" fill="white" font-size="8">SS</text>
+            <line x1="215" y1="79" x2="215" y2="98" stroke="#a855f7" stroke-width="1.5"/>
+            <line x1="215" y1="79" x2="285" y2="98" stroke="#a855f7" stroke-width="1" stroke-dasharray="2"/>
+            <line x1="285" y1="79" x2="285" y2="98" stroke="#a855f7" stroke-width="1.5"/>
+            <line x1="285" y1="79" x2="215" y2="98" stroke="#a855f7" stroke-width="1" stroke-dasharray="2"/>
+            ` : ''}
             
             <!-- Spine Layer -->
-            <text x="250" y="45" text-anchor="middle" fill="#f97316" font-size="11">Spine Layer (${r.spineSwitches} switches)</text>
-            <rect x="180" y="52" width="60" height="28" rx="4" fill="#ea580c" stroke="#f97316" stroke-width="2"/>
-            <text x="210" y="70" text-anchor="middle" fill="white" font-size="10">Spine</text>
-            <rect x="260" y="52" width="60" height="28" rx="4" fill="#ea580c" stroke="#f97316" stroke-width="2"/>
-            <text x="290" y="70" text-anchor="middle" fill="white" font-size="10">Spine</text>
+            <text x="250" y="${hasSuperSpine ? 95 : 50}" text-anchor="middle" fill="#f97316" font-size="10" font-weight="bold">Spine (${r.spineSwitches})</text>
+            <rect x="190" y="${hasSuperSpine ? 100 : 55}" width="50" height="24" rx="4" fill="#ea580c"/>
+            <text x="215" y="${hasSuperSpine ? 116 : 71}" text-anchor="middle" fill="white" font-size="8">Spine</text>
+            <rect x="260" y="${hasSuperSpine ? 100 : 55}" width="50" height="24" rx="4" fill="#ea580c"/>
+            <text x="285" y="${hasSuperSpine ? 116 : 71}" text-anchor="middle" fill="white" font-size="8">Spine</text>
             
-            <!-- Connection lines spine to ToR -->
-            <line x1="210" y1="80" x2="150" y2="115" stroke="#6b7280" stroke-width="1.5"/>
-            <line x1="210" y1="80" x2="350" y2="115" stroke="#6b7280" stroke-width="1.5"/>
-            <line x1="290" y1="80" x2="150" y2="115" stroke="#6b7280" stroke-width="1.5"/>
-            <line x1="290" y1="80" x2="350" y2="115" stroke="#6b7280" stroke-width="1.5"/>
+            <!-- Spine to ToR connections -->
+            <line x1="215" y1="${hasSuperSpine ? 124 : 79}" x2="165" y2="${hasSuperSpine ? 148 : 103}" stroke="#6b7280" stroke-width="1"/>
+            <line x1="215" y1="${hasSuperSpine ? 124 : 79}" x2="335" y2="${hasSuperSpine ? 148 : 103}" stroke="#6b7280" stroke-width="1"/>
+            <line x1="285" y1="${hasSuperSpine ? 124 : 79}" x2="165" y2="${hasSuperSpine ? 148 : 103}" stroke="#6b7280" stroke-width="1"/>
+            <line x1="285" y1="${hasSuperSpine ? 124 : 79}" x2="335" y2="${hasSuperSpine ? 148 : 103}" stroke="#6b7280" stroke-width="1"/>
             
             <!-- ToR Layer -->
-            <text x="250" y="110" text-anchor="middle" fill="#10b981" font-size="10">ToR Layer (${r.torSwitches} switches)</text>
-            <rect x="100" y="117" width="100" height="28" rx="4" fill="#059669" stroke="#10b981" stroke-width="2"/>
-            <text x="150" y="135" text-anchor="middle" fill="white" font-size="10">ToR A</text>
-            <rect x="300" y="117" width="100" height="28" rx="4" fill="#059669" stroke="#10b981" stroke-width="2"/>
-            <text x="350" y="135" text-anchor="middle" fill="white" font-size="10">ToR B</text>
+            <text x="250" y="${hasSuperSpine ? 145 : 100}" text-anchor="middle" fill="#10b981" font-size="10" font-weight="bold">ToR (${r.torSwitches})</text>
+            <rect x="120" y="${hasSuperSpine ? 150 : 105}" width="90" height="24" rx="4" fill="#059669"/>
+            <text x="165" y="${hasSuperSpine ? 166 : 121}" text-anchor="middle" fill="white" font-size="8">ToR A</text>
+            <rect x="290" y="${hasSuperSpine ? 150 : 105}" width="90" height="24" rx="4" fill="#059669"/>
+            <text x="335" y="${hasSuperSpine ? 166 : 121}" text-anchor="middle" fill="white" font-size="8">ToR B</text>
             
-            <!-- Connection lines ToR to servers -->
-            <line x1="150" y1="145" x2="100" y2="175" stroke="#0891b2" stroke-width="1"/>
-            <line x1="150" y1="145" x2="150" y2="175" stroke="#0891b2" stroke-width="1"/>
-            <line x1="150" y1="145" x2="200" y2="175" stroke="#0891b2" stroke-width="1"/>
-            <line x1="350" y1="145" x2="300" y2="175" stroke="#0891b2" stroke-width="1"/>
-            <line x1="350" y1="145" x2="350" y2="175" stroke="#0891b2" stroke-width="1"/>
-            <line x1="350" y1="145" x2="400" y2="175" stroke="#0891b2" stroke-width="1"/>
+            <!-- ToR to Server connections -->
+            <line x1="165" y1="${hasSuperSpine ? 174 : 129}" x2="120" y2="${hasSuperSpine ? 198 : 153}" stroke="#0891b2" stroke-width="1"/>
+            <line x1="165" y1="${hasSuperSpine ? 174 : 129}" x2="165" y2="${hasSuperSpine ? 198 : 153}" stroke="#0891b2" stroke-width="1"/>
+            <line x1="165" y1="${hasSuperSpine ? 174 : 129}" x2="210" y2="${hasSuperSpine ? 198 : 153}" stroke="#0891b2" stroke-width="1"/>
+            <line x1="335" y1="${hasSuperSpine ? 174 : 129}" x2="290" y2="${hasSuperSpine ? 198 : 153}" stroke="#0891b2" stroke-width="1"/>
+            <line x1="335" y1="${hasSuperSpine ? 174 : 129}" x2="335" y2="${hasSuperSpine ? 198 : 153}" stroke="#0891b2" stroke-width="1"/>
+            <line x1="335" y1="${hasSuperSpine ? 174 : 129}" x2="380" y2="${hasSuperSpine ? 198 : 153}" stroke="#0891b2" stroke-width="1"/>
             
-            <!-- Server Layer -->
-            <text x="250" y="172" text-anchor="middle" fill="#0891b2" font-size="10">Servers (${i.totalServers.toLocaleString()} total, ${r.serversPerRack}/rack)</text>
-            <rect x="80" y="178" width="40" height="22" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
-            <rect x="130" y="178" width="40" height="22" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
-            <rect x="180" y="178" width="40" height="22" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
-            <rect x="280" y="178" width="40" height="22" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
-            <rect x="330" y="178" width="40" height="22" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
-            <rect x="380" y="178" width="40" height="22" rx="2" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
+            <!-- Server icons -->
+            <text x="250" y="${hasSuperSpine ? 195 : 150}" text-anchor="middle" fill="#0891b2" font-size="10" font-weight="bold">Servers (${i.totalServers.toLocaleString()})</text>
+            <rect x="100" y="${hasSuperSpine ? 200 : 155}" width="30" height="18" rx="2" fill="#0891b2"/>
+            <rect x="140" y="${hasSuperSpine ? 200 : 155}" width="30" height="18" rx="2" fill="#0891b2"/>
+            <rect x="180" y="${hasSuperSpine ? 200 : 155}" width="30" height="18" rx="2" fill="#0891b2"/>
+            <rect x="290" y="${hasSuperSpine ? 200 : 155}" width="30" height="18" rx="2" fill="#0891b2"/>
+            <rect x="330" y="${hasSuperSpine ? 200 : 155}" width="30" height="18" rx="2" fill="#0891b2"/>
+            <rect x="370" y="${hasSuperSpine ? 200 : 155}" width="30" height="18" rx="2" fill="#0891b2"/>
             
-            <!-- Rack labels -->
-            ${isSuperSplit ? `
-            <text x="250" y="218" text-anchor="middle" fill="#f97316" font-size="9">Super Split: 4 Racks per Unit (2 ToR + 2 Server-only)</text>
-            ` : isSplit ? `
-            <text x="150" y="218" text-anchor="middle" fill="#9ca3af" font-size="9">Rack A (${r.serversPerRack} servers)</text>
-            <text x="350" y="218" text-anchor="middle" fill="#9ca3af" font-size="9">Rack B (${r.serversPerRack} servers)</text>
-            ` : `
-            <text x="250" y="218" text-anchor="middle" fill="#9ca3af" font-size="9">Single Rack (${r.serversPerRack} servers + 2 ToRs)</text>
-            `}
+            <!-- Scale Summary Section -->
+            <rect x="30" y="${hasSuperSpine ? 240 : 195}" width="440" height="110" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+            <text x="250" y="${hasSuperSpine ? 260 : 215}" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="bold">Deployment Scale</text>
             
-            <!-- Legend -->
-            <text x="250" y="238" text-anchor="middle" fill="#6b7280" font-size="9">${isSuperSplit ? 'Super Split' : isSplit ? 'Split' : 'Single'} Layout | ${networkSpeed} | ${r.scalableUnits} Units | ${r.totalRacks} Racks</text>
+            <!-- Scale Bars -->
+            <text x="50" y="${hasSuperSpine ? 285 : 240}" fill="#94a3b8" font-size="9">Servers</text>
+            <rect x="110" y="${hasSuperSpine ? 275 : 230}" width="300" height="14" rx="3" fill="#334155"/>
+            <rect x="110" y="${hasSuperSpine ? 275 : 230}" width="${serverPct * 3}" height="14" rx="3" fill="#0891b2"/>
+            <text x="420" y="${hasSuperSpine ? 285 : 240}" fill="#22d3ee" font-size="9" font-weight="bold">${i.totalServers.toLocaleString()}</text>
+            
+            <text x="50" y="${hasSuperSpine ? 305 : 260}" fill="#94a3b8" font-size="9">Racks</text>
+            <rect x="110" y="${hasSuperSpine ? 295 : 250}" width="300" height="14" rx="3" fill="#334155"/>
+            <rect x="110" y="${hasSuperSpine ? 295 : 250}" width="${rackPct * 3}" height="14" rx="3" fill="#06b6d4"/>
+            <text x="420" y="${hasSuperSpine ? 305 : 260}" fill="#22d3ee" font-size="9" font-weight="bold">${r.totalRacks}</text>
+            
+            <text x="50" y="${hasSuperSpine ? 325 : 280}" fill="#94a3b8" font-size="9">ToRs</text>
+            <rect x="110" y="${hasSuperSpine ? 315 : 270}" width="300" height="14" rx="3" fill="#334155"/>
+            <rect x="110" y="${hasSuperSpine ? 315 : 270}" width="${torPct * 3}" height="14" rx="3" fill="#10b981"/>
+            <text x="420" y="${hasSuperSpine ? 325 : 280}" fill="#10b981" font-size="9" font-weight="bold">${r.torSwitches}</text>
+            
+            <text x="50" y="${hasSuperSpine ? 345 : 300}" fill="#94a3b8" font-size="9">Spines</text>
+            <rect x="110" y="${hasSuperSpine ? 335 : 290}" width="300" height="14" rx="3" fill="#334155"/>
+            <rect x="110" y="${hasSuperSpine ? 335 : 290}" width="${spinePct * 3}" height="14" rx="3" fill="#ea580c"/>
+            <text x="420" y="${hasSuperSpine ? 345 : 300}" fill="#f97316" font-size="9" font-weight="bold">${r.spineSwitches}</text>
+            
+            <!-- Rack Grid Visualization -->
+            <text x="250" y="${hasSuperSpine ? 375 : 330}" text-anchor="middle" fill="#f8fafc" font-size="11" font-weight="bold">Data Center Floor (${r.totalRacks} Racks)</text>
+            <text x="250" y="${hasSuperSpine ? 390 : 345}" text-anchor="middle" fill="#64748b" font-size="9">${r.totalRacks > 100 ? 'Showing 100 of ' + r.totalRacks + ' racks' : 'Each square = 1 rack'}</text>
+            
+            <!-- Rack grid -->
+            <g transform="translate(0, ${hasSuperSpine ? 80 : 40})">
+                ${rackGridHtml}
+            </g>
+            
+            <!-- Summary Footer -->
+            <text x="250" y="${hasSuperSpine ? 500 : 460}" text-anchor="middle" fill="#6b7280" font-size="9">${layoutLabel} Layout | ${networkSpeed} | ${r.scalableUnits} Scalable Units | ${r.serversPerRack} servers/rack</text>
+            ${hasSuperSpine ? `<text x="250" y="515" text-anchor="middle" fill="#a855f7" font-size="9">3-Tier: ${r.superSpineSwitches} Super Spine + ${r.spineSwitches} Spine + ${r.torSwitches} ToR</text>` : ''}
         </svg>
     `;
 }
