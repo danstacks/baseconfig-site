@@ -1618,7 +1618,7 @@ function updateNetworkTopologyDiagram() {
         html += `<text x="${unitStartX + unitWidth/2}" y="${rackY + 55}" text-anchor="middle" fill="#64748b" font-size="8">Unit ${unit + 1}</text>`;
     }
     
-    html += `<text x="${width/2}" y="${rackY - 65}" text-anchor="middle" fill="#0891b2" font-size="12" font-weight="bold">Racks (${r.totalRacks}) - ${r.serversPerRack} servers each</text>`;
+    html += `<text x="${width/2}" y="${rackY - 80}" text-anchor="middle" fill="#0891b2" font-size="12" font-weight="bold">Racks (${r.totalRacks}) - ${r.serversPerRack} servers each</text>`;
     
     for (let rack = 0; rack < racksToShow; rack++) {
         const x = getRackX(rack);
@@ -3160,7 +3160,7 @@ function renderNetworkTopology() {
         html += `<text x="${unitStartX + unitWidth/2}" y="${rackY + 55}" text-anchor="middle" fill="#64748b" font-size="8">Unit ${unit + 1}</text>`;
     }
     
-    html += `<text x="${width/2}" y="${rackY - 65}" text-anchor="middle" fill="#0891b2" font-size="12" font-weight="bold">Racks (${r.totalRacks}) - ${r.serversPerRack} servers each</text>`;
+    html += `<text x="${width/2}" y="${rackY - 80}" text-anchor="middle" fill="#0891b2" font-size="12" font-weight="bold">Racks (${r.totalRacks}) - ${r.serversPerRack} servers each</text>`;
     
     for (let rack = 0; rack < racksToShow; rack++) {
         const x = getRackX(rack);
