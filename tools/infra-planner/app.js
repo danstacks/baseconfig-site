@@ -3017,129 +3017,163 @@ function renderNetworkTopology() {
     const networkSpeed = selectedNetworkSpeed === '100g' ? '100G' : '25G';
     const layoutLabel = isSuperSplit ? 'Super Split' : isSplit ? 'Split' : 'Single';
     
-    // Generate scale visualization bars
-    const maxServers = 50000;
-    const maxRacks = 500;
-    const maxTors = 1000;
-    const maxSpines = 100;
+    // Calculate how many items to show at each layer
+    const racksPerUnit = r.racksPerScalableUnit || 1;
+    const unitsToShow = Math.min(r.scalableUnits, 6); // Show up to 6 scalable units
+    const racksToShow = unitsToShow * racksPerUnit;
+    const torsToShow = unitsToShow * 2; // 2 ToRs per unit
+    const spinesToShow = Math.min(r.spineSwitches, 8);
+    const superSpinesToShow = hasSuperSpine ? Math.min(r.superSpineSwitches, 4) : 0;
     
-    const serverPct = Math.min(100, (i.totalServers / maxServers) * 100);
-    const rackPct = Math.min(100, (r.totalRacks / maxRacks) * 100);
-    const torPct = Math.min(100, (r.torSwitches / maxTors) * 100);
-    const spinePct = Math.min(100, (r.spineSwitches / maxSpines) * 100);
+    // SVG dimensions
+    const width = 900;
+    const height = hasSuperSpine ? 520 : 450;
     
-    // Generate rack grid visualization (show proportional representation)
-    const rackGridSize = Math.min(r.totalRacks, 100); // Show up to 100 rack icons
-    const rackCols = 20;
-    const rackRows = Math.ceil(rackGridSize / rackCols);
+    // Layer Y positions (bottom to top)
+    const rackY = height - 80;
+    const torY = rackY - 90;
+    const spineY = torY - 80;
+    const superSpineY = spineY - 80;
     
-    let rackGridHtml = '';
-    for (let row = 0; row < rackRows; row++) {
-        for (let col = 0; col < rackCols; col++) {
-            const idx = row * rackCols + col;
-            if (idx < rackGridSize) {
-                const x = 50 + col * 20;
-                const y = 320 + row * 25;
-                rackGridHtml += `<rect x="${x}" y="${y}" width="16" height="20" rx="2" fill="#0891b2" opacity="0.7"/>`;
-            }
+    let html = `<svg viewBox="0 0 ${width} ${height}" class="w-full">
+        <!-- Title -->
+        <text x="${width/2}" y="25" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="bold">${networkSpeed} Network Topology - ${layoutLabel} Layout</text>
+        <text x="${width/2}" y="45" text-anchor="middle" fill="#94a3b8" font-size="11">${i.totalServers.toLocaleString()} Servers | ${r.totalRacks} Racks | ${r.scalableUnits} Scalable Units</text>
+    `;
+    
+    // === SUPER SPINE LAYER ===
+    if (hasSuperSpine) {
+        const ssWidth = superSpinesToShow * 90;
+        const ssStartX = (width - ssWidth) / 2 + 45;
+        
+        html += `<text x="${width/2}" y="${superSpineY - 15}" text-anchor="middle" fill="#a855f7" font-size="12" font-weight="bold">Super Spine Layer (${r.superSpineSwitches})</text>`;
+        
+        for (let s = 0; s < superSpinesToShow; s++) {
+            const x = ssStartX + s * 90;
+            html += `
+                <rect x="${x - 35}" y="${superSpineY}" width="70" height="35" rx="4" fill="#9333ea" stroke="#a855f7" stroke-width="2"/>
+                <text x="${x}" y="${superSpineY + 22}" text-anchor="middle" fill="white" font-size="10" font-weight="bold">SS${s + 1}</text>
+            `;
+        }
+        if (r.superSpineSwitches > superSpinesToShow) {
+            html += `<text x="${ssStartX + superSpinesToShow * 90}" y="${superSpineY + 22}" fill="#a855f7" font-size="11">+${r.superSpineSwitches - superSpinesToShow}</text>`;
         }
     }
     
-    container.innerHTML = `
-        <svg viewBox="0 0 500 ${hasSuperSpine ? 520 : 480}" class="w-full max-w-3xl mx-auto">
-            <!-- Title -->
-            <text x="250" y="20" text-anchor="middle" fill="#f8fafc" font-size="14" font-weight="bold">${networkSpeed} Network Topology - ${layoutLabel} Layout</text>
-            
-            <!-- Network Hierarchy Diagram -->
-            ${hasSuperSpine ? `
-            <!-- Super Spine Layer -->
-            <text x="250" y="50" text-anchor="middle" fill="#a855f7" font-size="10" font-weight="bold">Super Spine (${r.superSpineSwitches})</text>
-            <rect x="190" y="55" width="50" height="24" rx="4" fill="#9333ea"/>
-            <text x="215" y="71" text-anchor="middle" fill="white" font-size="8">SS</text>
-            <rect x="260" y="55" width="50" height="24" rx="4" fill="#9333ea"/>
-            <text x="285" y="71" text-anchor="middle" fill="white" font-size="8">SS</text>
-            <line x1="215" y1="79" x2="215" y2="98" stroke="#a855f7" stroke-width="1.5"/>
-            <line x1="215" y1="79" x2="285" y2="98" stroke="#a855f7" stroke-width="1" stroke-dasharray="2"/>
-            <line x1="285" y1="79" x2="285" y2="98" stroke="#a855f7" stroke-width="1.5"/>
-            <line x1="285" y1="79" x2="215" y2="98" stroke="#a855f7" stroke-width="1" stroke-dasharray="2"/>
-            ` : ''}
-            
-            <!-- Spine Layer -->
-            <text x="250" y="${hasSuperSpine ? 95 : 50}" text-anchor="middle" fill="#f97316" font-size="10" font-weight="bold">Spine (${r.spineSwitches})</text>
-            <rect x="190" y="${hasSuperSpine ? 100 : 55}" width="50" height="24" rx="4" fill="#ea580c"/>
-            <text x="215" y="${hasSuperSpine ? 116 : 71}" text-anchor="middle" fill="white" font-size="8">Spine</text>
-            <rect x="260" y="${hasSuperSpine ? 100 : 55}" width="50" height="24" rx="4" fill="#ea580c"/>
-            <text x="285" y="${hasSuperSpine ? 116 : 71}" text-anchor="middle" fill="white" font-size="8">Spine</text>
-            
-            <!-- Spine to ToR connections -->
-            <line x1="215" y1="${hasSuperSpine ? 124 : 79}" x2="165" y2="${hasSuperSpine ? 148 : 103}" stroke="#6b7280" stroke-width="1"/>
-            <line x1="215" y1="${hasSuperSpine ? 124 : 79}" x2="335" y2="${hasSuperSpine ? 148 : 103}" stroke="#6b7280" stroke-width="1"/>
-            <line x1="285" y1="${hasSuperSpine ? 124 : 79}" x2="165" y2="${hasSuperSpine ? 148 : 103}" stroke="#6b7280" stroke-width="1"/>
-            <line x1="285" y1="${hasSuperSpine ? 124 : 79}" x2="335" y2="${hasSuperSpine ? 148 : 103}" stroke="#6b7280" stroke-width="1"/>
-            
-            <!-- ToR Layer -->
-            <text x="250" y="${hasSuperSpine ? 145 : 100}" text-anchor="middle" fill="#10b981" font-size="10" font-weight="bold">ToR (${r.torSwitches})</text>
-            <rect x="120" y="${hasSuperSpine ? 150 : 105}" width="90" height="24" rx="4" fill="#059669"/>
-            <text x="165" y="${hasSuperSpine ? 166 : 121}" text-anchor="middle" fill="white" font-size="8">ToR A</text>
-            <rect x="290" y="${hasSuperSpine ? 150 : 105}" width="90" height="24" rx="4" fill="#059669"/>
-            <text x="335" y="${hasSuperSpine ? 166 : 121}" text-anchor="middle" fill="white" font-size="8">ToR B</text>
-            
-            <!-- ToR to Server connections -->
-            <line x1="165" y1="${hasSuperSpine ? 174 : 129}" x2="120" y2="${hasSuperSpine ? 198 : 153}" stroke="#0891b2" stroke-width="1"/>
-            <line x1="165" y1="${hasSuperSpine ? 174 : 129}" x2="165" y2="${hasSuperSpine ? 198 : 153}" stroke="#0891b2" stroke-width="1"/>
-            <line x1="165" y1="${hasSuperSpine ? 174 : 129}" x2="210" y2="${hasSuperSpine ? 198 : 153}" stroke="#0891b2" stroke-width="1"/>
-            <line x1="335" y1="${hasSuperSpine ? 174 : 129}" x2="290" y2="${hasSuperSpine ? 198 : 153}" stroke="#0891b2" stroke-width="1"/>
-            <line x1="335" y1="${hasSuperSpine ? 174 : 129}" x2="335" y2="${hasSuperSpine ? 198 : 153}" stroke="#0891b2" stroke-width="1"/>
-            <line x1="335" y1="${hasSuperSpine ? 174 : 129}" x2="380" y2="${hasSuperSpine ? 198 : 153}" stroke="#0891b2" stroke-width="1"/>
-            
-            <!-- Server icons -->
-            <text x="250" y="${hasSuperSpine ? 195 : 150}" text-anchor="middle" fill="#0891b2" font-size="10" font-weight="bold">Servers (${i.totalServers.toLocaleString()})</text>
-            <rect x="100" y="${hasSuperSpine ? 200 : 155}" width="30" height="18" rx="2" fill="#0891b2"/>
-            <rect x="140" y="${hasSuperSpine ? 200 : 155}" width="30" height="18" rx="2" fill="#0891b2"/>
-            <rect x="180" y="${hasSuperSpine ? 200 : 155}" width="30" height="18" rx="2" fill="#0891b2"/>
-            <rect x="290" y="${hasSuperSpine ? 200 : 155}" width="30" height="18" rx="2" fill="#0891b2"/>
-            <rect x="330" y="${hasSuperSpine ? 200 : 155}" width="30" height="18" rx="2" fill="#0891b2"/>
-            <rect x="370" y="${hasSuperSpine ? 200 : 155}" width="30" height="18" rx="2" fill="#0891b2"/>
-            
-            <!-- Scale Summary Section -->
-            <rect x="30" y="${hasSuperSpine ? 240 : 195}" width="440" height="110" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-            <text x="250" y="${hasSuperSpine ? 260 : 215}" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="bold">Deployment Scale</text>
-            
-            <!-- Scale Bars -->
-            <text x="50" y="${hasSuperSpine ? 285 : 240}" fill="#94a3b8" font-size="9">Servers</text>
-            <rect x="110" y="${hasSuperSpine ? 275 : 230}" width="300" height="14" rx="3" fill="#334155"/>
-            <rect x="110" y="${hasSuperSpine ? 275 : 230}" width="${serverPct * 3}" height="14" rx="3" fill="#0891b2"/>
-            <text x="420" y="${hasSuperSpine ? 285 : 240}" fill="#22d3ee" font-size="9" font-weight="bold">${i.totalServers.toLocaleString()}</text>
-            
-            <text x="50" y="${hasSuperSpine ? 305 : 260}" fill="#94a3b8" font-size="9">Racks</text>
-            <rect x="110" y="${hasSuperSpine ? 295 : 250}" width="300" height="14" rx="3" fill="#334155"/>
-            <rect x="110" y="${hasSuperSpine ? 295 : 250}" width="${rackPct * 3}" height="14" rx="3" fill="#06b6d4"/>
-            <text x="420" y="${hasSuperSpine ? 305 : 260}" fill="#22d3ee" font-size="9" font-weight="bold">${r.totalRacks}</text>
-            
-            <text x="50" y="${hasSuperSpine ? 325 : 280}" fill="#94a3b8" font-size="9">ToRs</text>
-            <rect x="110" y="${hasSuperSpine ? 315 : 270}" width="300" height="14" rx="3" fill="#334155"/>
-            <rect x="110" y="${hasSuperSpine ? 315 : 270}" width="${torPct * 3}" height="14" rx="3" fill="#10b981"/>
-            <text x="420" y="${hasSuperSpine ? 325 : 280}" fill="#10b981" font-size="9" font-weight="bold">${r.torSwitches}</text>
-            
-            <text x="50" y="${hasSuperSpine ? 345 : 300}" fill="#94a3b8" font-size="9">Spines</text>
-            <rect x="110" y="${hasSuperSpine ? 335 : 290}" width="300" height="14" rx="3" fill="#334155"/>
-            <rect x="110" y="${hasSuperSpine ? 335 : 290}" width="${spinePct * 3}" height="14" rx="3" fill="#ea580c"/>
-            <text x="420" y="${hasSuperSpine ? 345 : 300}" fill="#f97316" font-size="9" font-weight="bold">${r.spineSwitches}</text>
-            
-            <!-- Rack Grid Visualization -->
-            <text x="250" y="${hasSuperSpine ? 375 : 330}" text-anchor="middle" fill="#f8fafc" font-size="11" font-weight="bold">Data Center Floor (${r.totalRacks} Racks)</text>
-            <text x="250" y="${hasSuperSpine ? 390 : 345}" text-anchor="middle" fill="#64748b" font-size="9">${r.totalRacks > 100 ? 'Showing 100 of ' + r.totalRacks + ' racks' : 'Each square = 1 rack'}</text>
-            
-            <!-- Rack grid -->
-            <g transform="translate(0, ${hasSuperSpine ? 80 : 40})">
-                ${rackGridHtml}
-            </g>
-            
-            <!-- Summary Footer -->
-            <text x="250" y="${hasSuperSpine ? 500 : 460}" text-anchor="middle" fill="#6b7280" font-size="9">${layoutLabel} Layout | ${networkSpeed} | ${r.scalableUnits} Scalable Units | ${r.serversPerRack} servers/rack</text>
-            ${hasSuperSpine ? `<text x="250" y="515" text-anchor="middle" fill="#a855f7" font-size="9">3-Tier: ${r.superSpineSwitches} Super Spine + ${r.spineSwitches} Spine + ${r.torSwitches} ToR</text>` : ''}
-        </svg>
+    // === SPINE LAYER ===
+    const spineWidth = spinesToShow * 80;
+    const spineStartX = (width - spineWidth) / 2 + 40;
+    
+    html += `<text x="${width/2}" y="${spineY - 15}" text-anchor="middle" fill="#f97316" font-size="12" font-weight="bold">Spine Layer (${r.spineSwitches})</text>`;
+    
+    for (let s = 0; s < spinesToShow; s++) {
+        const x = spineStartX + s * 80;
+        html += `
+            <rect x="${x - 30}" y="${spineY}" width="60" height="30" rx="4" fill="#ea580c" stroke="#f97316" stroke-width="2"/>
+            <text x="${x}" y="${spineY + 19}" text-anchor="middle" fill="white" font-size="9" font-weight="bold">Sp${s + 1}</text>
+        `;
+        
+        // Connect to super spines
+        if (hasSuperSpine) {
+            const ssWidth = superSpinesToShow * 90;
+            const ssStartX = (width - ssWidth) / 2 + 45;
+            for (let ss = 0; ss < superSpinesToShow; ss++) {
+                const ssX = ssStartX + ss * 90;
+                html += `<line x1="${x}" y1="${spineY}" x2="${ssX}" y2="${superSpineY + 35}" stroke="#a855f7" stroke-width="1" opacity="0.4"/>`;
+            }
+        }
+    }
+    if (r.spineSwitches > spinesToShow) {
+        html += `<text x="${spineStartX + spinesToShow * 80}" y="${spineY + 19}" fill="#f97316" font-size="11">+${r.spineSwitches - spinesToShow}</text>`;
+    }
+    
+    // === TOR LAYER ===
+    const torWidth = torsToShow * 70;
+    const torStartX = (width - torWidth) / 2 + 35;
+    
+    html += `<text x="${width/2}" y="${torY - 15}" text-anchor="middle" fill="#10b981" font-size="12" font-weight="bold">ToR Layer (${r.torSwitches})</text>`;
+    
+    for (let t = 0; t < torsToShow; t++) {
+        const x = torStartX + t * 70;
+        html += `
+            <rect x="${x - 28}" y="${torY}" width="56" height="28" rx="4" fill="#059669" stroke="#10b981" stroke-width="2"/>
+            <text x="${x}" y="${torY + 18}" text-anchor="middle" fill="white" font-size="8" font-weight="bold">ToR${t + 1}</text>
+        `;
+        
+        // Connect to spines (each ToR connects to all spines)
+        for (let s = 0; s < spinesToShow; s++) {
+            const spineX = spineStartX + s * 80;
+            html += `<line x1="${x}" y1="${torY}" x2="${spineX}" y2="${spineY + 30}" stroke="#6b7280" stroke-width="1" opacity="0.3"/>`;
+        }
+    }
+    if (r.torSwitches > torsToShow) {
+        html += `<text x="${torStartX + torsToShow * 70}" y="${torY + 18}" fill="#10b981" font-size="11">+${r.torSwitches - torsToShow}</text>`;
+    }
+    
+    // === RACK LAYER (Mini rack diagrams) ===
+    const rackWidth = racksToShow * 65;
+    const rackStartX = (width - rackWidth) / 2 + 32;
+    
+    html += `<text x="${width/2}" y="${rackY - 55}" text-anchor="middle" fill="#0891b2" font-size="12" font-weight="bold">Racks (${r.totalRacks}) - ${r.serversPerRack} servers each</text>`;
+    
+    for (let rack = 0; rack < racksToShow; rack++) {
+        const x = rackStartX + rack * 65;
+        const unitIdx = Math.floor(rack / racksPerUnit);
+        const torIdx = unitIdx * 2; // First ToR of this unit
+        
+        // Mini rack diagram
+        html += `
+            <rect x="${x - 25}" y="${rackY - 40}" width="50" height="70" rx="3" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+        `;
+        
+        // Draw servers inside rack (simplified)
+        const serversToDrawInRack = Math.min(r.serversPerRack, 8);
+        const serverHeight = 6;
+        const serverGap = 1;
+        for (let srv = 0; srv < serversToDrawInRack; srv++) {
+            const srvY = rackY - 35 + srv * (serverHeight + serverGap);
+            html += `<rect x="${x - 20}" y="${srvY}" width="40" height="${serverHeight}" rx="1" fill="#0891b2"/>`;
+        }
+        if (r.serversPerRack > 8) {
+            html += `<text x="${x}" y="${rackY + 20}" text-anchor="middle" fill="#64748b" font-size="7">+${r.serversPerRack - 8}</text>`;
+        }
+        
+        // Rack label
+        html += `<text x="${x}" y="${rackY + 40}" text-anchor="middle" fill="#94a3b8" font-size="8">R${rack + 1}</text>`;
+        
+        // Connect rack to its ToRs (dual-homed)
+        if (torIdx < torsToShow) {
+            const tor1X = torStartX + torIdx * 70;
+            const tor2X = torStartX + (torIdx + 1) * 70;
+            html += `<line x1="${x}" y1="${rackY - 40}" x2="${tor1X}" y2="${torY + 28}" stroke="#0891b2" stroke-width="1.5" opacity="0.6"/>`;
+            if (torIdx + 1 < torsToShow) {
+                html += `<line x1="${x}" y1="${rackY - 40}" x2="${tor2X}" y2="${torY + 28}" stroke="#0891b2" stroke-width="1.5" opacity="0.6"/>`;
+            }
+        }
+    }
+    if (r.totalRacks > racksToShow) {
+        html += `<text x="${rackStartX + racksToShow * 65}" y="${rackY}" fill="#0891b2" font-size="11">+${r.totalRacks - racksToShow} racks</text>`;
+    }
+    
+    // === LEGEND ===
+    html += `
+        <g transform="translate(30, ${height - 35})">
+            <rect x="0" y="0" width="15" height="12" rx="2" fill="#9333ea"/>
+            <text x="20" y="10" fill="#94a3b8" font-size="9">Super Spine</text>
+            <rect x="100" y="0" width="15" height="12" rx="2" fill="#ea580c"/>
+            <text x="120" y="10" fill="#94a3b8" font-size="9">Spine</text>
+            <rect x="180" y="0" width="15" height="12" rx="2" fill="#059669"/>
+            <text x="200" y="10" fill="#94a3b8" font-size="9">ToR</text>
+            <rect x="240" y="0" width="15" height="12" rx="2" fill="#0891b2"/>
+            <text x="260" y="10" fill="#94a3b8" font-size="9">Server</text>
+        </g>
+        <text x="${width - 30}" y="${height - 20}" text-anchor="end" fill="#64748b" font-size="9">
+            ${hasSuperSpine ? r.superSpineSwitches + ' Super + ' : ''}${r.spineSwitches} Spine + ${r.torSwitches} ToR
+        </text>
     `;
+    
+    html += '</svg>';
+    container.innerHTML = html;
 }
 
 function render3DDataCenter() {
