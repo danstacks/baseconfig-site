@@ -3029,13 +3029,13 @@ function renderNetworkTopology() {
     
     // SVG dimensions
     const width = 900;
-    const height = hasSuperSpine ? 520 : 450;
+    const height = hasSuperSpine ? 580 : 520;
     
-    // Layer Y positions (bottom to top)
-    const rackY = height - 80;
-    const torY = rackY - 90;
-    const spineY = torY - 80;
-    const superSpineY = spineY - 80;
+    // Layer Y positions (bottom to top) - more spacing to prevent overlap
+    const rackY = height - 120;
+    const torY = rackY - 100;
+    const spineY = torY - 85;
+    const superSpineY = spineY - 85;
     
     let html = `<svg viewBox="0 0 ${width} ${height}" class="w-full">
         <!-- Title -->
@@ -3177,7 +3177,7 @@ function renderNetworkTopology() {
     
     // === LEGEND ===
     html += `
-        <g transform="translate(30, ${height - 35})">
+        <g transform="translate(30, ${height - 30})">
             <rect x="0" y="0" width="15" height="12" rx="2" fill="#9333ea"/>
             <text x="20" y="10" fill="#94a3b8" font-size="9">Super Spine</text>
             <rect x="100" y="0" width="15" height="12" rx="2" fill="#ea580c"/>
@@ -3187,7 +3187,7 @@ function renderNetworkTopology() {
             <rect x="240" y="0" width="15" height="12" rx="2" fill="#0891b2"/>
             <text x="260" y="10" fill="#94a3b8" font-size="9">Server</text>
         </g>
-        <text x="${width - 30}" y="${height - 20}" text-anchor="end" fill="#64748b" font-size="9">
+        <text x="${width - 30}" y="${height - 15}" text-anchor="end" fill="#64748b" font-size="9">
             ${hasSuperSpine ? r.superSpineSwitches + ' Super + ' : ''}${r.spineSwitches} Spine + ${r.torSwitches} ToR
         </text>
     `;
