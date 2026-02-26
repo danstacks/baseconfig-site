@@ -268,9 +268,19 @@
 
                 <!-- Network Topology Diagram -->
                 <div class="card rounded-xl p-6 lg:col-span-2">
-                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <i data-lucide="network" class="w-5 h-5 text-green-400"></i>Network Topology
-                    </h2>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <i data-lucide="network" class="w-5 h-5 text-green-400"></i>Network Topology
+                        </h2>
+                        <div class="flex gap-2">
+                            <button onclick="exportToDrawio()" class="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-1">
+                                <i data-lucide="share-2" class="w-4 h-4"></i>Export to Draw.io
+                            </button>
+                            <button onclick="exportConfigTopologyAsPNG()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-1">
+                                <i data-lucide="image" class="w-4 h-4"></i>Export PNG
+                            </button>
+                        </div>
+                    </div>
                     <div id="network-topology-diagram" class="bg-slate-900 rounded-lg p-4 overflow-x-auto">
                         <!-- Will be populated by JavaScript -->
                     </div>
