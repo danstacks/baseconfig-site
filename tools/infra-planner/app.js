@@ -3019,10 +3019,12 @@ function renderNetworkTopology() {
     
     // Calculate how many items to show at each layer
     const racksPerUnit = r.racksPerScalableUnit || 1;
-    const unitsToShow = Math.min(r.scalableUnits, 6); // Show up to 6 scalable units
+    // Limit units based on layout to keep diagram readable
+    const maxUnits = isSuperSplit ? 2 : (isSplit ? 3 : 4); // Super split shows fewer units due to 4 racks each
+    const unitsToShow = Math.min(r.scalableUnits, maxUnits);
     const racksToShow = unitsToShow * racksPerUnit;
-    const torsToShow = unitsToShow * 2; // 2 ToRs per unit
-    const spinesToShow = Math.min(r.spineSwitches, 8);
+    const torsToShow = Math.min(unitsToShow * 2, 8); // Max 8 ToRs shown
+    const spinesToShow = Math.min(r.spineSwitches, 6);
     const superSpinesToShow = hasSuperSpine ? Math.min(r.superSpineSwitches, 4) : 0;
     
     // SVG dimensions
