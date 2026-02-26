@@ -3011,246 +3011,169 @@ function renderNetworkTopology() {
     const r = calculationResults;
     const layout = r.inputs.rackLayout || 'single';
     const isSuperSplit = layout === 'supersplit';
+    const isSplit = layout === 'split';
     
-    // Super Split: 2 ToRs serve 4 racks (2 ToR racks + 2 server-only racks)
-    // Split: 1 ToR per rack across 2 racks
-    // Single: 2 ToRs in 1 rack
-    const racksPerSU = layout === 'single' ? 1 : (layout === 'split' ? 2 : 4);
+    // Get actual counts from calculations
+    const serverCount = r.inputs.totalServers || 0;
+    const rackCount = r.totalRacks || 1;
+    const unitCount = r.scalableUnits || 1;
+    const racksPerSU = r.racksPerScalableUnit || 1;
     const serversPerRack = r.serversPerRack || 20;
-    
-    let html = `<svg viewBox="0 0 800 500" class="w-full h-full">
-        <defs>
-            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
-            </marker>
-        </defs>
-    `;
-    
-    const torY = 80;
-    
-    // Get spine info from calculationResults
+    const torCount = r.torSwitches || 2;
     const spineCount = r.spineSwitches || 2;
     const hasSuperSpine = r.needsSuperSpine || false;
     const superSpineCount = r.superSpineSwitches || 0;
+    const networkSpeed = selectedNetworkSpeed === '100g' ? '100G' : '25G';
     
-    // Adjust Y positions based on whether we have super spine
-    const superSpineY = 30;
-    const spineY = hasSuperSpine ? 80 : 40;
-    const torY2 = hasSuperSpine ? 150 : 120;
-    const rackY = hasSuperSpine ? 250 : 220;
+    // Y positions - adjust based on super spine presence
+    const superSpineY = 60;
+    const spineY = hasSuperSpine ? 130 : 70;
+    const torY = hasSuperSpine ? 210 : 150;
+    const rackY = hasSuperSpine ? 300 : 240;
     
-    if (isSuperSplit) {
-        // Super Split: 2 ToRs at top, connected to 4 racks below
-        html += `<text x="400" y="20" text-anchor="middle" fill="#f97316" font-size="14" font-weight="bold">Super Split: 2 ToRs → 4 Racks</text>`;
+    // Layout label
+    const layoutLabel = isSuperSplit ? 'Super Split (4 racks/unit)' : isSplit ? 'Split (2 racks/unit)' : 'Single Rack';
+    
+    let html = `<svg viewBox="0 0 800 480" class="w-full h-full">
+        <defs>
+            <linearGradient id="ssGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#9333ea"/><stop offset="100%" style="stop-color:#7c3aed"/>
+            </linearGradient>
+            <linearGradient id="spGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#ea580c"/><stop offset="100%" style="stop-color:#c2410c"/>
+            </linearGradient>
+            <linearGradient id="torGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#a855f7"/><stop offset="100%" style="stop-color:#7c3aed"/>
+            </linearGradient>
+            <linearGradient id="srvGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#0891b2"/><stop offset="100%" style="stop-color:#0e7490"/>
+            </linearGradient>
+        </defs>
         
-        // Draw Super Spine layer if needed
-        if (hasSuperSpine) {
-            html += `<text x="400" y="${superSpineY + 15}" text-anchor="middle" fill="#a855f7" font-size="10">Super Spine (${superSpineCount})</text>`;
-            const superSpineWidth = Math.min(superSpineCount, 4) * 70;
-            const superSpineStartX = 400 - superSpineWidth / 2 + 35;
-            for (let i = 0; i < Math.min(superSpineCount, 4); i++) {
-                const x = superSpineStartX + i * 70;
-                html += `<rect x="${x - 25}" y="${superSpineY + 20}" width="50" height="25" rx="4" fill="#9333ea"/>`;
-                html += `<text x="${x}" y="${superSpineY + 36}" text-anchor="middle" fill="white" font-size="8">SS${i + 1}</text>`;
-            }
+        <!-- Title -->
+        <text x="400" y="25" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="bold">${networkSpeed} Network Topology - ${layoutLabel}</text>
+        <text x="400" y="45" text-anchor="middle" fill="#94a3b8" font-size="11">${serverCount.toLocaleString()} Servers | ${rackCount.toLocaleString()} Racks | ${unitCount.toLocaleString()} Scalable Units</text>
+    `;
+    
+    // === SUPER SPINE LAYER ===
+    if (hasSuperSpine && superSpineCount > 0) {
+        html += `<text x="400" y="${superSpineY - 5}" text-anchor="middle" fill="#a855f7" font-size="11" font-weight="bold">Super Spine Layer (${superSpineCount})</text>`;
+        const ssToShow = Math.min(superSpineCount, 6);
+        const ssWidth = ssToShow * 70;
+        const ssStartX = 400 - ssWidth / 2 + 35;
+        for (let i = 0; i < ssToShow; i++) {
+            const x = ssStartX + i * 70;
+            html += `<rect x="${x - 30}" y="${superSpineY}" width="60" height="30" rx="4" fill="url(#ssGrad)"/>`;
+            html += `<text x="${x}" y="${superSpineY + 19}" text-anchor="middle" fill="white" font-size="9" font-weight="bold">SS${i + 1}</text>`;
         }
-        
-        // Draw Spine layer
-        html += `<text x="400" y="${spineY + 5}" text-anchor="middle" fill="#ea580c" font-size="10">Spine (${spineCount})</text>`;
-        const spineWidth = Math.min(spineCount, 6) * 60;
-        const spineStartX = 400 - spineWidth / 2 + 30;
-        for (let i = 0; i < Math.min(spineCount, 6); i++) {
-            const x = spineStartX + i * 60;
-            html += `<rect x="${x - 25}" y="${spineY + 10}" width="50" height="25" rx="4" fill="#ea580c"/>`;
-            html += `<text x="${x}" y="${spineY + 26}" text-anchor="middle" fill="white" font-size="8">Sp${i + 1}</text>`;
-            
-            // Connect to super spine if present
-            if (hasSuperSpine) {
-                for (let j = 0; j < Math.min(superSpineCount, 4); j++) {
-                    const ssX = (400 - Math.min(superSpineCount, 4) * 70 / 2 + 35) + j * 70;
-                    html += `<line x1="${x}" y1="${spineY + 10}" x2="${ssX}" y2="${superSpineY + 45}" stroke="#a855f7" stroke-width="1" opacity="0.4"/>`;
-                }
-            }
-        }
-        
-        // Draw 2 ToRs centered
-        html += `<text x="400" y="${torY2 - 10}" text-anchor="middle" fill="#a855f7" font-size="10">ToR (2 per unit)</text>`;
-        html += `<rect x="320" y="${torY2}" width="60" height="30" rx="4" fill="#a855f7"/>`;
-        html += `<text x="350" y="${torY2 + 19}" text-anchor="middle" fill="white" font-size="10" font-weight="bold">ToR 1</text>`;
-        html += `<rect x="420" y="${torY2}" width="60" height="30" rx="4" fill="#a855f7"/>`;
-        html += `<text x="450" y="${torY2 + 19}" text-anchor="middle" fill="white" font-size="10" font-weight="bold">ToR 2</text>`;
-        
-        // Connect ToRs to Spines
-        for (let i = 0; i < Math.min(spineCount, 6); i++) {
-            const spineX = spineStartX + i * 60;
-            html += `<line x1="350" y1="${torY2}" x2="${spineX}" y2="${spineY + 35}" stroke="#64748b" stroke-width="1" opacity="0.5"/>`;
-            html += `<line x1="450" y1="${torY2}" x2="${spineX}" y2="${spineY + 35}" stroke="#64748b" stroke-width="1" opacity="0.5"/>`;
-        }
-        
-        // Draw 4 racks
-        const rackPositions = [200, 320, 480, 600];
-        const rackLabels = ['ToR Rack 1', 'ToR Rack 2', 'Server Rack 1', 'Server Rack 2'];
-        const rackColors = ['#475569', '#475569', '#f97316', '#f97316'];
-        
-        rackPositions.forEach((x, i) => {
-            const isServerOnly = i >= 2;
-            html += `<rect x="${x - 45}" y="${rackY}" width="90" height="50" rx="4" fill="none" stroke="${rackColors[i]}" stroke-width="2" ${isServerOnly ? 'stroke-dasharray="4"' : ''}/>`;
-            html += `<text x="${x}" y="${rackY + 62}" text-anchor="middle" fill="${isServerOnly ? '#f97316' : '#94a3b8'}" font-size="9">${rackLabels[i]}</text>`;
-            
-            // Draw servers inside rack
-            for (let s = 0; s < 3; s++) {
-                html += `<rect x="${x - 30 + s * 22}" y="${rackY + 15}" width="18" height="25" rx="2" fill="#0891b2"/>`;
-            }
-            
-            // Connection lines from ToRs to racks
-            html += `<line x1="350" y1="${torY2 + 30}" x2="${x}" y2="${rackY}" stroke="#64748b" stroke-width="1.5"/>`;
-            html += `<line x1="450" y1="${torY2 + 30}" x2="${x}" y2="${rackY}" stroke="#64748b" stroke-width="1.5"/>`;
-        });
-        
-        html += `<text x="400" y="${rackY + 85}" text-anchor="middle" fill="#94a3b8" font-size="10">All servers dual-homed to both ToRs</text>`;
-    } else {
-        // Original logic for single/split - add spine layer
-        const torsPerRack = layout === 'split' ? 1 : 2;
-        
-        // Draw Super Spine layer if needed
-        if (hasSuperSpine) {
-            html += `<text x="400" y="${superSpineY + 15}" text-anchor="middle" fill="#a855f7" font-size="10">Super Spine (${superSpineCount})</text>`;
-            const superSpineWidth = Math.min(superSpineCount, 4) * 70;
-            const superSpineStartX = 400 - superSpineWidth / 2 + 35;
-            for (let i = 0; i < Math.min(superSpineCount, 4); i++) {
-                const x = superSpineStartX + i * 70;
-                html += `<rect x="${x - 25}" y="${superSpineY + 20}" width="50" height="25" rx="4" fill="#9333ea"/>`;
-                html += `<text x="${x}" y="${superSpineY + 36}" text-anchor="middle" fill="white" font-size="8">SS${i + 1}</text>`;
-            }
-        }
-        
-        // Draw Spine layer
-        html += `<text x="400" y="${spineY + 5}" text-anchor="middle" fill="#ea580c" font-size="10">Spine (${spineCount})</text>`;
-        const spineWidth = Math.min(spineCount, 6) * 60;
-        const spineStartX = 400 - spineWidth / 2 + 30;
-        for (let i = 0; i < Math.min(spineCount, 6); i++) {
-            const x = spineStartX + i * 60;
-            html += `<rect x="${x - 25}" y="${spineY + 10}" width="50" height="25" rx="4" fill="#ea580c"/>`;
-            html += `<text x="${x}" y="${spineY + 26}" text-anchor="middle" fill="white" font-size="8">Sp${i + 1}</text>`;
-            
-            // Connect to super spine if present
-            if (hasSuperSpine) {
-                for (let j = 0; j < Math.min(superSpineCount, 4); j++) {
-                    const ssX = (400 - Math.min(superSpineCount, 4) * 70 / 2 + 35) + j * 70;
-                    html += `<line x1="${x}" y1="${spineY + 10}" x2="${ssX}" y2="${superSpineY + 45}" stroke="#a855f7" stroke-width="1" opacity="0.4"/>`;
-                }
-            }
-        }
-        
-        // ToR layer label
-        const torLabel = layout === 'split' ? 'ToR Layer (1 per rack, cross-cabled)' : 'ToR Layer (2 per rack)';
-        html += `<text x="400" y="${torY2 - 10}" text-anchor="middle" fill="#a855f7" font-size="10">${torLabel}</text>`;
-        
-        // Calculate ToR positions grouped by rack
-        const rackWidth = 140;
-        const totalWidth = racksPerSU * rackWidth;
-        const startX = 400 - totalWidth / 2;
-        
-        const torPositions = [];
-        for (let rack = 0; rack < racksPerSU; rack++) {
-            const rackCenterX = startX + rack * rackWidth + rackWidth / 2;
-            if (layout === 'split') {
-                torPositions.push({ x: rackCenterX, rack: rack, torInRack: 0 });
-            } else {
-                torPositions.push({ x: rackCenterX - 30, rack: rack, torInRack: 0 });
-                torPositions.push({ x: rackCenterX + 30, rack: rack, torInRack: 1 });
-            }
-        }
-        
-        // Draw rack groupings
-        for (let rack = 0; rack < racksPerSU; rack++) {
-            const rackCenterX = startX + rack * rackWidth + rackWidth / 2;
-            html += `<rect x="${rackCenterX - 65}" y="${torY2}" width="130" height="45" rx="4" fill="none" stroke="#475569" stroke-dasharray="4"/>`;
-            html += `<text x="${rackCenterX}" y="${torY2 + 55}" text-anchor="middle" fill="#64748b" font-size="9">Rack ${rack + 1}</text>`;
-        }
-        
-        // Draw ToRs
-        torPositions.forEach((tor, i) => {
-            html += `<rect x="${tor.x - 22}" y="${torY2 + 10}" width="44" height="25" rx="4" fill="#a855f7"/>`;
-            html += `<text x="${tor.x}" y="${torY2 + 26}" text-anchor="middle" fill="white" font-size="8" font-weight="bold">ToR ${i + 1}</text>`;
-            
-            // Connect ToR to spines
-            for (let s = 0; s < Math.min(spineCount, 6); s++) {
-                const spineX = spineStartX + s * 60;
-                html += `<line x1="${tor.x}" y1="${torY2 + 10}" x2="${spineX}" y2="${spineY + 35}" stroke="#64748b" stroke-width="1" opacity="0.4"/>`;
-            }
-        });
-        
-        // Server layer - group by rack
-        html += `<text x="400" y="${rackY - 10}" text-anchor="middle" fill="#0891b2" font-size="10">Server Layer (${serversPerRack} per rack)</text>`;
-        const serverY = rackY;
-        
-        // Show servers grouped by rack
-        const maxServersToShow = Math.min(serversPerRack, 8);
-        
-        for (let rack = 0; rack < racksPerSU; rack++) {
-            const rackCenterX = startX + rack * rackWidth + rackWidth / 2;
-            const serverWidth = Math.min(120 / maxServersToShow, 18);
-            const serverGap = 2;
-            const serversWidth = maxServersToShow * (serverWidth + serverGap);
-            const serverStartX = rackCenterX - serversWidth / 2;
-            
-            for (let s = 0; s < maxServersToShow; s++) {
-                const x = serverStartX + s * (serverWidth + serverGap) + serverWidth / 2;
-                const serverNum = rack * serversPerRack + s + 1;
-                
-                html += `<rect x="${x - serverWidth/2}" y="${serverY}" width="${serverWidth}" height="18" rx="2" fill="#06b6d4"/>`;
-                if (serverWidth > 14) {
-                    html += `<text x="${x}" y="${serverY + 12}" text-anchor="middle" fill="white" font-size="7">${serverNum}</text>`;
-                }
-                
-                if (layout === 'split') {
-                    const tor1X = torPositions[0].x;
-                    const tor2X = torPositions[1].x;
-                    html += `<line x1="${x}" y1="${serverY}" x2="${tor1X}" y2="${torY2 + 35}" stroke="#64748b" stroke-width="1" opacity="0.3"/>`;
-                    html += `<line x1="${x}" y1="${serverY}" x2="${tor2X}" y2="${torY2 + 35}" stroke="#64748b" stroke-width="1" opacity="0.3"/>`;
-                } else {
-                    const tor1X = torPositions[rack * 2].x;
-                    const tor2X = torPositions[rack * 2 + 1].x;
-                    html += `<line x1="${x}" y1="${serverY}" x2="${tor1X}" y2="${torY2 + 35}" stroke="#64748b" stroke-width="1" opacity="0.3"/>`;
-                    html += `<line x1="${x}" y1="${serverY}" x2="${tor2X}" y2="${torY2 + 35}" stroke="#64748b" stroke-width="1" opacity="0.3"/>`;
-                }
-            }
-            
-            if (serversPerRack > maxServersToShow) {
-                html += `<text x="${rackCenterX}" y="${serverY + 35}" text-anchor="middle" fill="#64748b" font-size="9">+${serversPerRack - maxServersToShow} more</text>`;
-            }
+        if (superSpineCount > 6) {
+            html += `<text x="${ssStartX + 6 * 70}" y="${superSpineY + 19}" text-anchor="middle" fill="#a855f7" font-size="10">+${superSpineCount - 6}</text>`;
         }
     }
     
-    // Legend
+    // === SPINE LAYER ===
+    html += `<text x="400" y="${spineY - 5}" text-anchor="middle" fill="#ea580c" font-size="11" font-weight="bold">Spine Layer (${spineCount})</text>`;
+    const spToShow = Math.min(spineCount, 8);
+    const spWidth = spToShow * 60;
+    const spStartX = 400 - spWidth / 2 + 30;
+    for (let i = 0; i < spToShow; i++) {
+        const x = spStartX + i * 60;
+        html += `<rect x="${x - 25}" y="${spineY}" width="50" height="28" rx="4" fill="url(#spGrad)"/>`;
+        html += `<text x="${x}" y="${spineY + 18}" text-anchor="middle" fill="white" font-size="9" font-weight="bold">Sp${i + 1}</text>`;
+        
+        // Connect to super spine
+        if (hasSuperSpine) {
+            const ssToShow = Math.min(superSpineCount, 6);
+            const ssStartX = 400 - (ssToShow * 70) / 2 + 35;
+            for (let j = 0; j < ssToShow; j++) {
+                const ssX = ssStartX + j * 70;
+                html += `<line x1="${x}" y1="${spineY}" x2="${ssX}" y2="${superSpineY + 30}" stroke="#a855f7" stroke-width="1" opacity="0.3"/>`;
+            }
+        }
+    }
+    if (spineCount > 8) {
+        html += `<text x="${spStartX + 8 * 60}" y="${spineY + 18}" text-anchor="middle" fill="#ea580c" font-size="10">+${spineCount - 8}</text>`;
+    }
+    
+    // === TOR LAYER ===
+    html += `<text x="400" y="${torY - 5}" text-anchor="middle" fill="#a855f7" font-size="11" font-weight="bold">ToR Layer (${torCount})</text>`;
+    const torToShow = Math.min(torCount, 10);
+    const torWidth = torToShow * 55;
+    const torStartX = 400 - torWidth / 2 + 27;
+    for (let i = 0; i < torToShow; i++) {
+        const x = torStartX + i * 55;
+        html += `<rect x="${x - 22}" y="${torY}" width="44" height="25" rx="4" fill="url(#torGrad)"/>`;
+        html += `<text x="${x}" y="${torY + 16}" text-anchor="middle" fill="white" font-size="8" font-weight="bold">ToR${i + 1}</text>`;
+        
+        // Connect to spines
+        for (let s = 0; s < spToShow; s++) {
+            const spX = spStartX + s * 60;
+            html += `<line x1="${x}" y1="${torY}" x2="${spX}" y2="${spineY + 28}" stroke="#64748b" stroke-width="1" opacity="0.2"/>`;
+        }
+    }
+    if (torCount > 10) {
+        html += `<text x="${torStartX + 10 * 55}" y="${torY + 16}" text-anchor="middle" fill="#a855f7" font-size="10">+${torCount - 10}</text>`;
+    }
+    
+    // === SERVER/RACK LAYER ===
+    html += `<text x="400" y="${rackY - 5}" text-anchor="middle" fill="#0891b2" font-size="11" font-weight="bold">Server Layer (${serverCount.toLocaleString()} servers in ${rackCount} racks)</text>`;
+    
+    // Show representative racks based on layout
+    const racksToShow = isSuperSplit ? 4 : (isSplit ? 2 : 1);
+    const rackWidth = isSuperSplit ? 90 : 120;
+    const totalRackWidth = racksToShow * (rackWidth + 20);
+    const rackStartX = 400 - totalRackWidth / 2 + rackWidth / 2;
+    
+    for (let i = 0; i < racksToShow; i++) {
+        const x = rackStartX + i * (rackWidth + 20);
+        const isServerOnly = isSuperSplit && i >= 2;
+        const rackLabel = isSuperSplit 
+            ? (isServerOnly ? `Srv Rack ${i - 1}` : `ToR Rack ${i + 1}`)
+            : `Rack ${i + 1}`;
+        
+        // Rack outline
+        html += `<rect x="${x - rackWidth/2}" y="${rackY}" width="${rackWidth}" height="60" rx="4" fill="none" stroke="${isServerOnly ? '#f97316' : '#475569'}" stroke-width="2" ${isServerOnly ? 'stroke-dasharray="4"' : ''}/>`;
+        html += `<text x="${x}" y="${rackY + 72}" text-anchor="middle" fill="${isServerOnly ? '#f97316' : '#94a3b8'}" font-size="9">${rackLabel}</text>`;
+        
+        // Servers inside rack
+        const srvPerRow = isSuperSplit ? 3 : 4;
+        for (let s = 0; s < srvPerRow; s++) {
+            const srvX = x - (srvPerRow * 18) / 2 + s * 18 + 9;
+            html += `<rect x="${srvX - 7}" y="${rackY + 10}" width="14" height="35" rx="2" fill="url(#srvGrad)"/>`;
+        }
+        
+        // Connect to ToRs
+        const torIdx = Math.min(i, torToShow - 1);
+        const torX = torStartX + torIdx * 55;
+        html += `<line x1="${x}" y1="${rackY}" x2="${torX}" y2="${torY + 25}" stroke="#64748b" stroke-width="1.5" opacity="0.4"/>`;
+    }
+    
+    // Show "more racks" indicator
+    if (rackCount > racksToShow) {
+        html += `<text x="400" y="${rackY + 90}" text-anchor="middle" fill="#64748b" font-size="10">Showing 1 scalable unit (${racksToShow} racks) of ${unitCount.toLocaleString()} units total</text>`;
+    }
+    
+    // === LEGEND ===
     html += `
-        <g transform="translate(20, 420)">
-            <text x="0" y="0" fill="#94a3b8" font-size="12" font-weight="bold">Legend</text>
-            <rect x="0" y="10" width="20" height="12" rx="2" fill="#9333ea"/>
-            <text x="25" y="20" fill="#94a3b8" font-size="10">Super Spine</text>
-            <rect x="110" y="10" width="20" height="12" rx="2" fill="#ea580c"/>
-            <text x="135" y="20" fill="#94a3b8" font-size="10">Spine</text>
-            <rect x="180" y="10" width="20" height="12" rx="2" fill="#a855f7"/>
-            <text x="205" y="20" fill="#94a3b8" font-size="10">ToR</text>
-            <rect x="240" y="10" width="20" height="12" rx="2" fill="#06b6d4"/>
-            <text x="265" y="20" fill="#94a3b8" font-size="10">Server</text>
+        <g transform="translate(20, 430)">
+            <text x="0" y="0" fill="#94a3b8" font-size="11" font-weight="bold">Legend</text>
+            <rect x="0" y="10" width="18" height="12" rx="2" fill="#9333ea"/>
+            <text x="22" y="20" fill="#94a3b8" font-size="9">Super Spine</text>
+            <rect x="95" y="10" width="18" height="12" rx="2" fill="#ea580c"/>
+            <text x="117" y="20" fill="#94a3b8" font-size="9">Spine</text>
+            <rect x="160" y="10" width="18" height="12" rx="2" fill="#a855f7"/>
+            <text x="182" y="20" fill="#94a3b8" font-size="9">ToR</text>
+            <rect x="210" y="10" width="18" height="12" rx="2" fill="#0891b2"/>
+            <text x="232" y="20" fill="#94a3b8" font-size="9">Server</text>
         </g>
     `;
     
-    // Stats - use values from calculationResults
-    const totalTors = r.torSwitches || 2;
-    const torsPerUnit = 2; // Always 2 ToRs per scalable unit
-    const totalServers = r.inputs.totalServers || 0;
-    const spines = r.spineSwitches || 2;
-    
+    // === STATS ===
     html += `
-        <g transform="translate(520, 420)">
-            <text x="0" y="0" fill="#94a3b8" font-size="12" font-weight="bold">Topology Stats</text>
-            <text x="0" y="20" fill="#64748b" font-size="10">Racks/Unit: ${racksPerSU}</text>
-            <text x="0" y="35" fill="#64748b" font-size="10">ToRs: ${totalTors} (${torsPerUnit}/unit)</text>
-            <text x="0" y="50" fill="#64748b" font-size="10">Servers: ${totalServers} (${serversPerRack}/rack)</text>
-            <text x="0" y="65" fill="#64748b" font-size="10">Spines: ${spines}</text>
+        <g transform="translate(520, 430)">
+            <text x="0" y="0" fill="#94a3b8" font-size="11" font-weight="bold">Topology Stats</text>
+            <text x="0" y="18" fill="#64748b" font-size="9">${hasSuperSpine ? `Super Spines: ${superSpineCount} | ` : ''}Spines: ${spineCount} | ToRs: ${torCount}</text>
+            <text x="0" y="33" fill="#64748b" font-size="9">Racks: ${rackCount} (${racksPerSU}/unit) | Servers/Rack: ${serversPerRack}</text>
         </g>
     `;
     
