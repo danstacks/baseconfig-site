@@ -1550,7 +1550,7 @@ function updateNetworkTopologyDiagram() {
     if (hasSuperSpine) {
         const ssWidth = superSpinesToShow * 90;
         const ssStartX = (width - ssWidth) / 2 + 45;
-        html += `<text x="${width/2}" y="${superSpineY - 15}" text-anchor="middle" fill="#a855f7" font-size="12" font-weight="bold">Super Spine Layer (${r.superSpineSwitches})</text>`;
+        html += `<text x="50" y="${superSpineY + 10}" fill="#a855f7" font-size="11" font-weight="bold">Super Spine: ${r.superSpineSwitches}</text>`;
         for (let s = 0; s < superSpinesToShow; s++) {
             const x = ssStartX + s * 90;
             html += `<rect x="${x - 35}" y="${superSpineY}" width="70" height="35" rx="4" fill="#9333ea" stroke="#a855f7" stroke-width="2"/>`;
@@ -1564,7 +1564,7 @@ function updateNetworkTopologyDiagram() {
     // Spine Layer
     const spineWidth = spinesToShow * 80;
     const spineStartX = (width - spineWidth) / 2 + 40;
-    html += `<text x="${width/2}" y="${spineY - 15}" text-anchor="middle" fill="#f97316" font-size="12" font-weight="bold">Spine Layer (${r.spineSwitches})</text>`;
+    html += `<text x="50" y="${spineY + 10}" fill="#f97316" font-size="11" font-weight="bold">Spine: ${r.spineSwitches}</text>`;
     for (let s = 0; s < spinesToShow; s++) {
         const x = spineStartX + s * 80;
         html += `<rect x="${x - 30}" y="${spineY}" width="60" height="30" rx="4" fill="#ea580c" stroke="#f97316" stroke-width="2"/>`;
@@ -1585,7 +1585,7 @@ function updateNetworkTopologyDiagram() {
     // ToR Layer
     const torWidth = torsToShow * 70;
     const torStartX = (width - torWidth) / 2 + 35;
-    html += `<text x="${width/2}" y="${torY - 15}" text-anchor="middle" fill="#10b981" font-size="12" font-weight="bold">ToR Layer (${r.torSwitches})</text>`;
+    html += `<text x="50" y="${torY + 10}" fill="#10b981" font-size="11" font-weight="bold">ToR: ${r.torSwitches}</text>`;
     for (let t = 0; t < torsToShow; t++) {
         const x = torStartX + t * 70;
         html += `<rect x="${x - 28}" y="${torY}" width="56" height="28" rx="4" fill="#059669" stroke="#10b981" stroke-width="2"/>`;
@@ -3070,7 +3070,7 @@ function renderNetworkTopology() {
         const ssWidth = superSpinesToShow * 90;
         const ssStartX = (width - ssWidth) / 2 + 45;
         
-        html += `<text x="${width/2}" y="${superSpineY - 15}" text-anchor="middle" fill="#a855f7" font-size="12" font-weight="bold">Super Spine Layer (${r.superSpineSwitches})</text>`;
+        html += `<text x="50" y="${superSpineY + 10}" fill="#a855f7" font-size="11" font-weight="bold">Super Spine: ${r.superSpineSwitches}</text>`;
         
         for (let s = 0; s < superSpinesToShow; s++) {
             const x = ssStartX + s * 90;
@@ -3088,7 +3088,7 @@ function renderNetworkTopology() {
     const spineWidth = spinesToShow * 80;
     const spineStartX = (width - spineWidth) / 2 + 40;
     
-    html += `<text x="${width/2}" y="${spineY - 15}" text-anchor="middle" fill="#f97316" font-size="12" font-weight="bold">Spine Layer (${r.spineSwitches})</text>`;
+    html += `<text x="50" y="${spineY + 10}" fill="#f97316" font-size="11" font-weight="bold">Spine: ${r.spineSwitches}</text>`;
     
     for (let s = 0; s < spinesToShow; s++) {
         const x = spineStartX + s * 80;
@@ -3115,7 +3115,7 @@ function renderNetworkTopology() {
     const torWidth = torsToShow * 70;
     const torStartX = (width - torWidth) / 2 + 35;
     
-    html += `<text x="${width/2}" y="${torY - 15}" text-anchor="middle" fill="#10b981" font-size="12" font-weight="bold">ToR Layer (${r.torSwitches})</text>`;
+    html += `<text x="50" y="${torY + 10}" fill="#10b981" font-size="11" font-weight="bold">ToR: ${r.torSwitches}</text>`;
     
     for (let t = 0; t < torsToShow; t++) {
         const x = torStartX + t * 70;
