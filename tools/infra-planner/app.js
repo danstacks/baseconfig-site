@@ -3028,43 +3028,123 @@ function renderNetworkTopology() {
     
     const torY = 80;
     
+    // Get spine info from calculationResults
+    const spineCount = r.spineSwitches || 2;
+    const hasSuperSpine = r.needsSuperSpine || false;
+    const superSpineCount = r.superSpineSwitches || 0;
+    
+    // Adjust Y positions based on whether we have super spine
+    const superSpineY = 30;
+    const spineY = hasSuperSpine ? 80 : 40;
+    const torY2 = hasSuperSpine ? 150 : 120;
+    const rackY = hasSuperSpine ? 250 : 220;
+    
     if (isSuperSplit) {
         // Super Split: 2 ToRs at top, connected to 4 racks below
-        html += `<text x="400" y="30" text-anchor="middle" fill="#f97316" font-size="14" font-weight="bold">Super Split: 2 ToRs → 4 Racks</text>`;
+        html += `<text x="400" y="20" text-anchor="middle" fill="#f97316" font-size="14" font-weight="bold">Super Split: 2 ToRs → 4 Racks</text>`;
+        
+        // Draw Super Spine layer if needed
+        if (hasSuperSpine) {
+            html += `<text x="400" y="${superSpineY + 15}" text-anchor="middle" fill="#a855f7" font-size="10">Super Spine (${superSpineCount})</text>`;
+            const superSpineWidth = Math.min(superSpineCount, 4) * 70;
+            const superSpineStartX = 400 - superSpineWidth / 2 + 35;
+            for (let i = 0; i < Math.min(superSpineCount, 4); i++) {
+                const x = superSpineStartX + i * 70;
+                html += `<rect x="${x - 25}" y="${superSpineY + 20}" width="50" height="25" rx="4" fill="#9333ea"/>`;
+                html += `<text x="${x}" y="${superSpineY + 36}" text-anchor="middle" fill="white" font-size="8">SS${i + 1}</text>`;
+            }
+        }
+        
+        // Draw Spine layer
+        html += `<text x="400" y="${spineY + 5}" text-anchor="middle" fill="#ea580c" font-size="10">Spine (${spineCount})</text>`;
+        const spineWidth = Math.min(spineCount, 6) * 60;
+        const spineStartX = 400 - spineWidth / 2 + 30;
+        for (let i = 0; i < Math.min(spineCount, 6); i++) {
+            const x = spineStartX + i * 60;
+            html += `<rect x="${x - 25}" y="${spineY + 10}" width="50" height="25" rx="4" fill="#ea580c"/>`;
+            html += `<text x="${x}" y="${spineY + 26}" text-anchor="middle" fill="white" font-size="8">Sp${i + 1}</text>`;
+            
+            // Connect to super spine if present
+            if (hasSuperSpine) {
+                for (let j = 0; j < Math.min(superSpineCount, 4); j++) {
+                    const ssX = (400 - Math.min(superSpineCount, 4) * 70 / 2 + 35) + j * 70;
+                    html += `<line x1="${x}" y1="${spineY + 10}" x2="${ssX}" y2="${superSpineY + 45}" stroke="#a855f7" stroke-width="1" opacity="0.4"/>`;
+                }
+            }
+        }
         
         // Draw 2 ToRs centered
-        html += `<rect x="320" y="${torY}" width="60" height="30" rx="4" fill="#a855f7"/>`;
-        html += `<text x="350" y="${torY + 19}" text-anchor="middle" fill="white" font-size="10" font-weight="bold">ToR 1</text>`;
-        html += `<rect x="420" y="${torY}" width="60" height="30" rx="4" fill="#a855f7"/>`;
-        html += `<text x="450" y="${torY + 19}" text-anchor="middle" fill="white" font-size="10" font-weight="bold">ToR 2</text>`;
+        html += `<text x="400" y="${torY2 - 10}" text-anchor="middle" fill="#a855f7" font-size="10">ToR (2 per unit)</text>`;
+        html += `<rect x="320" y="${torY2}" width="60" height="30" rx="4" fill="#a855f7"/>`;
+        html += `<text x="350" y="${torY2 + 19}" text-anchor="middle" fill="white" font-size="10" font-weight="bold">ToR 1</text>`;
+        html += `<rect x="420" y="${torY2}" width="60" height="30" rx="4" fill="#a855f7"/>`;
+        html += `<text x="450" y="${torY2 + 19}" text-anchor="middle" fill="white" font-size="10" font-weight="bold">ToR 2</text>`;
+        
+        // Connect ToRs to Spines
+        for (let i = 0; i < Math.min(spineCount, 6); i++) {
+            const spineX = spineStartX + i * 60;
+            html += `<line x1="350" y1="${torY2}" x2="${spineX}" y2="${spineY + 35}" stroke="#64748b" stroke-width="1" opacity="0.5"/>`;
+            html += `<line x1="450" y1="${torY2}" x2="${spineX}" y2="${spineY + 35}" stroke="#64748b" stroke-width="1" opacity="0.5"/>`;
+        }
         
         // Draw 4 racks
-        const rackY = 180;
-        const rackPositions = [200, 300, 500, 600];
+        const rackPositions = [200, 320, 480, 600];
         const rackLabels = ['ToR Rack 1', 'ToR Rack 2', 'Server Rack 1', 'Server Rack 2'];
         const rackColors = ['#475569', '#475569', '#f97316', '#f97316'];
         
         rackPositions.forEach((x, i) => {
             const isServerOnly = i >= 2;
-            html += `<rect x="${x - 50}" y="${rackY}" width="100" height="60" rx="4" fill="none" stroke="${rackColors[i]}" stroke-width="2" ${isServerOnly ? 'stroke-dasharray="4"' : ''}/>`;
-            html += `<text x="${x}" y="${rackY + 75}" text-anchor="middle" fill="${isServerOnly ? '#f97316' : '#94a3b8'}" font-size="10">${rackLabels[i]}</text>`;
+            html += `<rect x="${x - 45}" y="${rackY}" width="90" height="50" rx="4" fill="none" stroke="${rackColors[i]}" stroke-width="2" ${isServerOnly ? 'stroke-dasharray="4"' : ''}/>`;
+            html += `<text x="${x}" y="${rackY + 62}" text-anchor="middle" fill="${isServerOnly ? '#f97316' : '#94a3b8'}" font-size="9">${rackLabels[i]}</text>`;
             
             // Draw servers inside rack
             for (let s = 0; s < 3; s++) {
-                html += `<rect x="${x - 35 + s * 25}" y="${rackY + 20}" width="20" height="30" rx="2" fill="#0891b2"/>`;
+                html += `<rect x="${x - 30 + s * 22}" y="${rackY + 15}" width="18" height="25" rx="2" fill="#0891b2"/>`;
             }
             
             // Connection lines from ToRs to racks
-            html += `<line x1="350" y1="${torY + 30}" x2="${x}" y2="${rackY}" stroke="#64748b" stroke-width="1.5"/>`;
-            html += `<line x1="450" y1="${torY + 30}" x2="${x}" y2="${rackY}" stroke="#64748b" stroke-width="1.5"/>`;
+            html += `<line x1="350" y1="${torY2 + 30}" x2="${x}" y2="${rackY}" stroke="#64748b" stroke-width="1.5"/>`;
+            html += `<line x1="450" y1="${torY2 + 30}" x2="${x}" y2="${rackY}" stroke="#64748b" stroke-width="1.5"/>`;
         });
         
-        html += `<text x="400" y="280" text-anchor="middle" fill="#94a3b8" font-size="11">All servers dual-homed to both ToRs</text>`;
+        html += `<text x="400" y="${rackY + 85}" text-anchor="middle" fill="#94a3b8" font-size="10">All servers dual-homed to both ToRs</text>`;
     } else {
-        // Original logic for single/split
+        // Original logic for single/split - add spine layer
         const torsPerRack = layout === 'split' ? 1 : 2;
+        
+        // Draw Super Spine layer if needed
+        if (hasSuperSpine) {
+            html += `<text x="400" y="${superSpineY + 15}" text-anchor="middle" fill="#a855f7" font-size="10">Super Spine (${superSpineCount})</text>`;
+            const superSpineWidth = Math.min(superSpineCount, 4) * 70;
+            const superSpineStartX = 400 - superSpineWidth / 2 + 35;
+            for (let i = 0; i < Math.min(superSpineCount, 4); i++) {
+                const x = superSpineStartX + i * 70;
+                html += `<rect x="${x - 25}" y="${superSpineY + 20}" width="50" height="25" rx="4" fill="#9333ea"/>`;
+                html += `<text x="${x}" y="${superSpineY + 36}" text-anchor="middle" fill="white" font-size="8">SS${i + 1}</text>`;
+            }
+        }
+        
+        // Draw Spine layer
+        html += `<text x="400" y="${spineY + 5}" text-anchor="middle" fill="#ea580c" font-size="10">Spine (${spineCount})</text>`;
+        const spineWidth = Math.min(spineCount, 6) * 60;
+        const spineStartX = 400 - spineWidth / 2 + 30;
+        for (let i = 0; i < Math.min(spineCount, 6); i++) {
+            const x = spineStartX + i * 60;
+            html += `<rect x="${x - 25}" y="${spineY + 10}" width="50" height="25" rx="4" fill="#ea580c"/>`;
+            html += `<text x="${x}" y="${spineY + 26}" text-anchor="middle" fill="white" font-size="8">Sp${i + 1}</text>`;
+            
+            // Connect to super spine if present
+            if (hasSuperSpine) {
+                for (let j = 0; j < Math.min(superSpineCount, 4); j++) {
+                    const ssX = (400 - Math.min(superSpineCount, 4) * 70 / 2 + 35) + j * 70;
+                    html += `<line x1="${x}" y1="${spineY + 10}" x2="${ssX}" y2="${superSpineY + 45}" stroke="#a855f7" stroke-width="1" opacity="0.4"/>`;
+                }
+            }
+        }
+        
+        // ToR layer label
         const torLabel = layout === 'split' ? 'ToR Layer (1 per rack, cross-cabled)' : 'ToR Layer (2 per rack)';
-        html += `<text x="400" y="${torY - 30}" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold">${torLabel}</text>`;
+        html += `<text x="400" y="${torY2 - 10}" text-anchor="middle" fill="#a855f7" font-size="10">${torLabel}</text>`;
         
         // Calculate ToR positions grouped by rack
         const rackWidth = 140;
@@ -3085,19 +3165,25 @@ function renderNetworkTopology() {
         // Draw rack groupings
         for (let rack = 0; rack < racksPerSU; rack++) {
             const rackCenterX = startX + rack * rackWidth + rackWidth / 2;
-            html += `<rect x="${rackCenterX - 65}" y="${torY - 10}" width="130" height="45" rx="4" fill="none" stroke="#475569" stroke-dasharray="4"/>`;
-            html += `<text x="${rackCenterX}" y="${torY + 45}" text-anchor="middle" fill="#64748b" font-size="9">Rack ${rack + 1}</text>`;
+            html += `<rect x="${rackCenterX - 65}" y="${torY2}" width="130" height="45" rx="4" fill="none" stroke="#475569" stroke-dasharray="4"/>`;
+            html += `<text x="${rackCenterX}" y="${torY2 + 55}" text-anchor="middle" fill="#64748b" font-size="9">Rack ${rack + 1}</text>`;
         }
         
         // Draw ToRs
         torPositions.forEach((tor, i) => {
-            html += `<rect x="${tor.x - 22}" y="${torY}" width="44" height="25" rx="4" fill="#a855f7"/>`;
-            html += `<text x="${tor.x}" y="${torY + 16}" text-anchor="middle" fill="white" font-size="8" font-weight="bold">ToR ${i + 1}</text>`;
+            html += `<rect x="${tor.x - 22}" y="${torY2 + 10}" width="44" height="25" rx="4" fill="#a855f7"/>`;
+            html += `<text x="${tor.x}" y="${torY2 + 26}" text-anchor="middle" fill="white" font-size="8" font-weight="bold">ToR ${i + 1}</text>`;
+            
+            // Connect ToR to spines
+            for (let s = 0; s < Math.min(spineCount, 6); s++) {
+                const spineX = spineStartX + s * 60;
+                html += `<line x1="${tor.x}" y1="${torY2 + 10}" x2="${spineX}" y2="${spineY + 35}" stroke="#64748b" stroke-width="1" opacity="0.4"/>`;
+            }
         });
         
-        // Server layer - group by rack (only for single/split, super split handled above)
-        html += `<text x="400" y="${torY + 100}" text-anchor="middle" fill="#94a3b8" font-size="14" font-weight="bold">Server Layer (${serversPerRack} per rack)</text>`;
-        const serverY = torY + 120;
+        // Server layer - group by rack
+        html += `<text x="400" y="${rackY - 10}" text-anchor="middle" fill="#0891b2" font-size="10">Server Layer (${serversPerRack} per rack)</text>`;
+        const serverY = rackY;
         
         // Show servers grouped by rack
         const maxServersToShow = Math.min(serversPerRack, 8);
@@ -3121,13 +3207,13 @@ function renderNetworkTopology() {
                 if (layout === 'split') {
                     const tor1X = torPositions[0].x;
                     const tor2X = torPositions[1].x;
-                    html += `<line x1="${x}" y1="${serverY}" x2="${tor1X}" y2="${torY + 25}" stroke="#64748b" stroke-width="1" opacity="0.3"/>`;
-                    html += `<line x1="${x}" y1="${serverY}" x2="${tor2X}" y2="${torY + 25}" stroke="#64748b" stroke-width="1" opacity="0.3"/>`;
+                    html += `<line x1="${x}" y1="${serverY}" x2="${tor1X}" y2="${torY2 + 35}" stroke="#64748b" stroke-width="1" opacity="0.3"/>`;
+                    html += `<line x1="${x}" y1="${serverY}" x2="${tor2X}" y2="${torY2 + 35}" stroke="#64748b" stroke-width="1" opacity="0.3"/>`;
                 } else {
                     const tor1X = torPositions[rack * 2].x;
                     const tor2X = torPositions[rack * 2 + 1].x;
-                    html += `<line x1="${x}" y1="${serverY}" x2="${tor1X}" y2="${torY + 25}" stroke="#64748b" stroke-width="1" opacity="0.3"/>`;
-                    html += `<line x1="${x}" y1="${serverY}" x2="${tor2X}" y2="${torY + 25}" stroke="#64748b" stroke-width="1" opacity="0.3"/>`;
+                    html += `<line x1="${x}" y1="${serverY}" x2="${tor1X}" y2="${torY2 + 35}" stroke="#64748b" stroke-width="1" opacity="0.3"/>`;
+                    html += `<line x1="${x}" y1="${serverY}" x2="${tor2X}" y2="${torY2 + 35}" stroke="#64748b" stroke-width="1" opacity="0.3"/>`;
                 }
             }
             
@@ -3258,58 +3344,95 @@ function exportToDrawio() {
         return;
     }
     
-    // Create Draw.io XML format
+    // Get actual values from calculationResults
     const layout = r.inputs.rackLayout || 'single';
-    const racksPerSU = layout === 'single' ? 1 : (layout === 'dual' ? 2 : 4);
-    const torsPerRack = 2;
-    const spines = layout === 'single' ? 0 : 2;
+    const racksPerSU = r.racksPerScalableUnit || (layout === 'single' ? 1 : (layout === 'split' ? 2 : 4));
+    const spines = r.spineSwitches || 2;
+    const superSpines = r.superSpineSwitches || 0;
+    const hasSuperSpine = r.needsSuperSpine || false;
+    const totalTors = r.torSwitches || 2;
     
     let mxGraphModel = `<?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="app.diagrams.net">
   <diagram name="Infrastructure Topology" id="infra-topology">
-    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850">
+    <mxGraphModel dx="1200" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
         <!-- Title -->
-        <mxCell id="title" value="Infrastructure Topology - ${r.totalServers} Servers" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=18;fontStyle=1" vertex="1" parent="1">
-          <mxGeometry x="400" y="20" width="300" height="30" as="geometry"/>
+        <mxCell id="title" value="Infrastructure Topology - ${formatNumber(r.inputs.totalServers)} Servers" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="400" y="20" width="400" height="30" as="geometry"/>
         </mxCell>
 `;
     
     let cellId = 10;
+    let yOffset = 60;
     
-    // Spine switches
-    if (spines > 0) {
-        for (let i = 0; i < spines; i++) {
+    // Super Spine switches (if needed)
+    if (hasSuperSpine && superSpines > 0) {
+        const ssStartX = 400 - (superSpines * 60);
+        for (let i = 0; i < superSpines; i++) {
             mxGraphModel += `
-        <mxCell id="${cellId++}" value="Spine ${i + 1}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9a825;strokeColor=#c17900;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="${400 + i * 120}" y="80" width="100" height="40" as="geometry"/>
+        <mxCell id="${cellId++}" value="Super Spine ${i + 1}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#7b1fa2;strokeColor=#4a148c;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="${ssStartX + i * 120}" y="${yOffset}" width="100" height="40" as="geometry"/>
         </mxCell>`;
         }
+        yOffset += 80;
     }
     
-    // ToR switches
-    const totalTors = racksPerSU * torsPerRack;
-    for (let i = 0; i < totalTors; i++) {
+    // Spine switches
+    const spineStartX = 400 - (Math.min(spines, 8) * 60);
+    for (let i = 0; i < Math.min(spines, 8); i++) {
+        mxGraphModel += `
+        <mxCell id="${cellId++}" value="Spine ${i + 1}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e65100;strokeColor=#bf360c;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="${spineStartX + i * 120}" y="${yOffset}" width="100" height="40" as="geometry"/>
+        </mxCell>`;
+    }
+    if (spines > 8) {
+        mxGraphModel += `
+        <mxCell id="${cellId++}" value="+${spines - 8} more spines" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="${spineStartX + 8 * 120}" y="${yOffset + 10}" width="100" height="20" as="geometry"/>
+        </mxCell>`;
+    }
+    yOffset += 80;
+    
+    // ToR switches (show sample, not all)
+    const torsToShow = Math.min(totalTors, 8);
+    const torStartX = 400 - (torsToShow * 50);
+    for (let i = 0; i < torsToShow; i++) {
         mxGraphModel += `
         <mxCell id="${cellId++}" value="ToR ${i + 1}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#9c27b0;strokeColor=#7b1fa2;fontColor=#ffffff;" vertex="1" parent="1">
-          <mxGeometry x="${200 + i * 100}" y="180" width="80" height="30" as="geometry"/>
+          <mxGeometry x="${torStartX + i * 100}" y="${yOffset}" width="80" height="30" as="geometry"/>
         </mxCell>`;
     }
-    
-    // Racks
-    for (let i = 0; i < racksPerSU; i++) {
+    if (totalTors > 8) {
         mxGraphModel += `
-        <mxCell id="${cellId++}" value="Rack ${i + 1}&#xa;${r.serversPerRack} Servers" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0097a7;strokeColor=#006064;fontColor=#ffffff;" vertex="1" parent="1">
-          <mxGeometry x="${250 + i * 150}" y="280" width="100" height="80" as="geometry"/>
+        <mxCell id="${cellId++}" value="+${totalTors - 8} more ToRs" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="${torStartX + 8 * 100}" y="${yOffset + 5}" width="100" height="20" as="geometry"/>
         </mxCell>`;
     }
+    yOffset += 70;
+    
+    // Racks (show sample scalable unit)
+    const racksToShow = Math.min(racksPerSU, 4);
+    const rackStartX = 400 - (racksToShow * 75);
+    for (let i = 0; i < racksToShow; i++) {
+        const isServerOnly = layout === 'supersplit' && i >= 2;
+        const rackLabel = layout === 'supersplit' 
+            ? (isServerOnly ? `Server Rack ${i - 1}` : `ToR Rack ${i + 1}`)
+            : `Rack ${i + 1}`;
+        mxGraphModel += `
+        <mxCell id="${cellId++}" value="${rackLabel}&#xa;${r.serversPerRack} Servers" style="rounded=0;whiteSpace=wrap;html=1;fillColor=${isServerOnly ? '#e65100' : '#0097a7'};strokeColor=${isServerOnly ? '#bf360c' : '#006064'};fontColor=#ffffff;${isServerOnly ? 'dashed=1;' : ''}" vertex="1" parent="1">
+          <mxGeometry x="${rackStartX + i * 150}" y="${yOffset}" width="120" height="80" as="geometry"/>
+        </mxCell>`;
+    }
+    yOffset += 120;
     
     // Summary box
+    const layoutLabel = layout === 'supersplit' ? 'Super Split (4 racks/unit)' : (layout === 'split' ? 'Split (2 racks/unit)' : 'Single (1 rack/unit)');
     mxGraphModel += `
-        <mxCell id="${cellId++}" value="Summary&#xa;Total Servers: ${formatNumber(r.totalServers)}&#xa;Total Racks: ${formatNumber(r.totalRacks)}&#xa;Scalable Units: ${formatNumber(r.scalableUnits)}&#xa;Total Power: ${formatNumber(Math.round(r.totalPower))} kW" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474f;strokeColor=#263238;fontColor=#ffffff;align=left;spacingLeft=10;" vertex="1" parent="1">
-          <mxGeometry x="700" y="280" width="180" height="100" as="geometry"/>
+        <mxCell id="${cellId++}" value="Summary&#xa;Layout: ${layoutLabel}&#xa;Total Servers: ${formatNumber(r.inputs.totalServers)}&#xa;Total Racks: ${formatNumber(r.totalRacks)}&#xa;Scalable Units: ${formatNumber(r.scalableUnits)}&#xa;ToR Switches: ${formatNumber(totalTors)}&#xa;Spine Switches: ${formatNumber(spines)}${hasSuperSpine ? '&#xa;Super Spines: ' + superSpines : ''}&#xa;Total Power: ${formatNumber(Math.round(r.totalPower))} kW" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474f;strokeColor=#263238;fontColor=#ffffff;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="50" y="60" width="200" height="${hasSuperSpine ? 180 : 160}" as="geometry"/>
         </mxCell>`;
     
     mxGraphModel += `
@@ -3318,7 +3441,16 @@ function exportToDrawio() {
   </diagram>
 </mxfile>`;
     
-    downloadBlob(mxGraphModel, 'infrastructure-topology.drawio', 'application/xml');
+    // Create blob and download
+    const blob = new Blob([mxGraphModel], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'infrastructure-topology.drawio';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }
 
 function exportDiagramAsPNG() {
@@ -3328,8 +3460,10 @@ function exportDiagramAsPNG() {
     
     if (view === 'topology') {
         element = document.querySelector('#networkTopologyDiagram svg');
+    } else if (view === 'rack') {
+        element = document.getElementById('rackDiagramContainer');
     } else {
-        alert('PNG export is currently available for Network Topology view. Please switch to that view.');
+        alert('PNG export is available for Network Topology and Rack Diagram views.');
         return;
     }
     
@@ -3338,26 +3472,42 @@ function exportDiagramAsPNG() {
         return;
     }
     
-    // Convert SVG to canvas and download
-    const svgData = new XMLSerializer().serializeToString(element);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-    
-    img.onload = function() {
-        canvas.width = img.width * 2;
-        canvas.height = img.height * 2;
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    // For SVG elements
+    if (element.tagName === 'svg' || element.querySelector('svg')) {
+        const svg = element.tagName === 'svg' ? element : element.querySelector('svg');
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
         
-        const link = document.createElement('a');
-        link.download = 'network-topology.png';
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-    };
-    
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+        // Use 4x scale for high resolution output
+        const scale = 4;
+        
+        img.onload = function() {
+            // Set canvas to a large fixed size for better quality
+            canvas.width = 1600 * scale;
+            canvas.height = 1000 * scale;
+            
+            // Fill background
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw scaled image
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            const link = document.createElement('a');
+            link.download = 'network-topology.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        };
+        
+        // Add explicit width/height to SVG for proper scaling
+        const svgWithSize = svgData.replace('<svg', `<svg width="1600" height="1000"`);
+        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgWithSize)));
+    } else {
+        // For HTML elements, use html2canvas approach (fallback)
+        alert('PNG export for this view requires the Network Topology SVG. Please switch to Network Topology view.');
+    }
 }
 
 function exportBOM() {
