@@ -1535,9 +1535,9 @@ function updateNetworkTopologyDiagram() {
     const width = 900;
     const height = hasSuperSpine ? 580 : 520;
     
-    // Layer Y positions
-    const rackY = height - 120;
-    const torY = rackY - 100;
+    // Layer Y positions - more spacing to prevent overlap
+    const rackY = height - 100;
+    const torY = rackY - 120;
     const spineY = torY - 85;
     const superSpineY = spineY - 85;
     
@@ -1618,7 +1618,9 @@ function updateNetworkTopologyDiagram() {
         html += `<text x="${unitStartX + unitWidth/2}" y="${rackY + 55}" text-anchor="middle" fill="#64748b" font-size="8">Unit ${unit + 1}</text>`;
     }
     
-    html += `<text x="${width/2}" y="${rackY - 80}" text-anchor="middle" fill="#0891b2" font-size="12" font-weight="bold">Racks (${r.totalRacks}) - ${r.serversPerRack} servers each</text>`;
+    // Racks label moved to left side to avoid overlap
+    html += `<text x="50" y="${rackY + 10}" fill="#0891b2" font-size="11" font-weight="bold">Racks: ${r.totalRacks}</text>`;
+    html += `<text x="50" y="${rackY + 25}" fill="#64748b" font-size="9">${r.serversPerRack} servers each</text>`;
     
     for (let rack = 0; rack < racksToShow; rack++) {
         const x = getRackX(rack);
@@ -3051,9 +3053,9 @@ function renderNetworkTopology() {
     const width = 900;
     const height = hasSuperSpine ? 580 : 520;
     
-    // Layer Y positions (bottom to top) - more spacing to prevent overlap
-    const rackY = height - 120;
-    const torY = rackY - 100;
+    // Layer Y positions - more spacing to prevent overlap
+    const rackY = height - 100;
+    const torY = rackY - 120;
     const spineY = torY - 85;
     const superSpineY = spineY - 85;
     
@@ -3160,7 +3162,9 @@ function renderNetworkTopology() {
         html += `<text x="${unitStartX + unitWidth/2}" y="${rackY + 55}" text-anchor="middle" fill="#64748b" font-size="8">Unit ${unit + 1}</text>`;
     }
     
-    html += `<text x="${width/2}" y="${rackY - 80}" text-anchor="middle" fill="#0891b2" font-size="12" font-weight="bold">Racks (${r.totalRacks}) - ${r.serversPerRack} servers each</text>`;
+    // Racks label moved to left side to avoid overlap
+    html += `<text x="50" y="${rackY + 10}" fill="#0891b2" font-size="11" font-weight="bold">Racks: ${r.totalRacks}</text>`;
+    html += `<text x="50" y="${rackY + 25}" fill="#64748b" font-size="9">${r.serversPerRack} servers each</text>`;
     
     for (let rack = 0; rack < racksToShow; rack++) {
         const x = getRackX(rack);
