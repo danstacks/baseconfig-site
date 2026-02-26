@@ -1075,8 +1075,8 @@
         const PRICING = {
             serverCost: 26066.39,
             switchCost: 19475.05,
-            serverOpticsCost: 155.88,
-            spineOpticsCost: 875.00,
+            serverOpticsCost: 779.38,   // QSFP-200G-SR4-S (75% off $3,117.51 list)
+            spineOpticsCost: 875.00,     // 400G uplink optic
             drives: {
                 '15.3TB': 5488.12,
                 '30.7TB': 8291.25,
@@ -1089,8 +1089,8 @@
         const CONFIG = {
             serversPerRack: 30,
             switchesPerRack: 2,
-            opticsPerServer: 2,
-            spineOpticsPerSwitch: 4,
+            opticsPerServer: 4,       // 4x 200G optics per server (2 per CX7 NIC)
+            spineOpticsPerSwitch: 4,  // 400G uplinks per leaf switch
             minServers: 8,
             serverPower: 900,        // Watts per EBox server
             switchPower32: 638,      // Watts per 32-port 1U switch (N9K-C9332D-GX2B typical)
@@ -1211,7 +1211,7 @@
             const servers = serversRequired[i];
             const racks = racksRequired[i];
             const switches = racks * CONFIG.switchesPerRack;
-            const serverOptics = servers * CONFIG.opticsPerServer;
+            const serverOptics = servers * CONFIG.opticsPerServer;       // 4 per server
             const spineOptics = switches * CONFIG.spineOpticsPerSwitch;
             
             const serverCostTotal = PRICING.serverCost * servers;
@@ -1219,7 +1219,8 @@
             const switchesCostTotal = switches * PRICING.switchCost;
             const serverOpticsCostTotal = serverOptics * PRICING.serverOpticsCost;
             const spineOpticsCostTotal = spineOptics * PRICING.spineOpticsCost;
-            const totalPrice = serverCostTotal + driveCostTotal + switchesCostTotal + serverOpticsCostTotal + spineOpticsCostTotal;
+            const totalOpticsCost = serverOpticsCostTotal + spineOpticsCostTotal;
+            const totalPrice = serverCostTotal + driveCostTotal + switchesCostTotal + totalOpticsCost;
             const pricePerTB = totalPrice / (servers * capacities[i].usable);
             const totalUsableCapacity = servers * capacities[i].usable;
             
@@ -1276,21 +1277,21 @@
                                 <span class="text-gray-400">Leaf Switches</span>
                                 <span class="font-medium">${switches}</span>
                             </div>
-                            <div class="text-xs text-gray-500 mt-1">SKU: N9K-C9336C-FX2 (36×100G/40G)</div>
+                            <div class="text-xs text-gray-500 mt-1">SKU: N9K-C9364D-GX2A (64×400G)</div>
                         </div>
                         <div class="p-2 bg-slate-800/50 rounded">
                             <div class="flex justify-between">
-                                <span class="text-gray-400">Server Optics (2 per server)</span>
+                                <span class="text-gray-400">Server Optics (4 per server)</span>
                                 <span class="font-medium">${serverOptics}</span>
                             </div>
-                            <div class="text-xs text-gray-500 mt-1">SKU: QSFP-100G-SR4-S (100G SR4)</div>
+                            <div class="text-xs text-gray-500 mt-1">SKU: QSFP-200G-SR4-S (200G SR4)</div>
                         </div>
                         <div class="p-2 bg-slate-800/50 rounded">
                             <div class="flex justify-between">
                                 <span class="text-gray-400">Spine Optics (4 per switch)</span>
                                 <span class="font-medium">${spineOptics}</span>
                             </div>
-                            <div class="text-xs text-gray-500 mt-1">SKU: QSFP-100G-SR4-S (100G SR4)</div>
+                            <div class="text-xs text-gray-500 mt-1">SKU: QSFP-DD-400G-SR8 (400G uplinks)</div>
                         </div>
                         <div class="p-2 bg-slate-800/50 rounded">
                             <div class="flex justify-between">
@@ -1323,7 +1324,7 @@
                         </div>
                         <div class="flex justify-between p-2 bg-slate-800/50 rounded">
                             <span class="text-gray-400">Optics (Server + Spine)</span>
-                            <span class="font-medium">$${(serverOpticsCostTotal + spineOpticsCostTotal).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                            <span class="font-medium">$${totalOpticsCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                         <div class="flex justify-between p-3 bg-${driveColors[i]}-900/30 border border-${driveColors[i]}-500/30 rounded font-semibold">
                             <span>Total Solution</span>
