@@ -1210,7 +1210,12 @@
             const i = driveOptionIndex;
             const servers = serversRequired[i];
             const racks = racksRequired[i];
-            const switches = racks * CONFIG.switchesPerRack;
+            // Leaf switches must be in pairs (FE pair + BE pair)
+            // Each server has 4x 200G ports, using 400G switch ports with breakout
+            // So each server uses 2 switch ports (2x 400G -> 4x 200G)
+            // Round up to ensure pairs
+            const rawSwitches = Math.ceil((servers * 2) / 32); // 32-port switches
+            const switches = rawSwitches + (rawSwitches % 2); // Round up to even (pairs)
             const serverOptics = servers * CONFIG.opticsPerServer;       // 4 per server
             const spineOptics = switches * CONFIG.spineOpticsPerSwitch;
             
