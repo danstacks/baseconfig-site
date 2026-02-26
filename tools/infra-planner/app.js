@@ -3118,13 +3118,24 @@ function renderNetworkTopology() {
     // Split: 2 racks → 2 ToRs  
     // Super Split: 4 racks → 2 ToRs
     
-    const rackWidth = racksToShow * 65;
-    const rackStartX = (width - rackWidth) / 2 + 32;
+    // Calculate rack spacing with gaps between units
+    const rackSpacing = 60;
+    const unitGap = 30; // Gap between scalable units
+    const totalRackWidth = racksToShow * rackSpacing + (unitsToShow - 1) * unitGap;
+    const rackStartX = (width - totalRackWidth) / 2 + rackSpacing / 2;
+    
+    // Helper to get X position for a rack (accounts for unit gaps)
+    const getRackX = (rackIdx) => {
+        const unitIdx = Math.floor(rackIdx / racksPerUnit);
+        const rackInUnit = rackIdx % racksPerUnit;
+        return rackStartX + unitIdx * (racksPerUnit * rackSpacing + unitGap) + rackInUnit * rackSpacing;
+    };
     
     // Add scalable unit grouping boxes
     for (let unit = 0; unit < unitsToShow; unit++) {
-        const unitStartX = rackStartX + unit * racksPerUnit * 65 - 30;
-        const unitWidth = racksPerUnit * 65 + 10;
+        const firstRackInUnit = unit * racksPerUnit;
+        const unitStartX = getRackX(firstRackInUnit) - 35;
+        const unitWidth = racksPerUnit * rackSpacing + 10;
         html += `<rect x="${unitStartX}" y="${rackY - 50}" width="${unitWidth}" height="100" rx="6" fill="none" stroke="#475569" stroke-width="1" stroke-dasharray="4"/>`;
         html += `<text x="${unitStartX + unitWidth/2}" y="${rackY + 55}" text-anchor="middle" fill="#64748b" font-size="8">Unit ${unit + 1}</text>`;
     }
@@ -3132,7 +3143,7 @@ function renderNetworkTopology() {
     html += `<text x="${width/2}" y="${rackY - 65}" text-anchor="middle" fill="#0891b2" font-size="12" font-weight="bold">Racks (${r.totalRacks}) - ${r.serversPerRack} servers each</text>`;
     
     for (let rack = 0; rack < racksToShow; rack++) {
-        const x = rackStartX + rack * 65;
+        const x = getRackX(rack);
         const unitIdx = Math.floor(rack / racksPerUnit);
         const torIdx = unitIdx * 2; // First ToR of this scalable unit
         
