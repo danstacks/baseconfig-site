@@ -721,6 +721,53 @@
             </p>
         </div>
 
+        <!-- Calculation Methodology -->
+        <div class="card rounded-xl p-6 mb-8">
+            <details>
+                <summary class="text-lg font-semibold flex items-center gap-2 cursor-pointer hover:text-cyan-400">
+                    <i data-lucide="calculator" class="w-5 h-5 text-gray-400"></i>
+                    How We Calculate These Estimates
+                </summary>
+                <div class="mt-4 space-y-4 text-sm text-gray-400">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-3 bg-slate-800/50 rounded-lg">
+                            <h4 class="font-medium text-white mb-2">Server Count</h4>
+                            <p>Servers = Target Capacity ÷ Usable Capacity per Server</p>
+                            <p class="text-xs mt-1">Minimum cluster size: 8 servers (VAST requirement)</p>
+                        </div>
+                        <div class="p-3 bg-slate-800/50 rounded-lg">
+                            <h4 class="font-medium text-white mb-2">Usable vs Raw Capacity</h4>
+                            <p>Usable ≈ 82% of Raw capacity</p>
+                            <p class="text-xs mt-1">~18% overhead for VAST data protection (erasure coding)</p>
+                        </div>
+                        <div class="p-3 bg-slate-800/50 rounded-lg">
+                            <h4 class="font-medium text-white mb-2">Drive Configurations</h4>
+                            <ul class="text-xs space-y-1">
+                                <li>• 15.3TB: 8 data drives + 2 NVRAM → ~100TB usable/server</li>
+                                <li>• 30.7TB: 8 data drives + 2 NVRAM → ~200TB usable/server</li>
+                                <li>• 61.4TB: 7 data drives + 3 NVRAM → ~350TB usable/server</li>
+                            </ul>
+                        </div>
+                        <div class="p-3 bg-slate-800/50 rounded-lg">
+                            <h4 class="font-medium text-white mb-2">Pricing</h4>
+                            <p>List prices from Cisco CCW (Feb 2026)</p>
+                            <p class="text-xs mt-1">Your discount is applied to all components. Actual quotes may vary.</p>
+                        </div>
+                        <div class="p-3 bg-slate-800/50 rounded-lg">
+                            <h4 class="font-medium text-white mb-2">Switch Count</h4>
+                            <p>Switches = ⌈(Servers × 2 ports) ÷ 32⌉ rounded to pairs</p>
+                            <p class="text-xs mt-1">Each server uses 4×200G ports (2×400G switch ports with breakout)</p>
+                        </div>
+                        <div class="p-3 bg-slate-800/50 rounded-lg">
+                            <h4 class="font-medium text-white mb-2">Power Estimates</h4>
+                            <p>Server: ~850W | Switch (32-port): ~450W</p>
+                            <p class="text-xs mt-1">Actual power varies by workload and configuration</p>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </div>
+
         <!-- Footer -->
         <footer class="mt-8 text-center text-gray-500 text-sm">
             <p>Prepared by Dan Stacks | <a href="/" class="text-cyan-400 hover:text-cyan-300">BaseConfig</a></p>

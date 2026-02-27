@@ -1161,6 +1161,50 @@
             </div>
         </section>
 
+        <!-- Calculation Methodology -->
+        <div class="card rounded-xl p-6 mb-8 mt-8">
+            <details>
+                <summary class="text-lg font-semibold flex items-center gap-2 cursor-pointer hover:text-cyan-400">
+                    <i data-lucide="calculator" class="w-5 h-5 text-gray-400"></i>
+                    How We Calculate These Estimates
+                </summary>
+                <div class="mt-4 space-y-4 text-sm text-gray-400">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="p-3 bg-slate-800/50 rounded-lg">
+                            <h4 class="font-medium text-white mb-2">Rack Count</h4>
+                            <p>Racks = ⌈Servers ÷ Servers per Rack⌉</p>
+                            <p class="text-xs mt-1">Servers per rack limited by power budget and rack units</p>
+                        </div>
+                        <div class="p-3 bg-slate-800/50 rounded-lg">
+                            <h4 class="font-medium text-white mb-2">Switch Count</h4>
+                            <p>ToR Switches = 2 per rack (redundant pair)</p>
+                            <p class="text-xs mt-1">Spine switches based on oversubscription ratio</p>
+                        </div>
+                        <div class="p-3 bg-slate-800/50 rounded-lg">
+                            <h4 class="font-medium text-white mb-2">Power Calculation</h4>
+                            <p>Total Power = (Servers × Server W) + (Switches × Switch W)</p>
+                            <p class="text-xs mt-1">Facility power = Total × PUE</p>
+                        </div>
+                        <div class="p-3 bg-slate-800/50 rounded-lg">
+                            <h4 class="font-medium text-white mb-2">Pricing</h4>
+                            <p>List prices from Cisco CCW (Feb 2026)</p>
+                            <p class="text-xs mt-1">Your discount is applied to all components</p>
+                        </div>
+                        <div class="p-3 bg-slate-800/50 rounded-lg">
+                            <h4 class="font-medium text-white mb-2">Timeline</h4>
+                            <p>Duration = Servers ÷ Deployment Rate</p>
+                            <p class="text-xs mt-1">Run Rate vs Rack & Roll comparison available</p>
+                        </div>
+                        <div class="p-3 bg-slate-800/50 rounded-lg">
+                            <h4 class="font-medium text-white mb-2">Workload Presets</h4>
+                            <p>Based on typical Cisco UCS configurations</p>
+                            <p class="text-xs mt-1">Power, cost, and specs from CCW validated BOMs</p>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </div>
+
         <!-- Footer -->
         <footer class="mt-8 text-center text-gray-500 text-sm">
             <p>Prepared by Dan Stacks | <a href="/" class="text-cyan-400 hover:text-cyan-300">BaseConfig</a></p>
