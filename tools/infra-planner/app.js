@@ -1051,6 +1051,53 @@ function finishWizard() {
     
     hideWizard();
     calculate();
+    
+    // Show completion notification and scroll to results
+    showWizardCompletionSummary(totalServers, workloadType);
+}
+
+function showWizardCompletionSummary(servers, workloadType) {
+    const preset = workloadPresets[workloadType] || { name: 'Custom' };
+    
+    // Create and show a brief notification
+    const notification = document.createElement('div');
+    notification.id = 'wizardCompleteNotification';
+    notification.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-green-900/95 border border-green-500 rounded-xl p-6 shadow-2xl max-w-md';
+    notification.innerHTML = `
+        <div class="flex items-start gap-4">
+            <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <i data-lucide="check" class="w-6 h-6 text-white"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-green-400 mb-2">Configuration Complete!</h3>
+                <p class="text-gray-300 text-sm mb-3">Your infrastructure plan is ready:</p>
+                <ul class="text-sm space-y-1 text-gray-400">
+                    <li>• <strong class="text-white">${parseInt(servers).toLocaleString()}</strong> servers (${preset.name})</li>
+                    <li>• Scroll down to see <strong class="text-cyan-400">detailed results</strong></li>
+                    <li>• Use <strong class="text-purple-400">Export</strong> buttons to save your plan</li>
+                </ul>
+                <button onclick="document.getElementById('wizardCompleteNotification').remove()" class="mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium w-full">
+                    Got it!
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(notification);
+    lucide.createIcons();
+    
+    // Auto-dismiss after 8 seconds
+    setTimeout(() => {
+        const notif = document.getElementById('wizardCompleteNotification');
+        if (notif) notif.remove();
+    }, 8000);
+    
+    // Scroll to results section
+    setTimeout(() => {
+        const resultsSection = document.getElementById('resultsSection');
+        if (resultsSection) {
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 500);
 }
 
 function applyWorkloadPreset() {
