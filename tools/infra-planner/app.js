@@ -1154,12 +1154,14 @@ function updateConfigBadges() {
     }
     document.getElementById('configNetworkBadge').textContent = networkSpeed.toUpperCase() + ' Network';
     document.getElementById('configPowerBadge').textContent = rackPower + 'kW ' + (rackLayout === 'split' ? '(Split)' : '(Single)');
+    document.getElementById('configDiscountBadge').textContent = currentDiscount + '% Discount';
 }
 
 // Discount slider functions
 function updateDiscount() {
     currentDiscount = parseInt(document.getElementById('discountSlider').value) || 60;
     document.getElementById('discountDisplay').textContent = currentDiscount + '%';
+    document.getElementById('configDiscountBadge').textContent = currentDiscount + '% Discount';
     
     // Sync wizard slider if it exists
     const wizardSlider = document.getElementById('wizardDiscountSlider');
