@@ -31,7 +31,7 @@ const workloadPresets = {
         storagePerServer: 5,
         networkSpeed: '25g',
         nicPorts: 2,
-        description: 'High-performance compute workloads',
+        description: 'Best for: HPC, scientific computing, AI/ML inference. High core count, max memory bandwidth.',
         specs: {
             chassis: 'Cisco UCS C225 M8 (1U)',
             cpu: '1x AMD EPYC 9655P (96C/192T, 2.6GHz, 400W)',
@@ -61,7 +61,7 @@ const workloadPresets = {
         storagePerServer: 100,
         networkSpeed: '25g',
         nicPorts: 2,
-        description: 'Hadoop distributed storage and compute nodes',
+        description: 'Best for: Big data analytics, Spark, HDFS. Balanced compute with high-capacity local storage.',
         specs: {
             chassis: 'Cisco UCS C240 M8L (2U LFF)',
             cpu: '1x Intel Xeon 6520P (24C, 210W)',
@@ -92,7 +92,7 @@ const workloadPresets = {
         storagePerServer: 50,
         networkSpeed: '25g',
         nicPorts: 2,
-        description: 'AMD-based data warehouse servers',
+        description: 'Best for: Analytics, BI, data lakes. Dual AMD CPUs with SAN connectivity for shared storage.',
         specs: {
             chassis: 'Cisco UCS C245 M8SX (2U SFF)',
             cpu: '2x AMD EPYC 9255 (24C, 200W)',
@@ -123,7 +123,7 @@ const workloadPresets = {
         storagePerServer: 50,
         networkSpeed: '25g',
         nicPorts: 2,
-        description: 'Intel-based data warehouse servers',
+        description: 'Best for: Analytics, BI, data lakes. Dual Intel CPUs with SAN connectivity for shared storage.',
         specs: {
             chassis: 'Cisco UCS C240 M8SX (2U SFF)',
             cpu: '2x Intel Xeon 6520P (24C, 210W)',
@@ -154,7 +154,7 @@ const workloadPresets = {
         storagePerServer: 2,
         networkSpeed: '25g',
         nicPorts: 2,
-        description: 'Intel general purpose with local storage',
+        description: 'Best for: Web servers, app servers, dev/test. Balanced config with local SSD storage.',
         specs: {
             chassis: 'Cisco UCS C220 M7S (1U SFF)',
             cpu: '1x Intel Xeon 6548Y+ (32C, 250W)',
@@ -184,7 +184,7 @@ const workloadPresets = {
         storagePerServer: 0,
         networkSpeed: '25g',
         nicPorts: 4,
-        description: 'Intel general purpose with SAN storage',
+        description: 'Best for: Web servers, app servers needing shared storage. Boots from SAN, no local data.',
         specs: {
             chassis: 'Cisco UCS C220 M7S (1U SFF)',
             cpu: '2x Intel Xeon 6526Y (16C, 195W)',
@@ -213,7 +213,7 @@ const workloadPresets = {
         storagePerServer: 20,
         networkSpeed: '25g',
         nicPorts: 2,
-        description: 'Intel database servers with local NVMe storage',
+        description: 'Best for: SQL Server, PostgreSQL, MySQL. High memory + fast local NVMe for low latency.',
         specs: {
             chassis: 'Cisco UCS C220 M7S (1U SFF)',
             cpu: '2x Intel Xeon 6548Y+ (32C, 250W)',
@@ -243,7 +243,7 @@ const workloadPresets = {
         storagePerServer: 0,
         networkSpeed: '25g',
         nicPorts: 2,
-        description: 'Intel database servers with SAN storage',
+        description: 'Best for: Clustered databases, HA setups. High memory with shared SAN storage.',
         specs: {
             chassis: 'Cisco UCS C220 M7S (1U SFF)',
             cpu: '2x Intel Xeon 6548Y+ (32C, 250W)',
@@ -272,7 +272,7 @@ const workloadPresets = {
         storagePerServer: 2,
         networkSpeed: '25g',
         nicPorts: 2,
-        description: 'AMD general purpose with local storage',
+        description: 'Best for: Web servers, app servers, dev/test. AMD option with local SSD storage.',
         specs: {
             chassis: 'Cisco UCS C225 M8S (1U SFF)',
             cpu: '1x AMD EPYC 9335 (32C, 210W)',
@@ -302,7 +302,7 @@ const workloadPresets = {
         storagePerServer: 0,
         networkSpeed: '25g',
         nicPorts: 2,
-        description: 'AMD general purpose with SAN storage',
+        description: 'Best for: Web servers, app servers needing shared storage. AMD option with SAN.',
         specs: {
             chassis: 'Cisco UCS C245 M8SX (2U SFF)',
             cpu: '2x AMD EPYC 9115 (16C, 125W)',
@@ -331,7 +331,7 @@ const workloadPresets = {
         storagePerServer: 20,
         networkSpeed: '25g',
         nicPorts: 2,
-        description: 'AMD database servers with local NVMe storage',
+        description: 'Best for: SQL Server, PostgreSQL, MySQL on AMD. High memory + fast local NVMe.',
         specs: {
             chassis: 'Cisco UCS C245 M8SX (2U SFF)',
             cpu: '2x AMD EPYC 9335 (32C, 210W)',
@@ -361,7 +361,7 @@ const workloadPresets = {
         storagePerServer: 0,
         networkSpeed: '25g',
         nicPorts: 2,
-        description: 'AMD database servers with SAN storage',
+        description: 'Best for: Clustered databases, HA setups on AMD. High memory with shared SAN.',
         specs: {
             chassis: 'Cisco UCS C245 M8SX (2U SFF)',
             cpu: '2x AMD EPYC 9335 (32C, 210W)',
@@ -390,7 +390,7 @@ const workloadPresets = {
         storagePerServer: 5,
         networkSpeed: '25g',
         nicPorts: 2,
-        description: 'Virtualization hosts for VM workloads',
+        description: 'Best for: VMware, Hyper-V, KVM. High core count + memory for running many VMs.',
         specs: {
             chassis: 'Cisco UCS C220 M7S (1U SFF)',
             cpu: '2x Intel Xeon 6548Y+ (32C, 250W)',
@@ -419,7 +419,7 @@ const workloadPresets = {
         storagePerServer: 2,
         networkSpeed: '25g',
         nicPorts: 2,
-        description: 'Kubernetes/container worker nodes',
+        description: 'Best for: Kubernetes, Docker Swarm, OpenShift. High core density for containers.',
         specs: {
             chassis: 'Cisco UCS C225 M8S (1U SFF)',
             cpu: '1x AMD EPYC 9535 (64C, 300W)',
@@ -450,7 +450,7 @@ const workloadPresets = {
         storagePerServer: 30,
         networkSpeed: '25g',
         nicPorts: 4,
-        description: 'Oracle database optimized configuration',
+        description: 'Best for: Oracle DB, RAC clusters. Optimized for Oracle licensing (lower core count).',
         specs: {
             chassis: 'Cisco UCS C220 M7S (1U SFF)',
             cpu: '2x Intel Xeon 6526Y (16C, 195W)',
@@ -478,7 +478,7 @@ const workloadPresets = {
         storagePerServer: 50,
         networkSpeed: '25g',
         nicPorts: 2,
-        description: 'Log aggregation and analysis servers',
+        description: 'Best for: Splunk, ELK, Graylog. High-capacity spinning disk for log retention.',
         specs: {
             chassis: 'Cisco UCS C240 M8L (2U LFF)',
             cpu: '2x Intel Xeon 6730P (32C, 270W)',
@@ -509,7 +509,7 @@ const workloadPresets = {
         storagePerServer: 200,
         networkSpeed: '25g',
         nicPorts: 2,
-        description: 'High-density storage servers',
+        description: 'Best for: File servers, backup targets, archives. Maximum storage capacity per server.',
         specs: {
             chassis: 'Cisco UCS C240 M8L (2U LFF)',
             cpu: '2x Intel Xeon 6737P (32C, 270W)',
