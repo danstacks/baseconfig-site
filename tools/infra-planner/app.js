@@ -1021,6 +1021,7 @@ function finishWizard() {
     const rackPower = document.getElementById('wizardRackPower').value;
     const runRate = document.getElementById('wizardRunRate').value;
     const rackRollRate = document.getElementById('wizardRackRollRate').value;
+    const wizardDiscount = document.getElementById('wizardDiscountSlider').value;
     
     // Set main form values
     document.getElementById('totalServers').value = totalServers;
@@ -1029,6 +1030,12 @@ function finishWizard() {
     document.getElementById('rackRollRate').value = rackRollRate;
     document.getElementById('networkSpeed').value = selectedNetworkSpeed;
     document.getElementById('rackLayout').value = selectedRackLayout;
+    
+    // Apply discount from wizard
+    currentDiscount = parseInt(wizardDiscount) || 60;
+    document.getElementById('discountSlider').value = currentDiscount;
+    document.getElementById('discountDisplay').textContent = currentDiscount + '%';
+    updateDiscountLabels(currentDiscount);
     
     // Apply workload preset
     if (workloadType) {
@@ -1151,26 +1158,55 @@ function updateConfigBadges() {
 
 // Discount slider functions
 function updateDiscount() {
-    currentDiscount = parseInt(document.getElementById('discountSlider').value) || 0;
+    currentDiscount = parseInt(document.getElementById('discountSlider').value) || 60;
     document.getElementById('discountDisplay').textContent = currentDiscount + '%';
     
-    // Update pricing mode label
-    const modeLabel = document.getElementById('pricingModeLabel');
-    if (currentDiscount === 0) {
-        modeLabel.textContent = 'List Price';
-        modeLabel.className = 'text-gray-400 font-semibold';
-    } else if (currentDiscount <= 25) {
-        modeLabel.textContent = 'Standard Partner (' + currentDiscount + '% off)';
-        modeLabel.className = 'text-blue-400 font-semibold';
-    } else if (currentDiscount <= 50) {
-        modeLabel.textContent = 'Preferred Partner (' + currentDiscount + '% off)';
-        modeLabel.className = 'text-purple-400 font-semibold';
-    } else {
-        modeLabel.textContent = 'Enterprise Deal (' + currentDiscount + '% off)';
-        modeLabel.className = 'text-emerald-400 font-semibold';
+    // Sync wizard slider if it exists
+    const wizardSlider = document.getElementById('wizardDiscountSlider');
+    if (wizardSlider) {
+        wizardSlider.value = currentDiscount;
+        document.getElementById('wizardDiscountDisplay').textContent = currentDiscount + '%';
     }
     
+    updateDiscountLabels(currentDiscount);
     calculate();
+}
+
+function updateWizardDiscount() {
+    currentDiscount = parseInt(document.getElementById('wizardDiscountSlider').value) || 60;
+    document.getElementById('wizardDiscountDisplay').textContent = currentDiscount + '%';
+    
+    // Sync main slider
+    const mainSlider = document.getElementById('discountSlider');
+    if (mainSlider) {
+        mainSlider.value = currentDiscount;
+        document.getElementById('discountDisplay').textContent = currentDiscount + '%';
+    }
+    
+    updateDiscountLabels(currentDiscount);
+}
+
+function updateDiscountLabels(discount) {
+    // Update pricing mode labels
+    const modeLabel = document.getElementById('pricingModeLabel');
+    const wizardDescription = document.getElementById('wizardDiscountDescription');
+    
+    let labelText, labelClass;
+    if (discount < 50) {
+        labelText = 'Preferred Partner (' + discount + '% off)';
+        labelClass = 'text-purple-400 font-semibold';
+    } else {
+        labelText = 'Enterprise Deal (' + discount + '% off)';
+        labelClass = 'text-emerald-400 font-semibold';
+    }
+    
+    if (modeLabel) {
+        modeLabel.textContent = labelText;
+        modeLabel.className = labelClass;
+    }
+    if (wizardDescription) {
+        wizardDescription.textContent = 'You pay ' + (100 - discount) + '% of list price';
+    }
 }
 
 // Get input values

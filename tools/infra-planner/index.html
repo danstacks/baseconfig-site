@@ -86,6 +86,21 @@
                             <div class="grid grid-cols-2 gap-2 text-xs" id="workloadSpecsContent"></div>
                         </div>
                     </div>
+                    
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-sm text-gray-400">Partner Discount Level</label>
+                            <span class="text-xl font-bold text-emerald-400" id="wizardDiscountDisplay">60%</span>
+                        </div>
+                        <input type="range" id="wizardDiscountSlider" min="40" max="75" value="60" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" oninput="updateWizardDiscount()">
+                        <div class="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>40%</span>
+                            <span>50%</span>
+                            <span>60%</span>
+                            <span>75%</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1" id="wizardDiscountDescription">You pay 40% of list price</p>
+                    </div>
                 </div>
 
                 <!-- Step 2: Power & Rack -->
@@ -453,14 +468,14 @@
                                 <label class="text-sm text-gray-400">Partner Discount</label>
                                 <span class="text-lg font-bold text-emerald-400" id="discountDisplay">60%</span>
                             </div>
-                            <input type="range" id="discountSlider" min="0" max="75" value="60" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" oninput="updateDiscount()">
+                            <input type="range" id="discountSlider" min="40" max="75" value="60" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" oninput="updateDiscount()">
                             <div class="flex justify-between text-xs text-gray-500 mt-1">
-                                <span>List</span>
-                                <span>25%</span>
+                                <span>40%</span>
                                 <span>50%</span>
+                                <span>60%</span>
                                 <span>75%</span>
                             </div>
-                            <p class="text-xs text-gray-500 mt-2">Typical enterprise discounts: 50-75% off list price.</p>
+                            <p class="text-xs text-gray-500 mt-2">Enterprise discounts typically range from 40-75% off list price.</p>
                         </div>
                         <div class="p-3 bg-slate-800 rounded-lg">
                             <div class="text-sm text-gray-400 mb-1">Pricing Mode</div>
