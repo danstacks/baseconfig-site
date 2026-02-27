@@ -1,0 +1,16 @@
+{
+  "name": "baseconfig-test-runner",
+  "version": "1.0.0",
+  "description": "Automated testing for BaseConfig tools with AI feedback",
+  "main": "test-runner.js",
+  "scripts": {
+    "test": "node test-runner.js",
+    "test:infra": "node test-runner.js --tool=infra-planner",
+    "test:storage": "node test-runner.js --tool=storage-calculator"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0",
+    "discord.js": "^14.14.0",
+    "node-fetch": "^3.3.0"
+  }
+}
