@@ -391,11 +391,11 @@
                         <div><label class="block text-sm text-gray-400 mb-1"><span class="tooltip" data-tip="Total ports on each ToR switch. Some ports are used for spine uplinks, rest for servers.">ToR Switch Ports</span></label>
                         <input type="number" id="torPorts" value="48" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                         <div><label class="block text-sm text-gray-400 mb-1">ToR Switch Cost ($)</label>
-                        <input type="number" id="torCost" value="16450.02" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <input type="number" id="torCost" value="65800.08" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                         <div><label class="block text-sm text-gray-400 mb-1">ToR Switch Power (Watts)</label>
                         <input type="number" id="torPower" value="450" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                         <div><label class="block text-sm text-gray-400 mb-1">Spine Switch Cost ($)</label>
-                        <input type="number" id="spineCost" value="19475.05" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <input type="number" id="spineCost" value="250552.56" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                         <div class="p-3 bg-slate-800/50 rounded-lg text-xs text-gray-400 mt-2">
                             <div class="font-medium text-cyan-400 mb-1">Switch Models:</div>
                             <div>ToR: N9K-C93180YC-FX3 (48x25G + 6x100G)</div>
@@ -411,11 +411,11 @@
                     </h2>
                     <div class="space-y-4">
                         <div><label class="block text-sm text-gray-400 mb-1">Server NIC Optics Cost ($)</label>
-                        <input type="number" id="serverOpticsCost" value="38.22" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <input type="number" id="serverOpticsCost" value="152.89" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                         <div><label class="block text-sm text-gray-400 mb-1">Optics per Server</label>
                         <input type="number" id="opticsPerServer" value="2" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                         <div><label class="block text-sm text-gray-400 mb-1">Uplink Optics Cost ($)</label>
-                        <input type="number" id="uplinkOpticsCost" value="518.29" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
+                        <input type="number" id="uplinkOpticsCost" value="2073.14" min="0" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                         <div><label class="block text-sm text-gray-400 mb-1">Uplinks per ToR</label>
                         <input type="number" id="uplinksPerTor" value="4" min="1" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="calculate()"></div>
                     </div>
@@ -440,6 +440,35 @@
                             <div class="flex justify-between"><span>Total Usable Capacity:</span><span id="vastCapacityDisplay" class="text-cyan-400 font-medium">0 TB</span></div>
                         </div>
                         <p class="text-xs text-gray-500">VAST handles data protection internally - no replication factor needed</p>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="percent" class="w-5 h-5 text-emerald-400"></i>Pricing & Discount
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-sm text-gray-400">Partner Discount</label>
+                                <span class="text-lg font-bold text-emerald-400" id="discountDisplay">60%</span>
+                            </div>
+                            <input type="range" id="discountSlider" min="0" max="75" value="60" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" oninput="updateDiscount()">
+                            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>List</span>
+                                <span>25%</span>
+                                <span>50%</span>
+                                <span>75%</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">Typical enterprise discounts: 50-75% off list price.</p>
+                        </div>
+                        <div class="p-3 bg-slate-800 rounded-lg">
+                            <div class="text-sm text-gray-400 mb-1">Pricing Mode</div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-emerald-400 font-semibold" id="pricingModeLabel">Enterprise Deal (60% off)</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1" id="discountSavingsPreview">Adjust slider to see pricing at different discount levels</p>
+                        </div>
                     </div>
                 </div>
 

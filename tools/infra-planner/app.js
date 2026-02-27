@@ -12,6 +12,7 @@ let comparisonWorkload = null;
 let savedConfigurations = JSON.parse(localStorage.getItem('infraPlannerConfigs') || '[]');
 let currentVisualizationView = 'rack';
 let existingInfrastructure = null;
+let currentDiscount = 60; // Default to typical enterprise discount (60% off list)
 
 // Constants for calculations
 const CABLE_COST_PER_METER_DAC = 15;  // DAC cable cost per meter
@@ -25,7 +26,7 @@ const workloadPresets = {
     high_compute: {
         name: 'High Compute',
         serverPower: 1224,
-        serverCost: 93718.61,
+        serverCost: 354531.35,  // CCW List Price
         serverHeight: 1,
         storagePerServer: 5,
         networkSpeed: '25g',
@@ -55,7 +56,7 @@ const workloadPresets = {
     hadoop_data_node: {
         name: 'Hadoop Data Node',
         serverPower: 762,
-        serverCost: 93748.91,
+        serverCost: 338182.20,  // CCW List Price
         serverHeight: 2,
         storagePerServer: 100,
         networkSpeed: '25g',
@@ -86,7 +87,7 @@ const workloadPresets = {
     datawarehouse_amd: {
         name: 'DataWarehouse - AMD',
         serverPower: 993,
-        serverCost: 77524.56,
+        serverCost: 282254.64,  // CCW List Price
         serverHeight: 2,
         storagePerServer: 50,
         networkSpeed: '25g',
@@ -117,7 +118,7 @@ const workloadPresets = {
     datawarehouse_intel: {
         name: 'DataWarehouse - Intel',
         serverPower: 964,
-        serverCost: 96745.95,
+        serverCost: 350169.99,  // CCW List Price
         serverHeight: 2,
         storagePerServer: 50,
         networkSpeed: '25g',
@@ -148,7 +149,7 @@ const workloadPresets = {
     gp_local_intel: {
         name: 'General Purpose Local Intel',
         serverPower: 574,
-        serverCost: 37583.81,
+        serverCost: 142066.80,  // CCW List Price
         serverHeight: 1,
         storagePerServer: 2,
         networkSpeed: '25g',
@@ -178,7 +179,7 @@ const workloadPresets = {
     gp_san_intel: {
         name: 'General Purpose SAN Intel',
         serverPower: 731,
-        serverCost: 33697.29,
+        serverCost: 127375.75,  // CCW List Price
         serverHeight: 1,
         storagePerServer: 0,
         networkSpeed: '25g',
@@ -207,7 +208,7 @@ const workloadPresets = {
     db_local_intel: {
         name: 'Database Local Optimized Intel',
         serverPower: 934,
-        serverCost: 57980.73,
+        serverCost: 219167.16,  // CCW List Price
         serverHeight: 1,
         storagePerServer: 20,
         networkSpeed: '25g',
@@ -237,7 +238,7 @@ const workloadPresets = {
     db_san_intel: {
         name: 'Database SAN Optimized Intel',
         serverPower: 891,
-        serverCost: 53551.32,
+        serverCost: 202423.99,  // CCW List Price
         serverHeight: 1,
         storagePerServer: 0,
         networkSpeed: '25g',
@@ -266,7 +267,7 @@ const workloadPresets = {
     gp_local_amd: {
         name: 'General Purpose Local AMD',
         serverPower: 770,
-        serverCost: 42388.37,
+        serverCost: 160228.04,  // CCW List Price
         serverHeight: 1,
         storagePerServer: 2,
         networkSpeed: '25g',
@@ -296,7 +297,7 @@ const workloadPresets = {
     gp_san_amd: {
         name: 'General Purpose SAN AMD',
         serverPower: 770,
-        serverCost: 42388.37,
+        serverCost: 160228.04,  // CCW List Price
         serverHeight: 2,
         storagePerServer: 0,
         networkSpeed: '25g',
@@ -325,7 +326,7 @@ const workloadPresets = {
     db_local_amd: {
         name: 'Database Local Optimized AMD',
         serverPower: 994,
-        serverCost: 75604.69,
+        serverCost: 285786.93,  // CCW List Price
         serverHeight: 2,
         storagePerServer: 20,
         networkSpeed: '25g',
@@ -355,7 +356,7 @@ const workloadPresets = {
     db_san_amd: {
         name: 'Database SAN Optimized AMD',
         serverPower: 926,
-        serverCost: 70077.29,
+        serverCost: 264892.16,  // CCW List Price
         serverHeight: 2,
         storagePerServer: 0,
         networkSpeed: '25g',
@@ -384,7 +385,7 @@ const workloadPresets = {
     hypervisor: {
         name: 'Hypervisor',
         serverPower: 970,
-        serverCost: 51501.34,
+        serverCost: 194675.07,  // CCW List Price
         serverHeight: 1,
         storagePerServer: 5,
         networkSpeed: '25g',
@@ -413,7 +414,7 @@ const workloadPresets = {
     container_worker: {
         name: 'Container Worker',
         serverPower: 556,
-        serverCost: 46312.82,
+        serverCost: 175062.46,  // CCW List Price
         serverHeight: 1,
         storagePerServer: 2,
         networkSpeed: '25g',
@@ -444,7 +445,7 @@ const workloadPresets = {
     oracle_db_intel: {
         name: 'Oracle DB Optimized Intel',
         serverPower: 871,
-        serverCost: 81500.01,
+        serverCost: 308070.04,  // CCW List Price
         serverHeight: 1,
         storagePerServer: 30,
         networkSpeed: '25g',
@@ -472,7 +473,7 @@ const workloadPresets = {
     logging: {
         name: 'Logging',
         serverPower: 1073,
-        serverCost: 53436.81,
+        serverCost: 201991.14,  // CCW List Price
         serverHeight: 2,
         storagePerServer: 50,
         networkSpeed: '25g',
@@ -503,7 +504,7 @@ const workloadPresets = {
     data_storage: {
         name: 'Data Storage Servers',
         serverPower: 1151,
-        serverCost: 52548.37,
+        serverCost: 198632.84,  // CCW List Price
         serverHeight: 2,
         storagePerServer: 200,
         networkSpeed: '25g',
@@ -538,38 +539,38 @@ const workloadPresets = {
 const networkPresets = {
     '25g': {
         // ToR: N9K-C93180YC-FX3 - 48x25G + 6x100G
-        // List: $65,800.08, 75% discount = $16,450.02
+        // CCW List Prices
         torPorts: 48,           // 48 server-facing 25G ports
         torUplinkPorts: 6,      // 6x 100G uplink ports
-        torCost: 16450.02,      // $65,800.08 list @ 75% discount
+        torCost: 65800.08,      // CCW List Price (N9K-C93180YC-FX3)
         torPower: 450,          // Watts
-        // Optics: SFP-H25G-CU3M (DAC) $152.89 list @ 75% = $38.22
-        // Or SFP-25G-SR-S (SR) $1,216.99 list @ 75% = $304.25
-        serverOpticsCost: 38.22,  // 25G DAC (SFP-H25G-CU3M) @ 75% discount
+        // Optics: SFP-H25G-CU3M (DAC) $152.89 list
+        // Or SFP-25G-SR-S (SR) $1,216.99 list
+        serverOpticsCost: 152.89,  // 25G DAC (SFP-H25G-CU3M) CCW List Price
         opticsPerServer: 2,
-        // QSFP-100G-SR1.2 $2,073.14 list @ 75% = $518.29
-        uplinkOpticsCost: 518.29, // 100G QSFP28 (QSFP-100G-SR1.2) @ 75% discount
+        // QSFP-100G-SR1.2 $2,073.14 list
+        uplinkOpticsCost: 2073.14, // 100G QSFP28 (QSFP-100G-SR1.2) CCW List Price
         uplinksPerTor: 4,       // Use 4 of 6 uplinks to spine (100G each)
         // Spine: N9K-C9364D-GX2A - 64x 400G (use 4:1 breakout for 100G ToR uplinks)
         // Or could use N9K-C9332D-GX2B - 32x 400G for smaller deployments
-        // Price from storage calc: $19,475.05 (75% discount)
         spinePorts: 64,         // 64 ports per spine switch (or 256 with 4:1 breakout to 100G)
-        spineCost: 19475.05,    // Same as storage calc (75% discount)
+        spineCost: 250552.56,   // CCW List Price (N9K-C9364D-GX2A)
         spinePower: 950         // Watts (same as storage calc 64-port)
     },
     '100g': {
         // ToR: N9K-C9336C-FX2 - 36x 40/100G QSFP28
+        // CCW List Prices
         torPorts: 36,           // 36 ports total
         torUplinkPorts: 8,      // Reserve 8 for uplinks
-        torCost: 42000,         // ~$42K with discount
+        torCost: 168000.00,     // CCW List Price (N9K-C9336C-FX2)
         torPower: 650,          // Watts
-        serverOpticsCost: 250,  // 100G QSFP28 optics
+        serverOpticsCost: 2073.14,  // 100G QSFP28 optics (QSFP-100G-SR1.2) CCW List Price
         opticsPerServer: 2,
-        uplinkOpticsCost: 350,  // 100G QSFP28 optics
+        uplinkOpticsCost: 2073.14,  // 100G QSFP28 optics CCW List Price
         uplinksPerTor: 8,       // 8 uplinks to spine
         // Spine: N9K-C9364D-GX2A - 64x 400G
         spinePorts: 64,
-        spineCost: 45000,
+        spineCost: 250552.56,   // CCW List Price (N9K-C9364D-GX2A)
         spinePower: 950
     }
 };
@@ -1119,8 +1120,8 @@ function updateSpineUplinkMode() {
     }
     
     // Update cost summary
-    const breakoutCost = parseFloat(document.getElementById('breakoutOpticsCost')?.value) || 1558.76;
-    const torOpticCost = parseFloat(document.getElementById('uplinkOpticsCost')?.value) || 518.29;
+    const breakoutCost = parseFloat(document.getElementById('breakoutOpticsCost')?.value) || 6235.04;
+    const torOpticCost = parseFloat(document.getElementById('uplinkOpticsCost')?.value) || 2073.14;
     const costPerLink = spineUplinkMode === 'breakout' 
         ? (breakoutCost / 4) + torOpticCost 
         : torOpticCost * 2; // Both ends need optics in direct mode
@@ -1148,32 +1149,75 @@ function updateConfigBadges() {
     document.getElementById('configPowerBadge').textContent = rackPower + 'kW ' + (rackLayout === 'split' ? '(Split)' : '(Single)');
 }
 
+// Discount slider functions
+function updateDiscount() {
+    currentDiscount = parseInt(document.getElementById('discountSlider').value) || 0;
+    document.getElementById('discountDisplay').textContent = currentDiscount + '%';
+    
+    // Update pricing mode label
+    const modeLabel = document.getElementById('pricingModeLabel');
+    if (currentDiscount === 0) {
+        modeLabel.textContent = 'List Price';
+        modeLabel.className = 'text-gray-400 font-semibold';
+    } else if (currentDiscount <= 25) {
+        modeLabel.textContent = 'Standard Partner (' + currentDiscount + '% off)';
+        modeLabel.className = 'text-blue-400 font-semibold';
+    } else if (currentDiscount <= 50) {
+        modeLabel.textContent = 'Preferred Partner (' + currentDiscount + '% off)';
+        modeLabel.className = 'text-purple-400 font-semibold';
+    } else {
+        modeLabel.textContent = 'Enterprise Deal (' + currentDiscount + '% off)';
+        modeLabel.className = 'text-emerald-400 font-semibold';
+    }
+    
+    calculate();
+}
+
 // Get input values
 function getInputs() {
+    const discountMultiplier = 1 - currentDiscount / 100;
+    
+    // Get list prices from inputs
+    const serverCostList = parseFloat(document.getElementById('serverCost').value) || 8500;
+    const rackCostList = parseFloat(document.getElementById('rackCost').value) || 3500;
+    const torCostList = parseFloat(document.getElementById('torCost').value) || 65800.08;
+    const spineCostList = parseFloat(document.getElementById('spineCost').value) || 250552.56;
+    const serverOpticsCostList = parseFloat(document.getElementById('serverOpticsCost').value) || 152.89;
+    const uplinkOpticsCostList = parseFloat(document.getElementById('uplinkOpticsCost').value) || 2073.14;
+    const breakoutOpticsCostList = parseFloat(document.getElementById('breakoutOpticsCost')?.value) || 6235.04;
+    
     return {
         totalServers: parseInt(document.getElementById('totalServers').value) || 6000,
         serverPower: parseInt(document.getElementById('serverPower').value) || 750,
-        serverCost: parseFloat(document.getElementById('serverCost').value) || 8500,
+        serverCost: serverCostList * discountMultiplier,
+        serverCostList: serverCostList,
         rackPower: parseFloat(document.getElementById('rackPower').value) || 10,
         rackUnits: parseInt(document.getElementById('rackUnits').value) || 42,
         serverHeight: parseInt(document.getElementById('serverHeight').value) || 1,
-        rackCost: parseFloat(document.getElementById('rackCost').value) || 3500,
+        rackCost: rackCostList * discountMultiplier,
+        rackCostList: rackCostList,
         rackLayout: document.getElementById('rackLayout').value || 'single',
         torPorts: parseInt(document.getElementById('torPorts').value) || 48,
-        torCost: parseFloat(document.getElementById('torCost').value) || 16450.02,
+        torCost: torCostList * discountMultiplier,
+        torCostList: torCostList,
         torPower: parseFloat(document.getElementById('torPower').value) || 450,
-        spineCost: parseFloat(document.getElementById('spineCost').value) || 19475.05,
-        serverOpticsCost: parseFloat(document.getElementById('serverOpticsCost').value) || 38.22,
+        spineCost: spineCostList * discountMultiplier,
+        spineCostList: spineCostList,
+        serverOpticsCost: serverOpticsCostList * discountMultiplier,
+        serverOpticsCostList: serverOpticsCostList,
         opticsPerServer: parseInt(document.getElementById('opticsPerServer').value) || 2,
-        uplinkOpticsCost: parseFloat(document.getElementById('uplinkOpticsCost').value) || 518.29,
+        uplinkOpticsCost: uplinkOpticsCostList * discountMultiplier,
+        uplinkOpticsCostList: uplinkOpticsCostList,
         uplinksPerTor: parseInt(document.getElementById('uplinksPerTor').value) || 4,
-        breakoutOpticsCost: parseFloat(document.getElementById('breakoutOpticsCost')?.value) || 1558.76,
+        breakoutOpticsCost: breakoutOpticsCostList * discountMultiplier,
+        breakoutOpticsCostList: breakoutOpticsCostList,
         storagePerServer: parseFloat(document.getElementById('storagePerServer').value) || 10,
         vastDriveOption: document.getElementById('vastDriveOption')?.value || '61.4TB',
         runRate: parseInt(document.getElementById('runRate').value) || 250,
         rackRollRate: parseInt(document.getElementById('rackRollRate').value) || 1000,
         rackRollPremium: parseFloat(document.getElementById('rackRollPremium').value) || 5,
-        laborCostPerServer: parseFloat(document.getElementById('laborCostPerServer').value) || 50
+        laborCostPerServer: parseFloat(document.getElementById('laborCostPerServer').value) || 50,
+        discount: currentDiscount
     };
 }
 
@@ -4341,6 +4385,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize storage calculator
     initStorageCalculator();
+    
+    // Initialize discount slider
+    const discountSlider = document.getElementById('discountSlider');
+    if (discountSlider) {
+        discountSlider.value = currentDiscount;
+        updateDiscount();
+    }
     
     // Check for config in URL
     loadFromURL();
