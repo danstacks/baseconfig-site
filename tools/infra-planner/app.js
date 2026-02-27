@@ -23,6 +23,124 @@ const AVG_TOR_TO_SPINE_LENGTH = 15; // Average cable length to spine
 
 // Workload presets with typical configurations
 const workloadPresets = {
+    gpu_8x_h200_nvl: {
+        name: 'GPU 8x H200 NVL (AI Training)',
+        serverPower: 10200,
+        serverCost: 1795476.23,  // CCW List Price
+        serverHeight: 7,
+        storagePerServer: 15,
+        networkSpeed: '200g',
+        nicPorts: 2,
+        description: 'Best for: Large-scale AI/ML training, LLM fine-tuning. 8x NVIDIA H200 NVL GPUs with 141GB HBM3e each.',
+        specs: {
+            chassis: 'Cisco UCS C845A M8 GPU Server (7U)',
+            cpu: '2x AMD EPYC 9555 (64C, 360W, 3.2GHz)',
+            ram: '2.3TB DDR5-6400 (24x 96GB RDIMMs)',
+            boot: '2x 960GB M.2 SATA SSD (RAID1)',
+            storage: '2x 7.6TB E1.S NVMe (Kioxia XD7P)',
+            gpu: '8x NVIDIA H200 NVL 141GB HBM3e (600W each)',
+            nic: '1x NVIDIA MCX755106AS 2x200GbE QSFP112',
+            psu: '4x 3200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCS-MGPUM8-MLB', description: 'UCS C845A M8 GPU Server MLB', qty: 1 },
+            { partNumber: 'CAI-CPU-A9555', description: 'AMD EPYC 9555 64C 360W 3.2GHz', qty: 2 },
+            { partNumber: 'CAI-MRX96G2RF5', description: '96GB DDR5-6400 RDIMM 2Rx4', qty: 24 },
+            { partNumber: 'CAI-M2-960G', description: '960GB M.2 SATA Micron G2 SSD', qty: 2 },
+            { partNumber: 'CAI-NVEST7T6K1V', description: '7.6TB E1.S Kioxia XD7P NVMe', qty: 2 },
+            { partNumber: 'CAI-GPU-H200-NVL', description: 'NVIDIA H200-NVL GPU 600W 141GB', qty: 8 },
+            { partNumber: 'CAI-P-N7D200GFO', description: 'NVIDIA MCX755106AS 2x200GbE NIC', qty: 1 },
+            { partNumber: 'CAI-845A-PSU', description: 'UCS C845A M8 3200W Titanium PSU', qty: 4 }
+        ]
+    },
+    gpu_4x_h200_nvl: {
+        name: 'GPU 4x H200 NVL (AI/ML)',
+        serverPower: 5400,
+        serverCost: 996469.79,  // CCW List Price
+        serverHeight: 7,
+        storagePerServer: 15,
+        networkSpeed: '200g',
+        nicPorts: 2,
+        description: 'Best for: AI/ML training, inference at scale. 4x NVIDIA H200 NVL GPUs with 141GB HBM3e each.',
+        specs: {
+            chassis: 'Cisco UCS C845A M8 GPU Server (7U)',
+            cpu: '2x AMD EPYC 9555 (64C, 360W, 3.2GHz)',
+            ram: '2.3TB DDR5-6400 (24x 96GB RDIMMs)',
+            boot: '2x 960GB M.2 SATA SSD (RAID1)',
+            storage: '2x 7.6TB E1.S NVMe (Kioxia XD7P)',
+            gpu: '4x NVIDIA H200 NVL 141GB HBM3e (600W each)',
+            nic: '1x NVIDIA MCX755106AS 2x200GbE QSFP112',
+            psu: '4x 3200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCS-MGPUM8-MLB', description: 'UCS C845A M8 GPU Server MLB', qty: 1 },
+            { partNumber: 'CAI-CPU-A9555', description: 'AMD EPYC 9555 64C 360W 3.2GHz', qty: 2 },
+            { partNumber: 'CAI-MRX96G2RF5', description: '96GB DDR5-6400 RDIMM 2Rx4', qty: 24 },
+            { partNumber: 'CAI-M2-960G', description: '960GB M.2 SATA Micron G2 SSD', qty: 2 },
+            { partNumber: 'CAI-NVEST7T6K1V', description: '7.6TB E1.S Kioxia XD7P NVMe', qty: 2 },
+            { partNumber: 'CAI-GPU-H200-NVL', description: 'NVIDIA H200-NVL GPU 600W 141GB', qty: 4 },
+            { partNumber: 'CAI-P-N7D200GFO', description: 'NVIDIA MCX755106AS 2x200GbE NIC', qty: 1 },
+            { partNumber: 'CAI-845A-PSU', description: 'UCS C845A M8 3200W Titanium PSU', qty: 4 }
+        ]
+    },
+    gpu_2x_rtx6000: {
+        name: 'GPU 2x RTX 6000 (Rendering)',
+        serverPower: 2200,
+        serverCost: 559746.05,  // CCW List Price
+        serverHeight: 7,
+        storagePerServer: 15,
+        networkSpeed: '200g',
+        nicPorts: 2,
+        description: 'Best for: 3D rendering, visualization, video encoding, lighter AI inference workloads.',
+        specs: {
+            chassis: 'Cisco UCS C845A M8 GPU Server (7U)',
+            cpu: '2x AMD EPYC 9555 (64C, 360W, 3.2GHz)',
+            ram: '1.1TB DDR5-6400 (12x 96GB RDIMMs)',
+            boot: '2x 960GB M.2 SATA SSD (RAID1)',
+            storage: '2x 7.6TB E1.S NVMe (Kioxia XD7P)',
+            gpu: '2x NVIDIA RTX 6000 Pro 96GB',
+            nic: '1x NVIDIA MCX755106AS 2x200GbE QSFP112',
+            psu: '4x 3200W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCS-MGPUM8-MLB', description: 'UCS C845A M8 GPU Server MLB', qty: 1 },
+            { partNumber: 'CAI-CPU-A9555', description: 'AMD EPYC 9555 64C 360W 3.2GHz', qty: 2 },
+            { partNumber: 'CAI-MRX96G2RF5', description: '96GB DDR5-6400 RDIMM 2Rx4', qty: 12 },
+            { partNumber: 'CAI-M2-960G', description: '960GB M.2 SATA Micron G2 SSD', qty: 2 },
+            { partNumber: 'CAI-NVEST7T6K1V', description: '7.6TB E1.S Kioxia XD7P NVMe', qty: 2 },
+            { partNumber: 'CAI-GPU-RTXP6000', description: 'NVIDIA RTX Pro 6000 96GB GPU', qty: 2 },
+            { partNumber: 'CAI-P-N7D200GFO', description: 'NVIDIA MCX755106AS 2x200GbE NIC', qty: 1 },
+            { partNumber: 'CAI-845A-PSU', description: 'UCS C845A M8 3200W Titanium PSU', qty: 4 }
+        ]
+    },
+    gpu_8x_h200_hgx: {
+        name: 'GPU 8x H200 HGX (Dense AI)',
+        serverPower: 12000,
+        serverCost: 1758047.20,  // CCW List Price
+        serverHeight: 10,
+        storagePerServer: 15,
+        networkSpeed: '200g',
+        nicPorts: 2,
+        description: 'Best for: Maximum AI density, large model training, HPC. 8x H200 in dense HGX form factor.',
+        specs: {
+            chassis: 'Cisco UCS M8 Dense GPU Server (10U)',
+            cpu: 'AMD EPYC 9535F (64C, 64GB DDR5 CX-7)',
+            ram: '1.5TB DDR5-6400',
+            boot: '2x 960GB M.2 NVMe',
+            storage: '2x 15.3TB NVMe',
+            gpu: '8x NVIDIA H200 HGX (NVLink)',
+            nic: 'Integrated CX-7 2x200GbE',
+            psu: '6x 3000W Titanium'
+        },
+        bom: [
+            { partNumber: 'UCS-DGPUM8-MLB', description: 'UCS M8 Dense GPU Server MLB', qty: 1 },
+            { partNumber: 'C885A-M8-CC-SLD06', description: 'AMD EPYC 9535F 64GB DDR5 CX-7', qty: 1 },
+            { partNumber: 'C885A-M8-H2SX-SLD', description: 'C885A M8 GPU SLED H200', qty: 1 },
+            { partNumber: 'C885A-NV-C1T9KV', description: 'C885A M8 SSD 1.92TB NVMe', qty: 2 },
+            { partNumber: 'C885A-PSU-3000W', description: 'UCS C885A M8 PSU 3000W 54V', qty: 6 },
+            { partNumber: 'C885A-M8-DCSCM', description: 'DC-SCM Card Nvidia GPU 5th Gen AMD', qty: 1 }
+        ]
+    },
     high_compute: {
         name: 'High Compute',
         serverPower: 1224,
