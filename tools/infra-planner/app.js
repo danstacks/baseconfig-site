@@ -1,6 +1,13 @@
 // Initialize Lucide icons
 lucide.createIcons();
 
+// Set up wizard button event listeners after DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('wizardBack').addEventListener('click', wizardPrevStep);
+    document.getElementById('wizardNext').addEventListener('click', wizardNextStep);
+    document.getElementById('wizardFinish').addEventListener('click', finishWizard);
+});
+
 // Global state
 let calculationResults = {};
 let wizardStep = 0;  // Start at step 0 (decision point)
