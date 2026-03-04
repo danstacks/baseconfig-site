@@ -36,42 +36,79 @@ const AVG_RACK_TO_TOR_LENGTH = 3;  // Average cable length within rack
 const AVG_TOR_TO_SPINE_LENGTH = 15; // Average cable length to spine
 
 // Historical server templates - generalized estimates (for migration calculator)
-// All historical generations listed are Intel-based (E5, Xeon Gold/Silver)
 const historicalServerTemplates = {
-    2014: {
+    // Intel Generations
+    '2014_intel': {
         vendor: 'intel',
+        label: '2014 Intel (Haswell)',
         high_compute: { cpu: '2x E5-2697v3 (14C)', cores: 28, ram: 256, power: 550, perf: 1.0, model: 'Dell R630 / HP DL380 G9' },
         general_purpose: { cpu: '2x E5-2680v3 (12C)', cores: 24, ram: 128, power: 450, perf: 1.0, model: 'Dell R630 / HP DL360 G9' },
         database: { cpu: '2x E5-2690v3 (12C)', cores: 24, ram: 512, power: 600, perf: 1.0, model: 'Dell R730 / HP DL380 G9' },
         storage: { cpu: '2x E5-2620v3 (6C)', cores: 12, ram: 64, power: 400, perf: 1.0, model: 'Dell R730xd / HP DL380 G9' }
     },
-    2016: {
+    '2016_intel': {
         vendor: 'intel',
+        label: '2016 Intel (Broadwell)',
         high_compute: { cpu: '2x E5-2697v4 (18C)', cores: 36, ram: 384, power: 550, perf: 1.3, model: 'Dell R640 / HP DL380 G10' },
         general_purpose: { cpu: '2x E5-2680v4 (14C)', cores: 28, ram: 192, power: 450, perf: 1.25, model: 'Dell R640 / HP DL360 G10' },
         database: { cpu: '2x E5-2690v4 (14C)', cores: 28, ram: 768, power: 600, perf: 1.3, model: 'Dell R740 / HP DL380 G10' },
         storage: { cpu: '2x E5-2630v4 (10C)', cores: 20, ram: 128, power: 400, perf: 1.2, model: 'Dell R740xd / HP DL380 G10' }
     },
-    2018: {
+    '2017_amd': {
+        vendor: 'amd',
+        label: '2017 AMD (EPYC Naples)',
+        high_compute: { cpu: '2x EPYC 7601 (32C)', cores: 64, ram: 512, power: 360, perf: 1.4, model: 'Dell R7425 / HP DL385 G10' },
+        general_purpose: { cpu: '2x EPYC 7451 (24C)', cores: 48, ram: 256, power: 360, perf: 1.3, model: 'Dell R7425 / HP DL385 G10' },
+        database: { cpu: '2x EPYC 7601 (32C)', cores: 64, ram: 1024, power: 360, perf: 1.4, model: 'Dell R7425 / HP DL385 G10' },
+        storage: { cpu: '2x EPYC 7351 (16C)', cores: 32, ram: 128, power: 340, perf: 1.2, model: 'Dell R7425 / HP DL385 G10' }
+    },
+    '2018_intel': {
         vendor: 'intel',
+        label: '2018 Intel (Skylake)',
         high_compute: { cpu: '2x Gold 6154 (18C)', cores: 36, ram: 512, power: 600, perf: 1.8, model: 'Dell R640 / HP DL380 G10' },
         general_purpose: { cpu: '2x Gold 6140 (18C)', cores: 36, ram: 256, power: 500, perf: 1.7, model: 'Dell R640 / HP DL360 G10' },
         database: { cpu: '2x Gold 6154 (18C)', cores: 36, ram: 1024, power: 650, perf: 1.8, model: 'Dell R740 / HP DL380 G10' },
         storage: { cpu: '2x Silver 4116 (12C)', cores: 24, ram: 192, power: 450, perf: 1.5, model: 'Dell R740xd / HP DL380 G10' }
     },
-    2020: {
+    '2019_amd': {
+        vendor: 'amd',
+        label: '2019 AMD (EPYC Rome)',
+        high_compute: { cpu: '2x EPYC 7742 (64C)', cores: 128, ram: 1024, power: 450, perf: 2.8, model: 'Dell R7525 / HP DL385 G10+' },
+        general_purpose: { cpu: '2x EPYC 7542 (32C)', cores: 64, ram: 512, power: 400, perf: 2.5, model: 'Dell R7525 / HP DL385 G10+' },
+        database: { cpu: '2x EPYC 7742 (64C)', cores: 128, ram: 2048, power: 450, perf: 2.8, model: 'Dell R7525 / HP DL385 G10+' },
+        storage: { cpu: '2x EPYC 7402 (24C)', cores: 48, ram: 256, power: 360, perf: 2.2, model: 'Dell R7525 / HP DL385 G10+' }
+    },
+    '2020_intel': {
         vendor: 'intel',
+        label: '2020 Intel (Ice Lake)',
         high_compute: { cpu: '2x Gold 6338 (32C)', cores: 64, ram: 512, power: 600, perf: 2.5, model: 'Dell R650 / HP DL380 G10+' },
         general_purpose: { cpu: '2x Gold 6330 (28C)', cores: 56, ram: 256, power: 500, perf: 2.3, model: 'Dell R650 / HP DL360 G10+' },
         database: { cpu: '2x Gold 6348 (28C)', cores: 56, ram: 1024, power: 650, perf: 2.5, model: 'Dell R750 / HP DL380 G10+' },
         storage: { cpu: '2x Silver 4316 (20C)', cores: 40, ram: 256, power: 450, perf: 2.0, model: 'Dell R750xd / HP DL380 G10+' }
     },
-    2022: {
+    '2021_amd': {
+        vendor: 'amd',
+        label: '2021 AMD (EPYC Milan)',
+        high_compute: { cpu: '2x EPYC 7763 (64C)', cores: 128, ram: 1024, power: 560, perf: 3.5, model: 'Dell R7525 / HP DL385 G10+v2' },
+        general_purpose: { cpu: '2x EPYC 7543 (32C)', cores: 64, ram: 512, power: 450, perf: 3.2, model: 'Dell R7525 / HP DL385 G10+v2' },
+        database: { cpu: '2x EPYC 7763 (64C)', cores: 128, ram: 2048, power: 560, perf: 3.5, model: 'Dell R7525 / HP DL385 G10+v2' },
+        storage: { cpu: '2x EPYC 7443 (24C)', cores: 48, ram: 256, power: 400, perf: 2.8, model: 'Dell R7525 / HP DL385 G10+v2' }
+    },
+    '2022_intel': {
         vendor: 'intel',
+        label: '2022 Intel (Sapphire Rapids)',
         high_compute: { cpu: '2x Gold 6448Y (32C)', cores: 64, ram: 512, power: 650, perf: 3.2, model: 'Dell R660 / HP DL380 G11' },
         general_purpose: { cpu: '2x Gold 6430 (32C)', cores: 64, ram: 256, power: 550, perf: 3.0, model: 'Dell R660 / HP DL360 G11' },
         database: { cpu: '2x Gold 6448Y (32C)', cores: 64, ram: 1024, power: 700, perf: 3.2, model: 'Dell R760 / HP DL380 G11' },
         storage: { cpu: '2x Silver 4416+ (20C)', cores: 40, ram: 256, power: 500, perf: 2.5, model: 'Dell R760xd / HP DL380 G11' }
+    },
+    '2022_amd': {
+        vendor: 'amd',
+        label: '2022 AMD (EPYC Genoa)',
+        high_compute: { cpu: '2x EPYC 9654 (96C)', cores: 192, ram: 1536, power: 720, perf: 4.5, model: 'Dell R7625 / HP DL385 G11' },
+        general_purpose: { cpu: '2x EPYC 9454 (48C)', cores: 96, ram: 768, power: 580, perf: 4.0, model: 'Dell R7625 / HP DL385 G11' },
+        database: { cpu: '2x EPYC 9654 (96C)', cores: 192, ram: 3072, power: 720, perf: 4.5, model: 'Dell R7625 / HP DL385 G11' },
+        storage: { cpu: '2x EPYC 9354 (32C)', cores: 64, ram: 512, power: 520, perf: 3.5, model: 'Dell R7625 / HP DL385 G11' }
     }
 };
 
@@ -800,11 +837,19 @@ function showWizard() {
                     <label class="block text-sm text-gray-400 mb-1">Server Generation</label>
                     <select class="migration-year input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateMigrationPreview()">
                         <option value="">Select era...</option>
-                        <option value="2014">2014 (Haswell) - Dell R630/HP DL380 G9</option>
-                        <option value="2016">2016 (Broadwell) - Dell R640/HP DL380 G10</option>
-                        <option value="2018">2018 (Skylake) - Dell R640/HP DL380 G10</option>
-                        <option value="2020">2020 (Ice Lake) - Dell R650/HP DL380 G10+</option>
-                        <option value="2022">2022 (Sapphire Rapids) - Dell R660/HP DL380 G11</option>
+                        <optgroup label="Intel Xeon">
+                            <option value="2014_intel">2014 Intel (Haswell) - E5 v3</option>
+                            <option value="2016_intel">2016 Intel (Broadwell) - E5 v4</option>
+                            <option value="2018_intel">2018 Intel (Skylake) - Gold/Silver</option>
+                            <option value="2020_intel">2020 Intel (Ice Lake) - 3rd Gen</option>
+                            <option value="2022_intel">2022 Intel (Sapphire Rapids) - 4th Gen</option>
+                        </optgroup>
+                        <optgroup label="AMD EPYC">
+                            <option value="2017_amd">2017 AMD (EPYC Naples) - 1st Gen</option>
+                            <option value="2019_amd">2019 AMD (EPYC Rome) - 2nd Gen</option>
+                            <option value="2021_amd">2021 AMD (EPYC Milan) - 3rd Gen</option>
+                            <option value="2022_amd">2022 AMD (EPYC Genoa) - 4th Gen</option>
+                        </optgroup>
                     </select>
                 </div>
                 <div>
@@ -883,11 +928,19 @@ function addMigrationEntry() {
                     <label class="block text-sm text-gray-400 mb-1">Server Generation</label>
                     <select class="migration-year input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateMigrationPreview()">
                         <option value="">Select era...</option>
-                        <option value="2014">2014 (Haswell) - Dell R630/HP DL380 G9</option>
-                        <option value="2016">2016 (Broadwell) - Dell R640/HP DL380 G10</option>
-                        <option value="2018">2018 (Skylake) - Dell R640/HP DL380 G10</option>
-                        <option value="2020">2020 (Ice Lake) - Dell R650/HP DL380 G10+</option>
-                        <option value="2022">2022 (Sapphire Rapids) - Dell R660/HP DL380 G11</option>
+                        <optgroup label="Intel Xeon">
+                            <option value="2014_intel">2014 Intel (Haswell) - E5 v3</option>
+                            <option value="2016_intel">2016 Intel (Broadwell) - E5 v4</option>
+                            <option value="2018_intel">2018 Intel (Skylake) - Gold/Silver</option>
+                            <option value="2020_intel">2020 Intel (Ice Lake) - 3rd Gen</option>
+                            <option value="2022_intel">2022 Intel (Sapphire Rapids) - 4th Gen</option>
+                        </optgroup>
+                        <optgroup label="AMD EPYC">
+                            <option value="2017_amd">2017 AMD (EPYC Naples) - 1st Gen</option>
+                            <option value="2019_amd">2019 AMD (EPYC Rome) - 2nd Gen</option>
+                            <option value="2021_amd">2021 AMD (EPYC Milan) - 3rd Gen</option>
+                            <option value="2022_amd">2022 AMD (EPYC Genoa) - 4th Gen</option>
+                        </optgroup>
                     </select>
                 </div>
                 <div>
