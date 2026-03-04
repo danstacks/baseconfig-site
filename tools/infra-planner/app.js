@@ -1075,6 +1075,26 @@ function wizardNextStep() {
     console.log('wizardNextStep called, current step:', wizardStep, 'type:', typeof wizardStep);
     
     if (wizardStep === '0b') {
+        // Validate that at least one complete migration entry exists
+        const entries = document.querySelectorAll('#wizardStep0b .migration-entry');
+        let hasValidEntry = false;
+        
+        entries.forEach(entry => {
+            const year = entry.querySelector('.migration-year').value;
+            const type = entry.querySelector('.migration-type').value;
+            const count = parseInt(entry.querySelector('.migration-count').value) || 0;
+            if (year && type && count > 0) {
+                hasValidEntry = true;
+            }
+        });
+        
+        if (!hasValidEntry) {
+            // Show validation warning and don't proceed
+            const validation = document.getElementById('migrationValidation');
+            if (validation) validation.classList.remove('hidden');
+            return;
+        }
+        
         console.log('Processing step 0b -> 1');
         // Moving from migration calculator to Step 1
         try {
