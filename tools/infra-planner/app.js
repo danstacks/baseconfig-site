@@ -112,12 +112,19 @@ const historicalServerTemplates = {
     }
 };
 
-// Current generation (2024-2026) baseline for comparison
+// Current generation (2024-2026) baseline for comparison - vendor-specific
 const currentGenBaseline = {
-    high_compute: { cpu: '2x Xeon 6980P (128C)', cores: 256, ram: 1024, power: 700, perf: 5.0 },
-    general_purpose: { cpu: '2x Xeon 6530 (32C)', cores: 64, ram: 512, power: 550, perf: 4.0 },
-    database: { cpu: '2x Xeon 6980P (128C)', cores: 256, ram: 2048, power: 800, perf: 5.0 },
-    storage: { cpu: '2x Xeon 6430 (32C)', cores: 64, ram: 512, power: 550, perf: 3.5 }
+    intel: {
+        general_purpose: { cpu: '2x Xeon 6530 (32C)', cores: 64, ram: 512, power: 550, perf: 4.0 },
+        database: { cpu: '2x Xeon 6548Y+ (32C)', cores: 64, ram: 1024, power: 500, perf: 4.0 },
+        storage: { cpu: '2x Xeon 6430 (32C)', cores: 64, ram: 512, power: 550, perf: 3.5 }
+    },
+    amd: {
+        // AMD EPYC Turin (5th Gen) - 2024-2025
+        general_purpose: { cpu: '2x EPYC 9755 (128C)', cores: 256, ram: 1536, power: 500, perf: 6.0 },
+        database: { cpu: '2x EPYC 9755 (128C)', cores: 256, ram: 3072, power: 500, perf: 6.0 },
+        storage: { cpu: '2x EPYC 9555 (64C)', cores: 128, ram: 768, power: 400, perf: 5.0 }
+    }
 };
 
 // Workload presets with typical configurations
@@ -995,8 +1002,10 @@ function updateMigrationPreview() {
             return;
         }
         
-        const oldSpec = historicalServerTemplates[year]?.[type];
-        const newSpec = currentGenBaseline[type];
+        const yearData = historicalServerTemplates[year];
+        const oldSpec = yearData?.[type];
+        const vendor = yearData?.vendor || 'intel';
+        const newSpec = currentGenBaseline[vendor]?.[type];
         
         if (oldSpec && newSpec) {
             const perfMultiplier = newSpec.perf / oldSpec.perf;
@@ -1100,7 +1109,8 @@ function applyMigrationCalculation() {
         if (year && type && count > 0) {
             const yearData = historicalServerTemplates[year];
             const oldSpec = yearData?.[type];
-            const newSpec = currentGenBaseline[type];
+            const vendor = yearData?.vendor || 'intel';
+            const newSpec = currentGenBaseline[vendor]?.[type];
             if (oldSpec && newSpec) {
                 const perfMultiplier = newSpec.perf / oldSpec.perf;
                 const newCount = Math.ceil(count / perfMultiplier);
@@ -1109,8 +1119,7 @@ function applyMigrationCalculation() {
                 // Track by type for workload selection
                 typeCounts[type] = (typeCounts[type] || 0) + newCount;
                 
-                // Track vendor from the year's data
-                const vendor = yearData.vendor || 'intel';
+                // Track vendor counts
                 vendorCounts[vendor] += newCount;
             }
         }
