@@ -991,6 +991,7 @@ function updateMigrationPreview() {
         }
         
         content.innerHTML = html;
+        lucide.createIcons();
     } else {
         preview.classList.add('hidden');
     }
