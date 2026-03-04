@@ -511,12 +511,9 @@ const workloadPresets = {
             { partNumber: 'UCSC-C245-M8SX', description: 'UCS C245 M8 Rack 2U SFF Chassis', qty: 1 },
             { partNumber: 'UCS-CPU-A9355', description: 'AMD EPYC 9355 32C 280W', qty: 2 },
             { partNumber: 'UCS-MRX64G2RE5', description: '64GB DDR5-6400 RDIMM', qty: 24 },
-            { partNumber: 'UCS-TPM2-002D-D', description: 'TPM 2.0 FIPS 140-2 AMD M8', qty: 1 },
-            { partNumber: 'UCSC-RAIL-D', description: 'Ball Bearing Rail Kit C220/C240 M7/M8', qty: 1 },
-            { partNumber: 'UCSC-RAID-M1L16', description: '24G Tri-Mode RAID w/4GB FBWC 16Drv', qty: 2 },
             { partNumber: 'UCS-SD960GBM3XEPD', description: '960GB SATA SSD', qty: 12 },
-            { partNumber: 'UCS-SD480GBM3XEPD', description: '480GB SATA SSD', qty: 2 },
             { partNumber: 'UCSC-P-N7Q25GFO', description: 'NVIDIA CX7 4x25GbE SFP56 OCP NIC', qty: 2 },
+            { partNumber: 'UCSC-RAID-M1L16', description: '24G Tri-Mode RAID w/4GB FBWC 16Drv', qty: 2 },
             { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
         ]
     },
