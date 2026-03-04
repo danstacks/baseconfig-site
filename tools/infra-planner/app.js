@@ -856,7 +856,6 @@ function showWizard() {
                     <label class="block text-sm text-gray-400 mb-1">Server Type</label>
                     <select class="migration-type input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateMigrationPreview()">
                         <option value="">Select type...</option>
-                        <option value="high_compute">High Density Compute (2P)</option>
                         <option value="general_purpose">General Purpose (2P)</option>
                         <option value="database">Database (2P)</option>
                         <option value="storage">Storage Dense</option>
@@ -947,7 +946,6 @@ function addMigrationEntry() {
                     <label class="block text-sm text-gray-400 mb-1">Server Type</label>
                     <select class="migration-type input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateMigrationPreview()">
                         <option value="">Select type...</option>
-                        <option value="high_compute">High Density Compute (2P)</option>
                         <option value="general_purpose">General Purpose (2P)</option>
                         <option value="database">Database (2P)</option>
                         <option value="storage">Storage Dense</option>
@@ -1073,13 +1071,11 @@ function updateMigrationPreview() {
 // Intel generations -> Intel workloads, AMD generations -> AMD workloads
 const migrationTypeToWorkload = {
     intel: {
-        'high_compute': 'gp_local_intel',      // 2P high-density -> 2P general purpose Intel
         'general_purpose': 'gp_local_intel',   // 2P general -> 2P general purpose Intel
         'database': 'db_local_intel',          // 2P database -> 2P database Intel
         'storage': 'data_storage'              // Storage -> Storage (vendor-neutral)
     },
     amd: {
-        'high_compute': 'gp_local_amd',        // 2P high-density -> 2P general purpose AMD
         'general_purpose': 'gp_local_amd',     // 2P general -> 2P general purpose AMD
         'database': 'db_local_amd',            // 2P database -> 2P database AMD
         'storage': 'data_storage'              // Storage -> Storage (vendor-neutral)
