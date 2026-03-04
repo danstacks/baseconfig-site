@@ -198,14 +198,14 @@ const workloadPresets = {
         ]
     },
     high_compute: {
-        name: 'High Compute',
+        name: 'High Compute (1P AMD)',
         serverPower: 1224,
         serverCost: 354531.35,  // CCW List Price
         serverHeight: 1,
         storagePerServer: 5,
         networkSpeed: '25g',
         nicPorts: 2,
-        description: 'Best for: HPC, scientific computing, AI/ML inference. High core count, max memory bandwidth.',
+        description: 'Best for: High-density apps needing many cores in 1U. Single-socket AMD with 96 cores. Containerized workloads, parallel processing.',
         specs: {
             chassis: 'Cisco UCS C225 M8 (1U)',
             cpu: '1x AMD EPYC 9655P (96C/192T, 2.6GHz, 400W)',
@@ -321,7 +321,7 @@ const workloadPresets = {
         ]
     },
     gp_local_intel: {
-        name: 'General Purpose Local Intel',
+        name: 'General Purpose Local (2P Intel)',
         serverPower: 574,
         serverCost: 142066.80,  // CCW List Price
         serverHeight: 1,
@@ -351,7 +351,7 @@ const workloadPresets = {
         ]
     },
     gp_san_intel: {
-        name: 'General Purpose SAN Intel',
+        name: 'General Purpose SAN (2P Intel)',
         serverPower: 731,
         serverCost: 127375.75,  // CCW List Price
         serverHeight: 1,
@@ -380,7 +380,7 @@ const workloadPresets = {
         ]
     },
     db_local_intel: {
-        name: 'Database Local Optimized Intel',
+        name: 'Database Local (2P Intel)',
         serverPower: 934,
         serverCost: 219167.16,  // CCW List Price
         serverHeight: 1,
@@ -410,7 +410,7 @@ const workloadPresets = {
         ]
     },
     db_san_intel: {
-        name: 'Database SAN Optimized Intel',
+        name: 'Database SAN (2P Intel)',
         serverPower: 891,
         serverCost: 202423.99,  // CCW List Price
         serverHeight: 1,
@@ -439,7 +439,7 @@ const workloadPresets = {
         ]
     },
     gp_local_amd: {
-        name: 'General Purpose Local AMD',
+        name: 'General Purpose Local (2P AMD)',
         serverPower: 770,
         serverCost: 160228.04,  // CCW List Price
         serverHeight: 1,
@@ -469,7 +469,7 @@ const workloadPresets = {
         ]
     },
     gp_san_amd: {
-        name: 'General Purpose SAN AMD',
+        name: 'General Purpose SAN (2P AMD)',
         serverPower: 770,
         serverCost: 160228.04,  // CCW List Price
         serverHeight: 2,
@@ -498,7 +498,7 @@ const workloadPresets = {
         ]
     },
     db_local_amd: {
-        name: 'Database Local Optimized AMD',
+        name: 'Database Local (2P AMD)',
         serverPower: 994,
         serverCost: 285786.93,  // CCW List Price
         serverHeight: 2,
@@ -528,7 +528,7 @@ const workloadPresets = {
         ]
     },
     db_san_amd: {
-        name: 'Database SAN Optimized AMD',
+        name: 'Database SAN (2P AMD)',
         serverPower: 926,
         serverCost: 264892.16,  // CCW List Price
         serverHeight: 2,
@@ -805,9 +805,9 @@ function showWizard() {
                     <label class="block text-sm text-gray-400 mb-1">Server Type</label>
                     <select class="migration-type input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateMigrationPreview()">
                         <option value="">Select type...</option>
-                        <option value="high_compute">High Compute (2P)</option>
+                        <option value="high_compute">High Density Compute (2P)</option>
                         <option value="general_purpose">General Purpose (2P)</option>
-                        <option value="database">Database Optimized</option>
+                        <option value="database">Database (2P)</option>
                         <option value="storage">Storage Dense</option>
                     </select>
                 </div>
@@ -888,9 +888,9 @@ function addMigrationEntry() {
                     <label class="block text-sm text-gray-400 mb-1">Server Type</label>
                     <select class="migration-type input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateMigrationPreview()">
                         <option value="">Select type...</option>
-                        <option value="high_compute">High Compute (2P)</option>
+                        <option value="high_compute">High Density Compute (2P)</option>
                         <option value="general_purpose">General Purpose (2P)</option>
-                        <option value="database">Database Optimized</option>
+                        <option value="database">Database (2P)</option>
                         <option value="storage">Storage Dense</option>
                     </select>
                 </div>
@@ -1011,11 +1011,12 @@ function updateMigrationPreview() {
 }
 
 // Map migration server types to workload presets
+// Migration types are historical 2P servers, so map to current 2P equivalents
 const migrationTypeToWorkload = {
-    'high_compute': 'high_compute',
-    'general_purpose': 'gp_local_intel',
-    'database': 'db_local_intel',
-    'storage': 'data_storage'
+    'high_compute': 'gp_local_intel',      // 2P high-density -> 2P general purpose (most cores)
+    'general_purpose': 'gp_local_intel',   // 2P general -> 2P general purpose
+    'database': 'db_local_intel',          // 2P database -> 2P database
+    'storage': 'data_storage'              // Storage -> Storage
 };
 
 // Apply migration calculation to wizard
