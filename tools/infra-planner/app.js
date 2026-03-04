@@ -1057,18 +1057,24 @@ function applyMigrationCalculation() {
 }
 
 function wizardNextStep() {
+    console.log('wizardNextStep called, current step:', wizardStep, 'type:', typeof wizardStep);
+    
     if (wizardStep === '0b') {
+        console.log('Processing step 0b -> 1');
         // Moving from migration calculator to Step 1
         applyMigrationCalculation();
         wizardStep = 1;
         document.getElementById('wizardStep0b').classList.add('hidden');
         document.getElementById('progressSteps').classList.remove('hidden');
         updateWizardUI();
-    } else if (wizardStep < 3) {
+    } else if (typeof wizardStep === 'number' && wizardStep < 3) {
+        console.log('Processing numeric step:', wizardStep, '-> ', wizardStep + 1);
         wizardStep++;
         updateWizardUI();
         if (wizardStep === 2) updatePowerPreview();
         if (wizardStep === 3) updateTimelinePreview();
+    } else {
+        console.log('No condition matched for wizardStep:', wizardStep);
     }
 }
 
