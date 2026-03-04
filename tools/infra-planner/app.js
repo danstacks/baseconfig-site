@@ -22,6 +22,48 @@ const DAC_MAX_LENGTH = 5;  // DAC max length in meters
 const AVG_RACK_TO_TOR_LENGTH = 3;  // Average cable length within rack
 const AVG_TOR_TO_SPINE_LENGTH = 15; // Average cable length to spine
 
+// Historical server templates - generalized estimates (for migration calculator)
+const historicalServerTemplates = {
+    2014: {
+        high_compute: { cpu: '2x E5-2697v3 (14C)', cores: 28, ram: 256, power: 550, perf: 1.0, model: 'Dell R630 / HP DL380 G9' },
+        general_purpose: { cpu: '2x E5-2680v3 (12C)', cores: 24, ram: 128, power: 450, perf: 1.0, model: 'Dell R630 / HP DL360 G9' },
+        database: { cpu: '2x E5-2690v3 (12C)', cores: 24, ram: 512, power: 600, perf: 1.0, model: 'Dell R730 / HP DL380 G9' },
+        storage: { cpu: '2x E5-2620v3 (6C)', cores: 12, ram: 64, power: 400, perf: 1.0, model: 'Dell R730xd / HP DL380 G9' }
+    },
+    2016: {
+        high_compute: { cpu: '2x E5-2697v4 (18C)', cores: 36, ram: 384, power: 550, perf: 1.3, model: 'Dell R640 / HP DL380 G10' },
+        general_purpose: { cpu: '2x E5-2680v4 (14C)', cores: 28, ram: 192, power: 450, perf: 1.25, model: 'Dell R640 / HP DL360 G10' },
+        database: { cpu: '2x E5-2690v4 (14C)', cores: 28, ram: 768, power: 600, perf: 1.3, model: 'Dell R740 / HP DL380 G10' },
+        storage: { cpu: '2x E5-2630v4 (10C)', cores: 20, ram: 128, power: 400, perf: 1.2, model: 'Dell R740xd / HP DL380 G10' }
+    },
+    2018: {
+        high_compute: { cpu: '2x Gold 6154 (18C)', cores: 36, ram: 512, power: 600, perf: 1.8, model: 'Dell R640 / HP DL380 G10' },
+        general_purpose: { cpu: '2x Gold 6140 (18C)', cores: 36, ram: 256, power: 500, perf: 1.7, model: 'Dell R640 / HP DL360 G10' },
+        database: { cpu: '2x Gold 6154 (18C)', cores: 36, ram: 1024, power: 650, perf: 1.8, model: 'Dell R740 / HP DL380 G10' },
+        storage: { cpu: '2x Silver 4116 (12C)', cores: 24, ram: 192, power: 450, perf: 1.5, model: 'Dell R740xd / HP DL380 G10' }
+    },
+    2020: {
+        high_compute: { cpu: '2x Gold 6338 (32C)', cores: 64, ram: 512, power: 600, perf: 2.5, model: 'Dell R650 / HP DL380 G10+' },
+        general_purpose: { cpu: '2x Gold 6330 (28C)', cores: 56, ram: 256, power: 500, perf: 2.3, model: 'Dell R650 / HP DL360 G10+' },
+        database: { cpu: '2x Gold 6348 (28C)', cores: 56, ram: 1024, power: 650, perf: 2.5, model: 'Dell R750 / HP DL380 G10+' },
+        storage: { cpu: '2x Silver 4316 (20C)', cores: 40, ram: 256, power: 450, perf: 2.0, model: 'Dell R750xd / HP DL380 G10+' }
+    },
+    2022: {
+        high_compute: { cpu: '2x Gold 6448Y (32C)', cores: 64, ram: 512, power: 650, perf: 3.2, model: 'Dell R660 / HP DL380 G11' },
+        general_purpose: { cpu: '2x Gold 6430 (32C)', cores: 64, ram: 256, power: 550, perf: 3.0, model: 'Dell R660 / HP DL360 G11' },
+        database: { cpu: '2x Gold 6448Y (32C)', cores: 64, ram: 1024, power: 700, perf: 3.2, model: 'Dell R760 / HP DL380 G11' },
+        storage: { cpu: '2x Silver 4416+ (20C)', cores: 40, ram: 256, power: 500, perf: 2.5, model: 'Dell R760xd / HP DL380 G11' }
+    }
+};
+
+// Current generation (2024-2026) baseline for comparison
+const currentGenBaseline = {
+    high_compute: { cpu: '2x Xeon 6980P (128C)', cores: 256, ram: 1024, power: 700, perf: 5.0 },
+    general_purpose: { cpu: '2x Xeon 6530 (32C)', cores: 64, ram: 512, power: 550, perf: 4.0 },
+    database: { cpu: '2x Xeon 6980P (128C)', cores: 256, ram: 2048, power: 800, perf: 5.0 },
+    storage: { cpu: '2x Xeon 6430 (32C)', cores: 64, ram: 512, power: 550, perf: 3.5 }
+};
+
 // Workload presets with typical configurations
 const workloadPresets = {
     gpu_8x_h200_nvl: {
@@ -4263,48 +4305,6 @@ function parseCSVToInfra(csv) {
     
     return { servers };
 }
-
-// Historical server templates - generalized estimates
-const historicalServerTemplates = {
-    2014: {
-        high_compute: { cpu: '2x E5-2697v3 (14C)', cores: 28, ram: 256, power: 550, perf: 1.0, model: 'Dell R630 / HP DL380 G9' },
-        general_purpose: { cpu: '2x E5-2680v3 (12C)', cores: 24, ram: 128, power: 450, perf: 1.0, model: 'Dell R630 / HP DL360 G9' },
-        database: { cpu: '2x E5-2690v3 (12C)', cores: 24, ram: 512, power: 600, perf: 1.0, model: 'Dell R730 / HP DL380 G9' },
-        storage: { cpu: '2x E5-2620v3 (6C)', cores: 12, ram: 64, power: 400, perf: 1.0, model: 'Dell R730xd / HP DL380 G9' }
-    },
-    2016: {
-        high_compute: { cpu: '2x E5-2697v4 (18C)', cores: 36, ram: 384, power: 550, perf: 1.3, model: 'Dell R640 / HP DL380 G10' },
-        general_purpose: { cpu: '2x E5-2680v4 (14C)', cores: 28, ram: 192, power: 450, perf: 1.25, model: 'Dell R640 / HP DL360 G10' },
-        database: { cpu: '2x E5-2690v4 (14C)', cores: 28, ram: 768, power: 600, perf: 1.3, model: 'Dell R740 / HP DL380 G10' },
-        storage: { cpu: '2x E5-2630v4 (10C)', cores: 20, ram: 128, power: 400, perf: 1.2, model: 'Dell R740xd / HP DL380 G10' }
-    },
-    2018: {
-        high_compute: { cpu: '2x Gold 6154 (18C)', cores: 36, ram: 512, power: 600, perf: 1.8, model: 'Dell R640 / HP DL380 G10' },
-        general_purpose: { cpu: '2x Gold 6140 (18C)', cores: 36, ram: 256, power: 500, perf: 1.7, model: 'Dell R640 / HP DL360 G10' },
-        database: { cpu: '2x Gold 6154 (18C)', cores: 36, ram: 1024, power: 650, perf: 1.8, model: 'Dell R740 / HP DL380 G10' },
-        storage: { cpu: '2x Silver 4116 (12C)', cores: 24, ram: 192, power: 450, perf: 1.5, model: 'Dell R740xd / HP DL380 G10' }
-    },
-    2020: {
-        high_compute: { cpu: '2x Gold 6338 (32C)', cores: 64, ram: 512, power: 600, perf: 2.5, model: 'Dell R650 / HP DL380 G10+' },
-        general_purpose: { cpu: '2x Gold 6330 (28C)', cores: 56, ram: 256, power: 500, perf: 2.3, model: 'Dell R650 / HP DL360 G10+' },
-        database: { cpu: '2x Gold 6348 (28C)', cores: 56, ram: 1024, power: 650, perf: 2.5, model: 'Dell R750 / HP DL380 G10+' },
-        storage: { cpu: '2x Silver 4316 (20C)', cores: 40, ram: 256, power: 450, perf: 2.0, model: 'Dell R750xd / HP DL380 G10+' }
-    },
-    2022: {
-        high_compute: { cpu: '2x Gold 6448Y (32C)', cores: 64, ram: 512, power: 650, perf: 3.2, model: 'Dell R660 / HP DL380 G11' },
-        general_purpose: { cpu: '2x Gold 6430 (32C)', cores: 64, ram: 256, power: 550, perf: 3.0, model: 'Dell R660 / HP DL360 G11' },
-        database: { cpu: '2x Gold 6448Y (32C)', cores: 64, ram: 1024, power: 700, perf: 3.2, model: 'Dell R760 / HP DL380 G11' },
-        storage: { cpu: '2x Silver 4416+ (20C)', cores: 40, ram: 256, power: 500, perf: 2.5, model: 'Dell R760xd / HP DL380 G11' }
-    }
-};
-
-// Current generation (2024-2026) baseline for comparison
-const currentGenBaseline = {
-    high_compute: { cpu: '2x Xeon 6980P (128C)', cores: 256, ram: 1024, power: 700, perf: 5.0 },
-    general_purpose: { cpu: '2x Xeon 6530 (32C)', cores: 64, ram: 512, power: 550, perf: 4.0 },
-    database: { cpu: '2x Xeon 6980P (128C)', cores: 256, ram: 2048, power: 800, perf: 5.0 },
-    storage: { cpu: '2x Xeon 6430 (32C)', cores: 64, ram: 512, power: 550, perf: 3.5 }
-};
 
 function updateHistoricalComparison() {
     const year = document.getElementById('historicalYear')?.value;
