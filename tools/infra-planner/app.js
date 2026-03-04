@@ -489,32 +489,34 @@ const workloadPresets = {
         ]
     },
     gp_local_amd: {
-        name: 'General Purpose Local (1P AMD)',
-        serverPower: 770,
-        serverCost: 160228.04,  // CCW List Price
-        serverHeight: 1,
-        storagePerServer: 2,
+        name: 'General Purpose Local (2P AMD)',
+        serverPower: 860,
+        serverCost: 296672.98,  // CCW List Price
+        serverHeight: 2,
+        storagePerServer: 14,
         networkSpeed: '25g',
-        nicPorts: 2,
-        description: 'Best for: Web servers, app servers, dev/test. AMD option with local SSD storage.',
+        nicPorts: 8,
+        description: 'Best for: Web servers, app servers, dev/test. 2P AMD option with local SSD storage.',
         specs: {
-            chassis: 'Cisco UCS C225 M8S (1U SFF)',
-            cpu: '1x AMD EPYC 9335 (32C, 210W)',
-            ram: '768GB DDR5-6400 (12x 64GB RDIMMs)',
-            boot: '2x 240GB M.2 SATA SSD (RAID1)',
-            storage: '6x 960GB SATA SSD',
-            nic: '2x 25G SFP28 (Mellanox CX6-Lx OCP)',
-            raid: '24G Tri-Mode RAID w/4GB FBWC',
+            chassis: 'Cisco UCS C245 M8SX (2U SFF)',
+            cpu: '2x AMD EPYC 9355 (32C, 280W)',
+            ram: '1536GB DDR5-6400 (24x 64GB RDIMMs)',
+            boot: 'M.2 SATA SSD (RAID1)',
+            storage: '12x 960GB SATA SSD + 2x 480GB SATA SSD',
+            nic: '2x 4x25G SFP28 (NVIDIA CX7)',
+            raid: '2x 24G Tri-Mode RAID w/4GB FBWC 16Drv',
             psu: '2x 1200W Titanium'
         },
         bom: [
-            { partNumber: 'UCSC-C225-M8S', description: 'UCS C225 M8 Rack 1U SFF Chassis', qty: 1 },
-            { partNumber: 'UCS-CPU-A9335', description: 'AMD EPYC 9335 32C 210W', qty: 1 },
-            { partNumber: 'UCS-MRX64G2RE5', description: '64GB DDR5-6400 RDIMM', qty: 12 },
-            { partNumber: 'UCS-M2-240G-D', description: '240GB M.2 SATA SSD', qty: 2 },
-            { partNumber: 'UCS-SD960GBM3XEPD', description: '960GB SATA SSD', qty: 6 },
-            { partNumber: 'UCSC-P-N6D25GF-D', description: 'Mellanox CX6-Lx 2x25G PCIe NIC', qty: 1 },
-            { partNumber: 'UCSC-RAID-M1L16', description: '24G Tri-Mode RAID w/4GB FBWC', qty: 1 },
+            { partNumber: 'UCSC-C245-M8SX', description: 'UCS C245 M8 Rack 2U SFF Chassis', qty: 1 },
+            { partNumber: 'UCS-CPU-A9355', description: 'AMD EPYC 9355 32C 280W', qty: 2 },
+            { partNumber: 'UCS-MRX64G2RE5', description: '64GB DDR5-6400 RDIMM', qty: 24 },
+            { partNumber: 'UCS-TPM2-002D-D', description: 'TPM 2.0 FIPS 140-2 AMD M8', qty: 1 },
+            { partNumber: 'UCSC-RAIL-D', description: 'Ball Bearing Rail Kit C220/C240 M7/M8', qty: 1 },
+            { partNumber: 'UCSC-RAID-M1L16', description: '24G Tri-Mode RAID w/4GB FBWC 16Drv', qty: 2 },
+            { partNumber: 'UCS-SD960GBM3XEPD', description: '960GB SATA SSD', qty: 12 },
+            { partNumber: 'UCS-SD480GBM3XEPD', description: '480GB SATA SSD', qty: 2 },
+            { partNumber: 'UCSC-P-N7Q25GFO', description: 'NVIDIA CX7 4x25GbE SFP56 OCP NIC', qty: 2 },
             { partNumber: 'UCSC-PSU1-1200W-D', description: '1200W AC Titanium PSU', qty: 2 }
         ]
     },
@@ -1085,7 +1087,7 @@ const migrationTypeToWorkload = {
         'storage': 'data_storage'              // Storage -> Storage (vendor-neutral)
     },
     amd: {
-        'general_purpose': 'gp_san_amd',       // 2P general -> 2P general purpose AMD (SAN)
+        'general_purpose': 'gp_local_amd',     // 2P general -> 2P general purpose AMD (Local)
         'database': 'db_local_amd',            // 2P database -> 2P database AMD
         'storage': 'data_storage'              // Storage -> Storage (vendor-neutral)
     }
