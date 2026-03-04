@@ -1,12 +1,18 @@
 // Initialize Lucide icons
 lucide.createIcons();
 
-// Set up wizard button event listeners after DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('wizardBack').addEventListener('click', wizardPrevStep);
-    document.getElementById('wizardNext').addEventListener('click', wizardNextStep);
-    document.getElementById('wizardFinish').addEventListener('click', finishWizard);
-});
+// Set up wizard button event listeners immediately (script is at end of body, DOM is ready)
+(function() {
+    const backBtn = document.getElementById('wizardBack');
+    const nextBtn = document.getElementById('wizardNext');
+    const finishBtn = document.getElementById('wizardFinish');
+    
+    if (backBtn) backBtn.addEventListener('click', function() { wizardPrevStep(); });
+    if (nextBtn) nextBtn.addEventListener('click', function() { wizardNextStep(); });
+    if (finishBtn) finishBtn.addEventListener('click', function() { finishWizard(); });
+    
+    console.log('Wizard buttons initialized:', { backBtn: !!backBtn, nextBtn: !!nextBtn, finishBtn: !!finishBtn });
+})();
 
 // Global state
 let calculationResults = {};
@@ -1070,7 +1076,11 @@ function wizardNextStep() {
     if (wizardStep === '0b') {
         console.log('Processing step 0b -> 1');
         // Moving from migration calculator to Step 1
-        applyMigrationCalculation();
+        try {
+            applyMigrationCalculation();
+        } catch (e) {
+            console.error('Error in applyMigrationCalculation:', e);
+        }
         wizardStep = 1;
         document.getElementById('wizardStep0b').classList.add('hidden');
         document.getElementById('progressSteps').classList.remove('hidden');
