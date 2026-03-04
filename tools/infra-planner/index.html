@@ -804,23 +804,30 @@
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div>
-                            <label class="block text-sm text-gray-400 mb-1">Server Generation Year</label>
+                            <label class="block text-sm text-gray-400 mb-1">Server Generation</label>
                             <select id="historicalYear" class="input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateHistoricalComparison()">
-                                <option value="">Select year...</option>
-                                <option value="2014">2014 (Haswell Era)</option>
-                                <option value="2016">2016 (Broadwell Era)</option>
-                                <option value="2018">2018 (Skylake Era)</option>
-                                <option value="2020">2020 (Ice Lake Era)</option>
-                                <option value="2022">2022 (Sapphire Rapids Era)</option>
+                                <option value="">Select era...</option>
+                                <optgroup label="Intel Xeon">
+                                    <option value="2014_intel">2014 Intel (Haswell) - E5 v3</option>
+                                    <option value="2016_intel">2016 Intel (Broadwell) - E5 v4</option>
+                                    <option value="2018_intel">2018 Intel (Skylake) - Gold/Silver</option>
+                                    <option value="2020_intel">2020 Intel (Ice Lake) - 3rd Gen</option>
+                                    <option value="2022_intel">2022 Intel (Sapphire Rapids) - 4th Gen</option>
+                                </optgroup>
+                                <optgroup label="AMD EPYC">
+                                    <option value="2017_amd">2017 AMD (EPYC Naples) - 1st Gen</option>
+                                    <option value="2019_amd">2019 AMD (EPYC Rome) - 2nd Gen</option>
+                                    <option value="2021_amd">2021 AMD (EPYC Milan) - 3rd Gen</option>
+                                    <option value="2022_amd">2022 AMD (EPYC Genoa) - 4th Gen</option>
+                                </optgroup>
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm text-gray-400 mb-1">Server Type</label>
                             <select id="historicalType" class="input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateHistoricalComparison()">
                                 <option value="">Select type...</option>
-                                <option value="high_compute">High Compute (2P)</option>
                                 <option value="general_purpose">General Purpose (2P)</option>
-                                <option value="database">Database Optimized</option>
+                                <option value="database">Database (2P)</option>
                                 <option value="storage">Storage Dense</option>
                             </select>
                         </div>

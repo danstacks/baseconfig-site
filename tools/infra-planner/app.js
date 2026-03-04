@@ -1148,6 +1148,28 @@ function applyMigrationCalculation() {
             workloadSelect.value = migrationTypeToWorkload[dominantVendor][dominantType];
             updateWorkloadDefaults();  // Update the description and specs display
         }
+        
+        // Sync to Migration tab - use the first entry's data for the historical comparison
+        const firstEntry = entries[0];
+        if (firstEntry) {
+            const firstYear = firstEntry.querySelector('.migration-year').value;
+            const firstType = firstEntry.querySelector('.migration-type').value;
+            const totalOldServers = Array.from(entries).reduce((sum, entry) => {
+                return sum + (parseInt(entry.querySelector('.migration-count').value) || 0);
+            }, 0);
+            
+            // Update Migration tab dropdowns
+            const historicalYearSelect = document.getElementById('historicalYear');
+            const historicalTypeSelect = document.getElementById('historicalType');
+            const historicalCountInput = document.getElementById('historicalCount');
+            
+            if (historicalYearSelect && firstYear) historicalYearSelect.value = firstYear;
+            if (historicalTypeSelect && firstType) historicalTypeSelect.value = firstType;
+            if (historicalCountInput) historicalCountInput.value = totalOldServers;
+            
+            // Trigger the comparison update
+            updateHistoricalComparison();
+        }
     }
 }
 
@@ -4442,8 +4464,10 @@ function updateHistoricalComparison() {
         return;
     }
     
-    const oldSpec = historicalServerTemplates[year]?.[type];
-    const newSpec = currentGenBaseline[type];
+    const yearData = historicalServerTemplates[year];
+    const oldSpec = yearData?.[type];
+    const vendor = yearData?.vendor || 'intel';
+    const newSpec = currentGenBaseline[vendor]?.[type];
     
     if (!oldSpec || !newSpec) {
         container.innerHTML = '<p>Invalid selection.</p>';
@@ -4456,12 +4480,15 @@ function updateHistoricalComparison() {
     const powerSavings = (count * oldSpec.power) - (equivalentNewServers * newSpec.power);
     const consolidationRatio = (count / equivalentNewServers).toFixed(1);
     
+    // Extract year number from key (e.g., "2014_intel" -> 2014)
+    const yearNum = parseInt(year.split('_')[0]);
+    
     // Also update the existing infrastructure for migration comparison
     existingInfrastructure = {
         servers: Array(count).fill(null).map((_, i) => ({
             hostname: `server-${String(i + 1).padStart(3, '0')}`,
             model: oldSpec.model.split(' / ')[0],
-            age: 2026 - parseInt(year),
+            age: 2026 - yearNum,
             power: oldSpec.power,
             cpu: oldSpec.cpu,
             ram: oldSpec.ram
@@ -4472,7 +4499,7 @@ function updateHistoricalComparison() {
     container.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-                <h4 class="font-semibold text-cyan-400 mb-3">Old Infrastructure (${year})</h4>
+                <h4 class="font-semibold text-cyan-400 mb-3">Old Infrastructure (${yearData.label || year})</h4>
                 <div class="space-y-2 text-sm">
                     <div class="flex justify-between"><span class="text-gray-400">Model:</span><span>${oldSpec.model}</span></div>
                     <div class="flex justify-between"><span class="text-gray-400">CPU:</span><span>${oldSpec.cpu}</span></div>
