@@ -169,10 +169,10 @@
                         <select id="wizardWorkloadType" class="input-field w-full px-4 py-3 rounded-lg text-white" onchange="updateWorkloadDefaults()">
                             <option value="">-- Select Workload Type --</option>
                             <optgroup label="Most Common">
-                                <option value="gp_local_intel">General Purpose Local Intel</option>
-                                <option value="hypervisor">Hypervisor (VMware/Hyper-V)</option>
-                                <option value="container_worker">Container Worker (Kubernetes)</option>
-                                <option value="db_local_intel">Database Local (SQL/PostgreSQL)</option>
+                                <option value="gp_local_intel">General Purpose Local (2P Intel)</option>
+                                <option value="hypervisor">Hypervisor (2P Intel)</option>
+                                <option value="container_worker">Container Worker (1P AMD)</option>
+                                <option value="db_local_intel">Database Local (2P Intel)</option>
                             </optgroup>
                             <optgroup label="GPU / AI Training">
                                 <option value="gpu_8x_h200_nvl">GPU 8x H200 NVL (AI Training)</option>
@@ -180,25 +180,26 @@
                                 <option value="gpu_8x_h200_hgx">GPU 8x H200 HGX (Dense AI)</option>
                                 <option value="gpu_2x_rtx6000">GPU 2x RTX 6000 (Rendering)</option>
                             </optgroup>
-                            <optgroup label="High Performance">
-                                <option value="high_compute">High Compute (HPC/Scientific)</option>
-                                <option value="hadoop_data_node">Hadoop/Spark Data Node</option>
-                                <option value="datawarehouse_amd">DataWarehouse - AMD</option>
-                                <option value="datawarehouse_intel">DataWarehouse - Intel</option>
+                            <optgroup label="High Density / Analytics">
+                                <option value="high_compute">High Density Compute (1P AMD)</option>
+                                <option value="hadoop_data_node">Hadoop/Spark Data Node (1P Intel)</option>
+                                <option value="datawarehouse_amd">DataWarehouse (2P AMD)</option>
+                                <option value="datawarehouse_intel">DataWarehouse (2P Intel)</option>
                             </optgroup>
                             <optgroup label="Database Optimized">
-                                <option value="db_san_intel">Database SAN Intel (Clustered)</option>
-                                <option value="db_local_amd">Database Local AMD</option>
-                                <option value="db_san_amd">Database SAN AMD (Clustered)</option>
-                                <option value="oracle_db_intel">Oracle DB (License Optimized)</option>
+                                <option value="db_san_intel">Database SAN (2P Intel)</option>
+                                <option value="db_local_amd">Database Local (2P AMD)</option>
+                                <option value="db_san_amd">Database SAN (2P AMD)</option>
+                                <option value="oracle_db_intel">Oracle DB (2P Intel)</option>
                             </optgroup>
                             <optgroup label="Storage & Logging">
-                                <option value="logging">Logging (Splunk/ELK)</option>
-                                <option value="data_storage">Data Storage Servers</option>
+                                <option value="logging">Logging Server (2P Intel)</option>
+                                <option value="data_storage">Data Storage (2P Intel)</option>
                             </optgroup>
                             <optgroup label="SAN-Attached">
-                                <option value="gp_san_intel">General Purpose SAN Intel</option>
-                                <option value="gp_san_amd">General Purpose SAN AMD</option>
+                                <option value="gp_san_intel">General Purpose SAN (2P Intel)</option>
+                                <option value="gp_san_amd">General Purpose SAN (2P AMD)</option>
+                                <option value="gp_local_amd">General Purpose Local (2P AMD)</option>
                             </optgroup>
                         </select>
                         <p class="text-xs text-emerald-400 mt-1" id="workloadDescription"></p>
@@ -455,10 +456,10 @@
                             <label class="block text-sm text-gray-400 mb-1">Workload Type</label>
                             <select id="workloadType" class="input-field w-full px-4 py-2 rounded-lg text-white" onchange="applyWorkloadPreset(); calculate()">
                                 <optgroup label="Most Common">
-                                    <option value="gp_local_intel">General Purpose Local Intel</option>
-                                    <option value="hypervisor">Hypervisor (VMware/Hyper-V)</option>
-                                    <option value="container_worker">Container Worker (Kubernetes)</option>
-                                    <option value="db_local_intel">Database Local (SQL/PostgreSQL)</option>
+                                    <option value="gp_local_intel">General Purpose Local (2P Intel)</option>
+                                    <option value="hypervisor">Hypervisor (2P Intel)</option>
+                                    <option value="container_worker">Container Worker (1P AMD)</option>
+                                    <option value="db_local_intel">Database Local (2P Intel)</option>
                                 </optgroup>
                                 <optgroup label="GPU / AI Training">
                                     <option value="gpu_8x_h200_nvl">GPU 8x H200 NVL (AI Training)</option>
@@ -466,25 +467,26 @@
                                     <option value="gpu_8x_h200_hgx">GPU 8x H200 HGX (Dense AI)</option>
                                     <option value="gpu_2x_rtx6000">GPU 2x RTX 6000 (Rendering)</option>
                                 </optgroup>
-                                <optgroup label="High Performance">
-                                    <option value="high_compute">High Compute (HPC/Scientific)</option>
-                                    <option value="hadoop_data_node">Hadoop/Spark Data Node</option>
-                                    <option value="datawarehouse_amd">DataWarehouse - AMD</option>
-                                    <option value="datawarehouse_intel">DataWarehouse - Intel</option>
+                                <optgroup label="High Density / Analytics">
+                                    <option value="high_compute">High Density Compute (1P AMD)</option>
+                                    <option value="hadoop_data_node">Hadoop/Spark Data Node (1P Intel)</option>
+                                    <option value="datawarehouse_amd">DataWarehouse (2P AMD)</option>
+                                    <option value="datawarehouse_intel">DataWarehouse (2P Intel)</option>
                                 </optgroup>
                                 <optgroup label="Database Optimized">
-                                    <option value="db_san_intel">Database SAN Intel (Clustered)</option>
-                                    <option value="db_local_amd">Database Local AMD</option>
-                                    <option value="db_san_amd">Database SAN AMD (Clustered)</option>
-                                    <option value="oracle_db_intel">Oracle DB (License Optimized)</option>
+                                    <option value="db_san_intel">Database SAN (2P Intel)</option>
+                                    <option value="db_local_amd">Database Local (2P AMD)</option>
+                                    <option value="db_san_amd">Database SAN (2P AMD)</option>
+                                    <option value="oracle_db_intel">Oracle DB (2P Intel)</option>
                                 </optgroup>
                                 <optgroup label="Storage & Logging">
-                                    <option value="logging">Logging (Splunk/ELK)</option>
-                                    <option value="data_storage">Data Storage Servers</option>
+                                    <option value="logging">Logging Server (2P Intel)</option>
+                                    <option value="data_storage">Data Storage (2P Intel)</option>
                                 </optgroup>
                                 <optgroup label="SAN-Attached">
-                                    <option value="gp_san_intel">General Purpose SAN Intel</option>
-                                    <option value="gp_san_amd">General Purpose SAN AMD</option>
+                                    <option value="gp_san_intel">General Purpose SAN (2P Intel)</option>
+                                    <option value="gp_san_amd">General Purpose SAN (2P AMD)</option>
+                                    <option value="gp_local_amd">General Purpose Local (2P AMD)</option>
                                 </optgroup>
                             </select>
                         </div>

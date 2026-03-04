@@ -241,7 +241,7 @@ const workloadPresets = {
         ]
     },
     high_compute: {
-        name: 'High Compute (1P AMD)',
+        name: 'High Density Compute (1P AMD)',
         serverPower: 1224,
         serverCost: 354531.35,  // CCW List Price
         serverHeight: 1,
@@ -271,7 +271,7 @@ const workloadPresets = {
         ]
     },
     hadoop_data_node: {
-        name: 'Hadoop Data Node',
+        name: 'Hadoop/Spark Data Node (1P Intel)',
         serverPower: 762,
         serverCost: 338182.20,  // CCW List Price
         serverHeight: 2,
@@ -302,7 +302,7 @@ const workloadPresets = {
         ]
     },
     datawarehouse_amd: {
-        name: 'DataWarehouse - AMD',
+        name: 'DataWarehouse (2P AMD)',
         serverPower: 993,
         serverCost: 282254.64,  // CCW List Price
         serverHeight: 2,
@@ -333,7 +333,7 @@ const workloadPresets = {
         ]
     },
     datawarehouse_intel: {
-        name: 'DataWarehouse - Intel',
+        name: 'DataWarehouse (2P Intel)',
         serverPower: 964,
         serverCost: 350169.99,  // CCW List Price
         serverHeight: 2,
@@ -600,7 +600,7 @@ const workloadPresets = {
         ]
     },
     hypervisor: {
-        name: 'Hypervisor',
+        name: 'Hypervisor (2P Intel)',
         serverPower: 970,
         serverCost: 194675.07,  // CCW List Price
         serverHeight: 1,
@@ -629,7 +629,7 @@ const workloadPresets = {
         ]
     },
     container_worker: {
-        name: 'Container Worker',
+        name: 'Container Worker (1P AMD)',
         serverPower: 556,
         serverCost: 175062.46,  // CCW List Price
         serverHeight: 1,
@@ -660,7 +660,7 @@ const workloadPresets = {
         ]
     },
     oracle_db_intel: {
-        name: 'Oracle DB Optimized Intel',
+        name: 'Oracle DB (2P Intel)',
         serverPower: 871,
         serverCost: 308070.04,  // CCW List Price
         serverHeight: 1,
@@ -688,7 +688,7 @@ const workloadPresets = {
         ]
     },
     logging: {
-        name: 'Logging',
+        name: 'Logging Server (2P Intel)',
         serverPower: 1073,
         serverCost: 201991.14,  // CCW List Price
         serverHeight: 2,
@@ -719,7 +719,7 @@ const workloadPresets = {
         ]
     },
     data_storage: {
-        name: 'Data Storage Servers',
+        name: 'Data Storage (2P Intel)',
         serverPower: 1151,
         serverCost: 198632.84,  // CCW List Price
         serverHeight: 2,
