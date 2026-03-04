@@ -942,13 +942,22 @@ function updateMigrationPreview() {
     }
 }
 
+// Map migration server types to workload presets
+const migrationTypeToWorkload = {
+    'high_compute': 'high_compute',
+    'general_purpose': 'gp_local_intel',
+    'database': 'db_local_intel',
+    'storage': 'data_storage'
+};
+
 // Apply migration calculation to wizard
 function applyMigrationCalculation() {
     updateMigrationPreview();
     
-    // Get the calculated new server count
+    // Get the calculated new server count and determine dominant workload type
     const entries = document.querySelectorAll('.migration-entry');
     let totalNewServers = 0;
+    let typeCounts = {};  // Track server counts by type to find dominant
     
     entries.forEach(entry => {
         const year = entry.querySelector('.migration-year').value;
@@ -960,7 +969,11 @@ function applyMigrationCalculation() {
             const newSpec = currentGenBaseline[type];
             if (oldSpec && newSpec) {
                 const perfMultiplier = newSpec.perf / oldSpec.perf;
-                totalNewServers += Math.ceil(count / perfMultiplier);
+                const newCount = Math.ceil(count / perfMultiplier);
+                totalNewServers += newCount;
+                
+                // Track by type for workload selection
+                typeCounts[type] = (typeCounts[type] || 0) + newCount;
             }
         }
     });
@@ -970,6 +983,22 @@ function applyMigrationCalculation() {
         // Update hint to show this was calculated
         document.getElementById('serverCountHint').innerHTML = `<span class="text-green-400">✓ Calculated from your existing ${document.querySelectorAll('.migration-entry').length > 1 ? 'server groups' : 'servers'}</span>`;
         document.getElementById('typicalSizesButtons').classList.add('hidden');
+        
+        // Auto-select workload type based on dominant server type
+        let dominantType = null;
+        let maxCount = 0;
+        for (const [type, count] of Object.entries(typeCounts)) {
+            if (count > maxCount) {
+                maxCount = count;
+                dominantType = type;
+            }
+        }
+        
+        if (dominantType && migrationTypeToWorkload[dominantType]) {
+            const workloadSelect = document.getElementById('wizardWorkloadType');
+            workloadSelect.value = migrationTypeToWorkload[dominantType];
+            updateWorkloadDefaults();  // Update the description and specs display
+        }
     }
 }
 
