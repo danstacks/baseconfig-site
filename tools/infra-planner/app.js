@@ -861,21 +861,25 @@ function removeMigrationEntry(btn) {
 
 // Calculate recommended servers based on migration entries
 function updateMigrationPreview() {
-    const entries = document.querySelectorAll('.migration-entry');
+    const entries = document.querySelectorAll('#wizardStep0b .migration-entry');
     let totalOldServers = 0;
     let totalNewServers = 0;
     let totalOldPower = 0;
     let totalNewPower = 0;
     let details = [];
-    let allValid = true;
+    let hasIncomplete = false;
     
     entries.forEach((entry, idx) => {
         const year = entry.querySelector('.migration-year').value;
         const type = entry.querySelector('.migration-type').value;
         const count = parseInt(entry.querySelector('.migration-count').value) || 0;
         
+        // Check if partially filled (has type but no year, or vice versa)
+        if ((!year && type) || (year && !type) || (!year && !type)) {
+            hasIncomplete = true;
+        }
+        
         if (!year || !type || count <= 0) {
-            allValid = false;
             return;
         }
         
@@ -904,6 +908,14 @@ function updateMigrationPreview() {
     
     const preview = document.getElementById('migrationPreview');
     const content = document.getElementById('migrationPreviewContent');
+    const validation = document.getElementById('migrationValidation');
+    
+    // Show validation warning if incomplete
+    if (hasIncomplete && details.length === 0) {
+        validation.classList.remove('hidden');
+    } else {
+        validation.classList.add('hidden');
+    }
     
     if (details.length > 0) {
         preview.classList.remove('hidden');

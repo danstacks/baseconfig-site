@@ -124,7 +124,14 @@
                         <i data-lucide="plus-circle" class="w-4 h-4"></i> Add another server group
                     </button>
                     
-                    <div id="migrationPreview" class="p-4 bg-slate-800 rounded-lg border border-slate-600 hidden">
+                    <div id="migrationValidation" class="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg hidden">
+                        <p class="text-yellow-400 text-sm flex items-center gap-2">
+                            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                            <span>Please select both <strong>Server Generation</strong> and <strong>Server Type</strong> for each group.</span>
+                        </p>
+                    </div>
+                    
+                    <div id="migrationPreview" class="p-4 bg-slate-800 rounded-lg border border-green-500/30 hidden">
                         <h4 class="font-semibold text-green-400 mb-3 flex items-center gap-2">
                             <i data-lucide="sparkles" class="w-4 h-4"></i> Recommended New Server Count
                         </h4>
