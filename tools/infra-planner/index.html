@@ -41,7 +41,7 @@
                 </div>
                 
                 <!-- Progress Steps -->
-                <div class="flex justify-center mb-8">
+                <div class="flex justify-center mb-8" id="progressSteps">
                     <div class="flex items-center gap-2">
                         <div id="step1Indicator" class="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center text-sm font-bold">1</div>
                         <div class="w-12 h-1 bg-slate-600" id="step1Bar"></div>
@@ -51,15 +51,96 @@
                     </div>
                 </div>
 
+                <!-- Step 0: Decision Point -->
+                <div id="wizardStep0" class="wizard-step space-y-6">
+                    <h3 class="text-lg font-semibold flex items-center gap-2"><i data-lucide="help-circle" class="w-5 h-5 text-cyan-400"></i>Let's Get Started</h3>
+                    
+                    <p class="text-gray-400">Do you know how many servers you need for your deployment?</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <button type="button" onclick="selectWizardPath('known')" id="pathKnown" class="wizard-path-btn p-6 rounded-xl border-2 border-slate-600 hover:border-cyan-500 text-left transition-all">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                                    <i data-lucide="check-circle" class="w-6 h-6 text-cyan-400"></i>
+                                </div>
+                                <div class="font-semibold text-lg">Yes, I know</div>
+                            </div>
+                            <p class="text-sm text-gray-400">I have a specific server count in mind for a new build or refresh project.</p>
+                        </button>
+                        
+                        <button type="button" onclick="selectWizardPath('calculate')" id="pathCalculate" class="wizard-path-btn p-6 rounded-xl border-2 border-slate-600 hover:border-purple-500 text-left transition-all">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
+                                    <i data-lucide="calculator" class="w-6 h-6 text-purple-400"></i>
+                                </div>
+                                <div class="font-semibold text-lg">Help me figure it out</div>
+                            </div>
+                            <p class="text-sm text-gray-400">I have existing servers to replace and need help calculating how many new ones I need.</p>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 0b: Migration Calculator (shown if "Help me figure it out" selected) -->
+                <div id="wizardStep0b" class="wizard-step hidden space-y-6">
+                    <h3 class="text-lg font-semibold flex items-center gap-2"><i data-lucide="history" class="w-5 h-5 text-purple-400"></i>Tell Us About Your Current Servers</h3>
+                    
+                    <div class="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3 mb-2">
+                        <p class="text-purple-300 text-sm">We'll calculate how many new servers you need based on your existing infrastructure and performance improvements in newer hardware.</p>
+                    </div>
+                    
+                    <div id="migrationEntries" class="space-y-4">
+                        <div class="migration-entry p-4 bg-slate-800/50 rounded-lg border border-slate-600">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Server Generation</label>
+                                    <select class="migration-year input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateMigrationPreview()">
+                                        <option value="">Select era...</option>
+                                        <option value="2014">2014 (Haswell) - Dell R630/HP DL380 G9</option>
+                                        <option value="2016">2016 (Broadwell) - Dell R640/HP DL380 G10</option>
+                                        <option value="2018">2018 (Skylake) - Dell R640/HP DL380 G10</option>
+                                        <option value="2020">2020 (Ice Lake) - Dell R650/HP DL380 G10+</option>
+                                        <option value="2022">2022 (Sapphire Rapids) - Dell R660/HP DL380 G11</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Server Type</label>
+                                    <select class="migration-type input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateMigrationPreview()">
+                                        <option value="">Select type...</option>
+                                        <option value="high_compute">High Compute (2P)</option>
+                                        <option value="general_purpose">General Purpose (2P)</option>
+                                        <option value="database">Database Optimized</option>
+                                        <option value="storage">Storage Dense</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">How Many?</label>
+                                    <input type="number" class="migration-count input-field w-full px-3 py-2 rounded-lg text-white" value="100" min="1" onchange="updateMigrationPreview()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="button" onclick="addMigrationEntry()" class="text-sm text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Add another server group
+                    </button>
+                    
+                    <div id="migrationPreview" class="p-4 bg-slate-800 rounded-lg border border-slate-600 hidden">
+                        <h4 class="font-semibold text-green-400 mb-3 flex items-center gap-2">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i> Recommended New Server Count
+                        </h4>
+                        <div id="migrationPreviewContent" class="space-y-2 text-sm"></div>
+                    </div>
+                </div>
+
                 <!-- Step 1: Basic Info -->
-                <div id="wizardStep1" class="wizard-step space-y-6">
+                <div id="wizardStep1" class="wizard-step hidden space-y-6">
                     <h3 class="text-lg font-semibold flex items-center gap-2"><i data-lucide="server" class="w-5 h-5 text-cyan-400"></i>Basic Configuration</h3>
                     
                     <div>
                         <label class="block text-sm text-gray-400 mb-2">How many servers are you planning? *</label>
                         <input type="number" id="wizardTotalServers" value="1000" min="1" class="input-field w-full px-4 py-3 rounded-lg text-white text-lg">
-                        <p class="text-xs text-gray-500 mt-1">Enter the total number of servers for your deployment (new build or refresh)</p>
-                        <div class="flex flex-wrap gap-2 mt-2">
+                        <p class="text-xs text-gray-500 mt-1" id="serverCountHint">Enter the total number of servers for your deployment (new build or refresh)</p>
+                        <div class="flex flex-wrap gap-2 mt-2" id="typicalSizesButtons">
                             <span class="text-xs text-gray-500">Typical sizes:</span>
                             <button type="button" onclick="document.getElementById('wizardTotalServers').value=50; updatePowerPreview()" class="px-2 py-0.5 text-xs bg-slate-700 hover:bg-slate-600 rounded">50 (small)</button>
                             <button type="button" onclick="document.getElementById('wizardTotalServers').value=200; updatePowerPreview()" class="px-2 py-0.5 text-xs bg-slate-700 hover:bg-slate-600 rounded">200 (medium)</button>

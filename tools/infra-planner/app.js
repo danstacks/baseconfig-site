@@ -3,7 +3,8 @@ lucide.createIcons();
 
 // Global state
 let calculationResults = {};
-let wizardStep = 1;
+let wizardStep = 0;  // Start at step 0 (decision point)
+let wizardPath = 'known';  // 'known' or 'calculate'
 let selectedNetworkSpeed = '25g';
 let selectedRackLayout = 'single';
 let spineUplinkMode = 'direct'; // 'direct' (100G in 400G port) or 'breakout' (4:1)
@@ -728,7 +729,47 @@ function formatNumber(num) {
 // Wizard functions
 function showWizard() {
     document.getElementById('wizardOverlay').classList.remove('hidden');
-    wizardStep = 1;
+    wizardStep = 0;  // Start at decision point
+    wizardPath = 'known';
+    // Reset migration entries to single entry
+    document.getElementById('migrationEntries').innerHTML = `
+        <div class="migration-entry p-4 bg-slate-800/50 rounded-lg border border-slate-600">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Server Generation</label>
+                    <select class="migration-year input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateMigrationPreview()">
+                        <option value="">Select era...</option>
+                        <option value="2014">2014 (Haswell) - Dell R630/HP DL380 G9</option>
+                        <option value="2016">2016 (Broadwell) - Dell R640/HP DL380 G10</option>
+                        <option value="2018">2018 (Skylake) - Dell R640/HP DL380 G10</option>
+                        <option value="2020">2020 (Ice Lake) - Dell R650/HP DL380 G10+</option>
+                        <option value="2022">2022 (Sapphire Rapids) - Dell R660/HP DL380 G11</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Server Type</label>
+                    <select class="migration-type input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateMigrationPreview()">
+                        <option value="">Select type...</option>
+                        <option value="high_compute">High Compute (2P)</option>
+                        <option value="general_purpose">General Purpose (2P)</option>
+                        <option value="database">Database Optimized</option>
+                        <option value="storage">Storage Dense</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">How Many?</label>
+                    <input type="number" class="migration-count input-field w-full px-3 py-2 rounded-lg text-white" value="100" min="1" onchange="updateMigrationPreview()">
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('migrationPreview').classList.add('hidden');
+    // Reset server count hint
+    document.getElementById('serverCountHint').textContent = 'Enter the total number of servers for your deployment (new build or refresh)';
+    document.getElementById('typicalSizesButtons').classList.remove('hidden');
+    // Reset path button styles
+    document.getElementById('pathKnown').classList.remove('border-cyan-500', 'bg-cyan-500/10');
+    document.getElementById('pathCalculate').classList.remove('border-purple-500', 'bg-purple-500/10');
     updateWizardUI();
     lucide.createIcons();
 }
@@ -742,8 +783,205 @@ function skipWizard() {
     calculate();
 }
 
+// Wizard path selection (Step 0)
+function selectWizardPath(path) {
+    wizardPath = path;
+    
+    // Update button styles
+    document.getElementById('pathKnown').classList.remove('border-cyan-500', 'bg-cyan-500/10');
+    document.getElementById('pathCalculate').classList.remove('border-purple-500', 'bg-purple-500/10');
+    
+    if (path === 'known') {
+        document.getElementById('pathKnown').classList.add('border-cyan-500', 'bg-cyan-500/10');
+        // Go directly to Step 1
+        wizardStep = 1;
+        updateWizardUI();
+    } else {
+        document.getElementById('pathCalculate').classList.add('border-purple-500', 'bg-purple-500/10');
+        // Show migration calculator (Step 0b)
+        document.getElementById('wizardStep0').classList.add('hidden');
+        document.getElementById('wizardStep0b').classList.remove('hidden');
+        document.getElementById('progressSteps').classList.add('hidden');
+        document.getElementById('wizardBack').classList.remove('hidden');
+        document.getElementById('wizardNext').classList.remove('hidden');
+        wizardStep = '0b';
+    }
+    lucide.createIcons();
+}
+
+// Add another migration entry row
+function addMigrationEntry() {
+    const container = document.getElementById('migrationEntries');
+    const entryHtml = `
+        <div class="migration-entry p-4 bg-slate-800/50 rounded-lg border border-slate-600 relative">
+            <button type="button" onclick="removeMigrationEntry(this)" class="absolute top-2 right-2 text-gray-500 hover:text-red-400">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Server Generation</label>
+                    <select class="migration-year input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateMigrationPreview()">
+                        <option value="">Select era...</option>
+                        <option value="2014">2014 (Haswell) - Dell R630/HP DL380 G9</option>
+                        <option value="2016">2016 (Broadwell) - Dell R640/HP DL380 G10</option>
+                        <option value="2018">2018 (Skylake) - Dell R640/HP DL380 G10</option>
+                        <option value="2020">2020 (Ice Lake) - Dell R650/HP DL380 G10+</option>
+                        <option value="2022">2022 (Sapphire Rapids) - Dell R660/HP DL380 G11</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Server Type</label>
+                    <select class="migration-type input-field w-full px-3 py-2 rounded-lg text-white" onchange="updateMigrationPreview()">
+                        <option value="">Select type...</option>
+                        <option value="high_compute">High Compute (2P)</option>
+                        <option value="general_purpose">General Purpose (2P)</option>
+                        <option value="database">Database Optimized</option>
+                        <option value="storage">Storage Dense</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">How Many?</label>
+                    <input type="number" class="migration-count input-field w-full px-3 py-2 rounded-lg text-white" value="50" min="1" onchange="updateMigrationPreview()">
+                </div>
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', entryHtml);
+    lucide.createIcons();
+    updateMigrationPreview();
+}
+
+function removeMigrationEntry(btn) {
+    const entry = btn.closest('.migration-entry');
+    if (document.querySelectorAll('.migration-entry').length > 1) {
+        entry.remove();
+        updateMigrationPreview();
+    }
+}
+
+// Calculate recommended servers based on migration entries
+function updateMigrationPreview() {
+    const entries = document.querySelectorAll('.migration-entry');
+    let totalOldServers = 0;
+    let totalNewServers = 0;
+    let totalOldPower = 0;
+    let totalNewPower = 0;
+    let details = [];
+    let allValid = true;
+    
+    entries.forEach((entry, idx) => {
+        const year = entry.querySelector('.migration-year').value;
+        const type = entry.querySelector('.migration-type').value;
+        const count = parseInt(entry.querySelector('.migration-count').value) || 0;
+        
+        if (!year || !type || count <= 0) {
+            allValid = false;
+            return;
+        }
+        
+        const oldSpec = historicalServerTemplates[year]?.[type];
+        const newSpec = currentGenBaseline[type];
+        
+        if (oldSpec && newSpec) {
+            const perfMultiplier = newSpec.perf / oldSpec.perf;
+            const equivalentNew = Math.ceil(count / perfMultiplier);
+            
+            totalOldServers += count;
+            totalNewServers += equivalentNew;
+            totalOldPower += count * oldSpec.power;
+            totalNewPower += equivalentNew * newSpec.power;
+            
+            details.push({
+                year,
+                type,
+                oldCount: count,
+                newCount: equivalentNew,
+                ratio: perfMultiplier.toFixed(1),
+                oldModel: oldSpec.model
+            });
+        }
+    });
+    
+    const preview = document.getElementById('migrationPreview');
+    const content = document.getElementById('migrationPreviewContent');
+    
+    if (details.length > 0) {
+        preview.classList.remove('hidden');
+        
+        const consolidationRatio = (totalOldServers / totalNewServers).toFixed(1);
+        const powerSavings = ((totalOldPower - totalNewPower) / 1000).toFixed(1);
+        
+        let html = `
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="text-center p-3 bg-slate-700/50 rounded-lg">
+                    <div class="text-2xl font-bold text-red-400">${totalOldServers}</div>
+                    <div class="text-xs text-gray-400">Old Servers</div>
+                </div>
+                <div class="text-center p-3 bg-slate-700/50 rounded-lg">
+                    <div class="text-2xl font-bold text-green-400">${totalNewServers}</div>
+                    <div class="text-xs text-gray-400">New Servers Needed</div>
+                </div>
+            </div>
+            <div class="space-y-1 text-gray-400">
+                <div class="flex justify-between"><span>Consolidation Ratio:</span><span class="text-green-400">${consolidationRatio}:1</span></div>
+                <div class="flex justify-between"><span>Power Savings:</span><span class="text-green-400">${powerSavings} kW</span></div>
+            </div>
+        `;
+        
+        if (details.length > 1) {
+            html += `<div class="mt-3 pt-3 border-t border-slate-600 text-xs text-gray-500">`;
+            details.forEach(d => {
+                html += `<div>${d.oldCount}× ${d.year} ${d.type} → ${d.newCount} new (${d.ratio}:1)</div>`;
+            });
+            html += `</div>`;
+        }
+        
+        content.innerHTML = html;
+    } else {
+        preview.classList.add('hidden');
+    }
+}
+
+// Apply migration calculation to wizard
+function applyMigrationCalculation() {
+    updateMigrationPreview();
+    
+    // Get the calculated new server count
+    const entries = document.querySelectorAll('.migration-entry');
+    let totalNewServers = 0;
+    
+    entries.forEach(entry => {
+        const year = entry.querySelector('.migration-year').value;
+        const type = entry.querySelector('.migration-type').value;
+        const count = parseInt(entry.querySelector('.migration-count').value) || 0;
+        
+        if (year && type && count > 0) {
+            const oldSpec = historicalServerTemplates[year]?.[type];
+            const newSpec = currentGenBaseline[type];
+            if (oldSpec && newSpec) {
+                const perfMultiplier = newSpec.perf / oldSpec.perf;
+                totalNewServers += Math.ceil(count / perfMultiplier);
+            }
+        }
+    });
+    
+    if (totalNewServers > 0) {
+        document.getElementById('wizardTotalServers').value = totalNewServers;
+        // Update hint to show this was calculated
+        document.getElementById('serverCountHint').innerHTML = `<span class="text-green-400">✓ Calculated from your existing ${document.querySelectorAll('.migration-entry').length > 1 ? 'server groups' : 'servers'}</span>`;
+        document.getElementById('typicalSizesButtons').classList.add('hidden');
+    }
+}
+
 function wizardNextStep() {
-    if (wizardStep < 3) {
+    if (wizardStep === '0b') {
+        // Moving from migration calculator to Step 1
+        applyMigrationCalculation();
+        wizardStep = 1;
+        document.getElementById('wizardStep0b').classList.add('hidden');
+        document.getElementById('progressSteps').classList.remove('hidden');
+        updateWizardUI();
+    } else if (wizardStep < 3) {
         wizardStep++;
         updateWizardUI();
         if (wizardStep === 2) updatePowerPreview();
@@ -752,37 +990,80 @@ function wizardNextStep() {
 }
 
 function wizardPrevStep() {
-    if (wizardStep > 1) {
+    if (wizardStep === '0b') {
+        // Go back to Step 0 decision
+        wizardStep = 0;
+        document.getElementById('wizardStep0b').classList.add('hidden');
+        document.getElementById('wizardStep0').classList.remove('hidden');
+        document.getElementById('progressSteps').classList.remove('hidden');
+        document.getElementById('wizardBack').classList.add('hidden');
+        document.getElementById('wizardNext').classList.add('hidden');
+    } else if (wizardStep === 1 && wizardPath === 'calculate') {
+        // Go back to migration calculator
+        wizardStep = '0b';
+        document.getElementById('wizardStep1').classList.add('hidden');
+        document.getElementById('wizardStep0b').classList.remove('hidden');
+        document.getElementById('progressSteps').classList.add('hidden');
+    } else if (wizardStep === 1 && wizardPath === 'known') {
+        // Go back to Step 0 decision
+        wizardStep = 0;
+        document.getElementById('wizardStep1').classList.add('hidden');
+        document.getElementById('wizardStep0').classList.remove('hidden');
+        document.getElementById('progressSteps').classList.add('hidden');
+        document.getElementById('wizardBack').classList.add('hidden');
+        document.getElementById('wizardNext').classList.add('hidden');
+        // Reset server count hint
+        document.getElementById('serverCountHint').textContent = 'Enter the total number of servers for your deployment (new build or refresh)';
+        document.getElementById('typicalSizesButtons').classList.remove('hidden');
+    } else if (wizardStep > 1) {
         wizardStep--;
         updateWizardUI();
     }
+    lucide.createIcons();
 }
 
 function updateWizardUI() {
     // Hide all steps
+    document.getElementById('wizardStep0').classList.add('hidden');
+    document.getElementById('wizardStep0b').classList.add('hidden');
     for (let i = 1; i <= 3; i++) {
         document.getElementById(`wizardStep${i}`).classList.add('hidden');
-        document.getElementById(`step${i}Indicator`).classList.remove('bg-blue-500', 'bg-green-500');
+        document.getElementById(`step${i}Indicator`).classList.remove('bg-cyan-500', 'bg-green-500');
         document.getElementById(`step${i}Indicator`).classList.add('bg-slate-600');
     }
     
-    // Show current step
-    document.getElementById(`wizardStep${wizardStep}`).classList.remove('hidden');
-    
-    // Update indicators
-    for (let i = 1; i <= wizardStep; i++) {
-        document.getElementById(`step${i}Indicator`).classList.remove('bg-slate-600');
-        document.getElementById(`step${i}Indicator`).classList.add(i < wizardStep ? 'bg-green-500' : 'bg-blue-500');
+    // Show appropriate step
+    if (wizardStep === 0) {
+        document.getElementById('wizardStep0').classList.remove('hidden');
+        document.getElementById('progressSteps').classList.add('hidden');
+        document.getElementById('wizardBack').classList.add('hidden');
+        document.getElementById('wizardNext').classList.add('hidden');
+        document.getElementById('wizardFinish').classList.add('hidden');
+    } else if (wizardStep === '0b') {
+        document.getElementById('wizardStep0b').classList.remove('hidden');
+        document.getElementById('progressSteps').classList.add('hidden');
+        document.getElementById('wizardBack').classList.remove('hidden');
+        document.getElementById('wizardNext').classList.remove('hidden');
+        document.getElementById('wizardFinish').classList.add('hidden');
+    } else {
+        document.getElementById('progressSteps').classList.remove('hidden');
+        document.getElementById(`wizardStep${wizardStep}`).classList.remove('hidden');
+        
+        // Update indicators
+        for (let i = 1; i <= wizardStep; i++) {
+            document.getElementById(`step${i}Indicator`).classList.remove('bg-slate-600');
+            document.getElementById(`step${i}Indicator`).classList.add(i < wizardStep ? 'bg-green-500' : 'bg-cyan-500');
+        }
+        
+        // Update progress bars
+        document.getElementById('step1Bar').classList.toggle('bg-green-500', wizardStep > 1);
+        document.getElementById('step2Bar').classList.toggle('bg-green-500', wizardStep > 2);
+        
+        // Update buttons
+        document.getElementById('wizardBack').classList.remove('hidden');
+        document.getElementById('wizardNext').classList.toggle('hidden', wizardStep === 3);
+        document.getElementById('wizardFinish').classList.toggle('hidden', wizardStep !== 3);
     }
-    
-    // Update progress bars
-    document.getElementById('step1Bar').classList.toggle('bg-green-500', wizardStep > 1);
-    document.getElementById('step2Bar').classList.toggle('bg-green-500', wizardStep > 2);
-    
-    // Update buttons
-    document.getElementById('wizardBack').classList.toggle('hidden', wizardStep === 1);
-    document.getElementById('wizardNext').classList.toggle('hidden', wizardStep === 3);
-    document.getElementById('wizardFinish').classList.toggle('hidden', wizardStep !== 3);
     
     lucide.createIcons();
 }
