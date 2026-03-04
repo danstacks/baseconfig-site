@@ -489,7 +489,7 @@ const workloadPresets = {
         ]
     },
     gp_local_amd: {
-        name: 'General Purpose Local (2P AMD)',
+        name: 'General Purpose Local (1P AMD)',
         serverPower: 770,
         serverCost: 160228.04,  // CCW List Price
         serverHeight: 1,
@@ -1085,7 +1085,7 @@ const migrationTypeToWorkload = {
         'storage': 'data_storage'              // Storage -> Storage (vendor-neutral)
     },
     amd: {
-        'general_purpose': 'gp_local_amd',     // 2P general -> 2P general purpose AMD
+        'general_purpose': 'gp_san_amd',       // 2P general -> 2P general purpose AMD (SAN)
         'database': 'db_local_amd',            // 2P database -> 2P database AMD
         'storage': 'data_storage'              // Storage -> Storage (vendor-neutral)
     }
