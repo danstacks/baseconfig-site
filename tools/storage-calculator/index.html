@@ -721,6 +721,23 @@
             </p>
         </div>
 
+        <!-- VAST Licensing Requirements -->
+        <div class="card rounded-xl p-6 mb-8 border border-amber-500/30">
+            <h3 class="text-lg font-semibold flex items-center gap-2 mb-4">
+                <i data-lucide="key" class="w-5 h-5 text-amber-400"></i>
+                VAST Licensing Requirements
+                <span id="license-ebox-type" class="text-sm font-normal text-amber-400 ml-2">(EBox 244)</span>
+            </h3>
+            <div id="licensing-content" class="space-y-4">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            <p class="text-xs text-gray-500 mt-4">
+                <i data-lucide="info" class="w-3 h-3 inline mr-1"></i>
+                License quantities are based on official VAST sizing guidelines. 100TB Capacity Licenses are billed monthly. 
+                Core Licenses are based on cluster configuration. Contact VAST for exact pricing.
+            </p>
+        </div>
+
         <!-- Calculation Methodology -->
         <div class="card rounded-xl p-6 mb-8">
             <details>
@@ -982,42 +999,43 @@
             const driveLabels = ['15.3TB', '30.7TB', '61.4TB'];
             const driveColors = ['cyan', 'purple', 'green'];
             const driveIds = ['wizardDrive15', 'wizardDrive30', 'wizardDrive61'];
-            const usableCapacities = [100, 200, 350];
-            const rawCapacities = [122.4, 245.6, 429.8];
             const minServers = 8;
             
-            // Calculate servers needed for each drive option
+            // Calculate servers needed for each drive option using dynamic capacity
             const serversNeeded = [];
             const driveValid = [];
             for (let i = 0; i < 3; i++) {
-                const capPerServer = wizardCapacityType === 'usable' ? usableCapacities[i] : rawCapacities[i];
-                const minCapacity = minServers * capPerServer;
-                serversNeeded[i] = Math.max(minServers, Math.ceil(capacityTB / capPerServer));
+                // Use dynamic capacity calculation
+                serversNeeded[i] = calculateServersRequired(capacityTB, i, wizardCapacityType);
+                // Get minimum cluster capacity for this drive option
+                const minCapacity = getTotalUsableCapacity(minServers, i);
                 // Drive is valid if requested capacity doesn't exceed what min cluster can provide
-                // (i.e., user isn't asking for less than min cluster can hold)
                 driveValid[i] = capacityTB <= 0 || capacityTB >= minCapacity * 0.5; // Allow some flexibility
             }
             
             // Update drive option buttons - grey out invalid ones
             for (let i = 0; i < 3; i++) {
                 const btn = document.getElementById(driveIds[i]);
-                const capPerServer = wizardCapacityType === 'usable' ? usableCapacities[i] : rawCapacities[i];
-                const minCapacity = minServers * capPerServer;
+                const minCapacity = getTotalUsableCapacity(minServers, i);
+                const capacityPerEBox = getDynamicCapacityPerEBox(minServers, i);
                 
                 if (!driveValid[i] && capacityTB > 0) {
                     btn.disabled = true;
                     btn.classList.add('opacity-50', 'cursor-not-allowed');
                     btn.innerHTML = `
                         <div class="font-semibold text-gray-500">${driveLabels[i]}</div>
-                        <div class="text-xs text-gray-500">${usableCapacities[i]}TB/server</div>
-                        <div class="text-xs text-red-400 mt-1">Min: ${minCapacity}TB</div>
+                        <div class="text-xs text-gray-500">${capacityPerEBox.toFixed(0)}TB/server</div>
+                        <div class="text-xs text-red-400 mt-1">Min: ${minCapacity.toFixed(0)}TB</div>
                     `;
                 } else {
                     btn.disabled = false;
                     btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    // Show dynamic capacity per EBox for the calculated server count
+                    const serversForOption = serversNeeded[i];
+                    const dynamicCapPerEBox = getDynamicCapacityPerEBox(serversForOption, i);
                     btn.innerHTML = `
                         <div class="font-semibold text-${driveColors[i]}-400">${driveLabels[i]}</div>
-                        <div class="text-xs text-gray-400">${usableCapacities[i]}TB/server</div>
+                        <div class="text-xs text-gray-400">${dynamicCapPerEBox.toFixed(0)}TB/server</div>
                     `;
                 }
             }
@@ -1032,8 +1050,8 @@
                 }
             }
             
-            const capPerServer = wizardCapacityType === 'usable' ? usableCapacities[wizardDriveOption] : rawCapacities[wizardDriveOption];
-            const servers = Math.max(minServers, Math.ceil(capacityTB / capPerServer));
+            // Use dynamic capacity calculation for selected drive option
+            const servers = serversNeeded[wizardDriveOption];
             
             const preview = document.getElementById('wizardSizingPreview');
             preview.textContent = `~${servers} EBox servers (${driveLabels[wizardDriveOption]} drives)`;
@@ -1135,8 +1153,8 @@
             const driveLabels = ['15.3TB', '30.7TB', '61.4TB'];
             
             const capacityInTB = capacityUnit === 'PB' ? parseFloat(capacity) * 1000 : parseFloat(capacity);
-            const capacityKey = wizardCapacityType === 'raw' ? 'raw' : 'usable';
-            const servers = Math.max(CONFIG.minServers, Math.ceil(capacityInTB / capacities[driveOption][capacityKey]));
+            // Use dynamic capacity calculation
+            const servers = calculateServersRequired(capacityInTB, driveOption, wizardCapacityType);
             const racks = Math.ceil(servers / CONFIG.serversPerRack);
             
             const notification = document.createElement('div');
@@ -1339,12 +1357,382 @@
             ];
         }
 
-        // Capacity per server (raw and usable)
+        // Raw capacity per server (fixed based on drive count and size)
+        const RAW_CAPACITIES = [
+            122.88,  // EBox 122: 8 × 15.36TB = 122.88TB raw
+            245.76,  // EBox 244: 8 × 30.72TB = 245.76TB raw
+            430.08   // EBox 430: 7 × 61.44TB = 430.08TB raw
+        ];
+        
+        // Legacy fixed capacities (kept for backward compatibility, but dynamic is preferred)
         const capacities = [
             { raw: 122.40, usable: 100.00 },
             { raw: 245.60, usable: 200.00 },
             { raw: 429.80, usable: 350.00 }
         ];
+        
+        // Get dynamic usable capacity per EBox based on server count and drive option
+        function getDynamicCapacityPerEBox(serverCount, driveOptionIndex) {
+            const clampedCount = Math.min(Math.max(serverCount, 8), 100);
+            let licenseData;
+            
+            if (driveOptionIndex === 0) {
+                licenseData = EBOX_122_LICENSE_DATA[clampedCount];
+            } else if (driveOptionIndex === 1) {
+                licenseData = EBOX_244_LICENSE_DATA[clampedCount];
+            } else if (driveOptionIndex === 2) {
+                licenseData = EBOX_430_LICENSE_DATA[clampedCount];
+            }
+            
+            return licenseData ? licenseData.capacityPerEBox : capacities[driveOptionIndex].usable;
+        }
+        
+        // Calculate servers required using iterative approach (capacity per EBox depends on server count)
+        function calculateServersRequired(targetCapacityTB, driveOptionIndex, capacityType) {
+            // For raw capacity, use fixed raw values
+            if (capacityType === 'raw') {
+                return Math.max(CONFIG.minServers, Math.ceil(targetCapacityTB / RAW_CAPACITIES[driveOptionIndex]));
+            }
+            
+            // For usable capacity, iterate since capacity per EBox changes with server count
+            // Start with minimum servers and work up
+            for (let servers = CONFIG.minServers; servers <= 100; servers++) {
+                const capacityPerEBox = getDynamicCapacityPerEBox(servers, driveOptionIndex);
+                const totalCapacity = servers * capacityPerEBox;
+                if (totalCapacity >= targetCapacityTB) {
+                    return servers;
+                }
+            }
+            // If we need more than 100 servers, calculate based on max capacity per EBox
+            const maxCapacityPerEBox = getDynamicCapacityPerEBox(100, driveOptionIndex);
+            return Math.ceil(targetCapacityTB / maxCapacityPerEBox);
+        }
+        
+        // Get total usable capacity for a given server count and drive option
+        function getTotalUsableCapacity(serverCount, driveOptionIndex) {
+            const capacityPerEBox = getDynamicCapacityPerEBox(serverCount, driveOptionIndex);
+            return serverCount * capacityPerEBox;
+        }
+
+        // VAST Licensing Data - EBox 244 (30.72TB drives)
+        // Format: { capacityPerEBox, clusterCapacity, capacityLicenses, coreLicenses }
+        const EBOX_244_LICENSE_DATA = {
+            8: { capacityPerEBox: 159.52, clusterCapacity: 1276.1, capacityLicenses: 13, coreLicenses: 119 },
+            9: { capacityPerEBox: 167.49, clusterCapacity: 1507.4, capacityLicenses: 16, coreLicenses: 118 },
+            10: { capacityPerEBox: 173.70, clusterCapacity: 1737.0, capacityLicenses: 18, coreLicenses: 119 },
+            11: { capacityPerEBox: 178.66, clusterCapacity: 1965.2, capacityLicenses: 20, coreLicenses: 119 },
+            12: { capacityPerEBox: 182.72, clusterCapacity: 2192.6, capacityLicenses: 22, coreLicenses: 120 },
+            13: { capacityPerEBox: 186.10, clusterCapacity: 2419.3, capacityLicenses: 25, coreLicenses: 121 },
+            14: { capacityPerEBox: 188.97, clusterCapacity: 2645.5, capacityLicenses: 27, coreLicenses: 122 },
+            15: { capacityPerEBox: 191.42, clusterCapacity: 2871.3, capacityLicenses: 29, coreLicenses: 123 },
+            16: { capacityPerEBox: 193.55, clusterCapacity: 3096.8, capacityLicenses: 31, coreLicenses: 124 },
+            17: { capacityPerEBox: 195.41, clusterCapacity: 3321.9, capacityLicenses: 34, coreLicenses: 125 },
+            18: { capacityPerEBox: 197.05, clusterCapacity: 3546.9, capacityLicenses: 36, coreLicenses: 126 },
+            19: { capacityPerEBox: 198.51, clusterCapacity: 3771.7, capacityLicenses: 38, coreLicenses: 127 },
+            20: { capacityPerEBox: 199.82, clusterCapacity: 3996.3, capacityLicenses: 40, coreLicenses: 129 },
+            21: { capacityPerEBox: 200.99, clusterCapacity: 4220.8, capacityLicenses: 43, coreLicenses: 130 },
+            22: { capacityPerEBox: 202.05, clusterCapacity: 4445.2, capacityLicenses: 45, coreLicenses: 131 },
+            23: { capacityPerEBox: 203.02, clusterCapacity: 4669.5, capacityLicenses: 47, coreLicenses: 133 },
+            24: { capacityPerEBox: 203.90, clusterCapacity: 4893.7, capacityLicenses: 49, coreLicenses: 134 },
+            25: { capacityPerEBox: 204.71, clusterCapacity: 5117.8, capacityLicenses: 52, coreLicenses: 135 },
+            26: { capacityPerEBox: 205.46, clusterCapacity: 5341.9, capacityLicenses: 54, coreLicenses: 137 },
+            27: { capacityPerEBox: 206.14, clusterCapacity: 5565.9, capacityLicenses: 56, coreLicenses: 138 },
+            28: { capacityPerEBox: 206.78, clusterCapacity: 5789.9, capacityLicenses: 58, coreLicenses: 140 },
+            29: { capacityPerEBox: 207.37, clusterCapacity: 6013.8, capacityLicenses: 61, coreLicenses: 141 },
+            30: { capacityPerEBox: 207.92, clusterCapacity: 6237.7, capacityLicenses: 63, coreLicenses: 143 },
+            31: { capacityPerEBox: 208.44, clusterCapacity: 6461.5, capacityLicenses: 65, coreLicenses: 144 },
+            32: { capacityPerEBox: 208.92, clusterCapacity: 6685.3, capacityLicenses: 67, coreLicenses: 145 },
+            33: { capacityPerEBox: 209.37, clusterCapacity: 6909.1, capacityLicenses: 70, coreLicenses: 147 },
+            34: { capacityPerEBox: 209.79, clusterCapacity: 7132.8, capacityLicenses: 72, coreLicenses: 148 },
+            35: { capacityPerEBox: 210.19, clusterCapacity: 7356.5, capacityLicenses: 74, coreLicenses: 150 },
+            36: { capacityPerEBox: 210.56, clusterCapacity: 7580.2, capacityLicenses: 76, coreLicenses: 151 },
+            37: { capacityPerEBox: 210.92, clusterCapacity: 7803.9, capacityLicenses: 79, coreLicenses: 153 },
+            38: { capacityPerEBox: 211.25, clusterCapacity: 8027.6, capacityLicenses: 81, coreLicenses: 154 },
+            39: { capacityPerEBox: 211.57, clusterCapacity: 8251.2, capacityLicenses: 83, coreLicenses: 156 },
+            40: { capacityPerEBox: 211.87, clusterCapacity: 8474.8, capacityLicenses: 85, coreLicenses: 157 },
+            41: { capacityPerEBox: 212.16, clusterCapacity: 8698.4, capacityLicenses: 87, coreLicenses: 159 },
+            42: { capacityPerEBox: 212.43, clusterCapacity: 8922.0, capacityLicenses: 90, coreLicenses: 160 },
+            43: { capacityPerEBox: 212.69, clusterCapacity: 9145.6, capacityLicenses: 92, coreLicenses: 162 },
+            44: { capacityPerEBox: 212.94, clusterCapacity: 9369.2, capacityLicenses: 94, coreLicenses: 163 },
+            45: { capacityPerEBox: 213.17, clusterCapacity: 9592.8, capacityLicenses: 96, coreLicenses: 165 },
+            46: { capacityPerEBox: 213.40, clusterCapacity: 9816.3, capacityLicenses: 99, coreLicenses: 166 },
+            47: { capacityPerEBox: 213.61, clusterCapacity: 10039.8, capacityLicenses: 101, coreLicenses: 168 },
+            48: { capacityPerEBox: 213.82, clusterCapacity: 10263.4, capacityLicenses: 103, coreLicenses: 169 },
+            49: { capacityPerEBox: 214.02, clusterCapacity: 10486.9, capacityLicenses: 105, coreLicenses: 171 },
+            50: { capacityPerEBox: 214.21, clusterCapacity: 10710.4, capacityLicenses: 108, coreLicenses: 172 },
+            51: { capacityPerEBox: 214.39, clusterCapacity: 10933.9, capacityLicenses: 110, coreLicenses: 174 },
+            52: { capacityPerEBox: 214.57, clusterCapacity: 11157.4, capacityLicenses: 112, coreLicenses: 175 },
+            53: { capacityPerEBox: 214.73, clusterCapacity: 11380.9, capacityLicenses: 114, coreLicenses: 177 },
+            54: { capacityPerEBox: 214.90, clusterCapacity: 11604.4, capacityLicenses: 117, coreLicenses: 178 },
+            55: { capacityPerEBox: 215.05, clusterCapacity: 11827.9, capacityLicenses: 119, coreLicenses: 180 },
+            56: { capacityPerEBox: 215.20, clusterCapacity: 12051.3, capacityLicenses: 121, coreLicenses: 181 },
+            57: { capacityPerEBox: 215.35, clusterCapacity: 12274.8, capacityLicenses: 123, coreLicenses: 183 },
+            58: { capacityPerEBox: 215.49, clusterCapacity: 12498.3, capacityLicenses: 125, coreLicenses: 184 },
+            59: { capacityPerEBox: 215.62, clusterCapacity: 12721.7, capacityLicenses: 128, coreLicenses: 186 },
+            60: { capacityPerEBox: 215.75, clusterCapacity: 12945.2, capacityLicenses: 130, coreLicenses: 187 },
+            61: { capacityPerEBox: 215.88, clusterCapacity: 13168.6, capacityLicenses: 132, coreLicenses: 189 },
+            62: { capacityPerEBox: 216.00, clusterCapacity: 13392.1, capacityLicenses: 134, coreLicenses: 190 },
+            63: { capacityPerEBox: 216.12, clusterCapacity: 13615.5, capacityLicenses: 137, coreLicenses: 192 },
+            64: { capacityPerEBox: 216.23, clusterCapacity: 13839.0, capacityLicenses: 139, coreLicenses: 193 },
+            65: { capacityPerEBox: 216.34, clusterCapacity: 14062.4, capacityLicenses: 141, coreLicenses: 195 },
+            66: { capacityPerEBox: 216.45, clusterCapacity: 14285.8, capacityLicenses: 143, coreLicenses: 197 },
+            67: { capacityPerEBox: 216.56, clusterCapacity: 14509.3, capacityLicenses: 146, coreLicenses: 198 },
+            68: { capacityPerEBox: 216.66, clusterCapacity: 14732.7, capacityLicenses: 148, coreLicenses: 200 },
+            69: { capacityPerEBox: 216.76, clusterCapacity: 14956.1, capacityLicenses: 150, coreLicenses: 201 },
+            70: { capacityPerEBox: 216.85, clusterCapacity: 15179.5, capacityLicenses: 152, coreLicenses: 203 },
+            71: { capacityPerEBox: 216.94, clusterCapacity: 15402.9, capacityLicenses: 155, coreLicenses: 204 },
+            72: { capacityPerEBox: 217.03, clusterCapacity: 15626.3, capacityLicenses: 157, coreLicenses: 206 },
+            73: { capacityPerEBox: 217.12, clusterCapacity: 15849.8, capacityLicenses: 159, coreLicenses: 207 },
+            74: { capacityPerEBox: 217.20, clusterCapacity: 16073.2, capacityLicenses: 161, coreLicenses: 209 },
+            75: { capacityPerEBox: 217.29, clusterCapacity: 16296.6, capacityLicenses: 163, coreLicenses: 210 },
+            76: { capacityPerEBox: 217.37, clusterCapacity: 16520.0, capacityLicenses: 166, coreLicenses: 212 },
+            77: { capacityPerEBox: 217.37, clusterCapacity: 16737.3, capacityLicenses: 168, coreLicenses: 215 },
+            78: { capacityPerEBox: 217.37, clusterCapacity: 16954.7, capacityLicenses: 170, coreLicenses: 217 },
+            79: { capacityPerEBox: 217.37, clusterCapacity: 17172.1, capacityLicenses: 172, coreLicenses: 220 },
+            80: { capacityPerEBox: 217.37, clusterCapacity: 17389.4, capacityLicenses: 174, coreLicenses: 223 },
+            81: { capacityPerEBox: 217.37, clusterCapacity: 17606.8, capacityLicenses: 177, coreLicenses: 226 },
+            82: { capacityPerEBox: 217.37, clusterCapacity: 17824.2, capacityLicenses: 179, coreLicenses: 229 },
+            83: { capacityPerEBox: 217.37, clusterCapacity: 18041.6, capacityLicenses: 181, coreLicenses: 231 },
+            84: { capacityPerEBox: 217.37, clusterCapacity: 18258.9, capacityLicenses: 183, coreLicenses: 234 },
+            85: { capacityPerEBox: 217.37, clusterCapacity: 18476.3, capacityLicenses: 185, coreLicenses: 237 },
+            86: { capacityPerEBox: 217.37, clusterCapacity: 18693.7, capacityLicenses: 187, coreLicenses: 240 },
+            87: { capacityPerEBox: 217.37, clusterCapacity: 18911.0, capacityLicenses: 190, coreLicenses: 243 },
+            88: { capacityPerEBox: 217.37, clusterCapacity: 19128.4, capacityLicenses: 192, coreLicenses: 245 },
+            89: { capacityPerEBox: 217.37, clusterCapacity: 19345.8, capacityLicenses: 194, coreLicenses: 248 },
+            90: { capacityPerEBox: 217.37, clusterCapacity: 19563.1, capacityLicenses: 196, coreLicenses: 251 },
+            91: { capacityPerEBox: 217.37, clusterCapacity: 19780.5, capacityLicenses: 198, coreLicenses: 254 },
+            92: { capacityPerEBox: 217.37, clusterCapacity: 19997.9, capacityLicenses: 200, coreLicenses: 256 },
+            93: { capacityPerEBox: 217.37, clusterCapacity: 20215.2, capacityLicenses: 203, coreLicenses: 259 },
+            94: { capacityPerEBox: 217.37, clusterCapacity: 20432.6, capacityLicenses: 205, coreLicenses: 262 },
+            95: { capacityPerEBox: 217.37, clusterCapacity: 20650.0, capacityLicenses: 207, coreLicenses: 265 },
+            96: { capacityPerEBox: 217.37, clusterCapacity: 20867.3, capacityLicenses: 209, coreLicenses: 268 },
+            97: { capacityPerEBox: 217.37, clusterCapacity: 21084.7, capacityLicenses: 211, coreLicenses: 270 },
+            98: { capacityPerEBox: 217.37, clusterCapacity: 21302.1, capacityLicenses: 214, coreLicenses: 273 },
+            99: { capacityPerEBox: 217.37, clusterCapacity: 21519.4, capacityLicenses: 216, coreLicenses: 276 },
+            100: { capacityPerEBox: 217.37, clusterCapacity: 21736.8, capacityLicenses: 218, coreLicenses: 279 }
+        };
+
+        // VAST Licensing Data - EBox 122 (15.36TB drives)
+        // Format: { capacityPerEBox, clusterCapacity, capacityLicenses, coreLicenses }
+        const EBOX_122_LICENSE_DATA = {
+            8: { capacityPerEBox: 79.76, clusterCapacity: 638.1, capacityLicenses: 7, coreLicenses: 251 },
+            9: { capacityPerEBox: 83.75, clusterCapacity: 753.7, capacityLicenses: 8, coreLicenses: 275 },
+            10: { capacityPerEBox: 86.85, clusterCapacity: 868.5, capacityLicenses: 9, coreLicenses: 299 },
+            11: { capacityPerEBox: 89.33, clusterCapacity: 982.6, capacityLicenses: 10, coreLicenses: 324 },
+            12: { capacityPerEBox: 91.36, clusterCapacity: 1096.3, capacityLicenses: 11, coreLicenses: 348 },
+            13: { capacityPerEBox: 93.05, clusterCapacity: 1209.7, capacityLicenses: 13, coreLicenses: 372 },
+            14: { capacityPerEBox: 94.48, clusterCapacity: 1322.8, capacityLicenses: 14, coreLicenses: 397 },
+            15: { capacityPerEBox: 95.71, clusterCapacity: 1435.7, capacityLicenses: 15, coreLicenses: 421 },
+            16: { capacityPerEBox: 96.77, clusterCapacity: 1548.4, capacityLicenses: 16, coreLicenses: 446 },
+            17: { capacityPerEBox: 97.70, clusterCapacity: 1661.0, capacityLicenses: 17, coreLicenses: 471 },
+            18: { capacityPerEBox: 98.53, clusterCapacity: 1773.5, capacityLicenses: 18, coreLicenses: 495 },
+            19: { capacityPerEBox: 99.25, clusterCapacity: 1885.8, capacityLicenses: 19, coreLicenses: 520 },
+            20: { capacityPerEBox: 99.91, clusterCapacity: 1998.2, capacityLicenses: 20, coreLicenses: 544 },
+            21: { capacityPerEBox: 100.50, clusterCapacity: 2110.4, capacityLicenses: 22, coreLicenses: 569 },
+            22: { capacityPerEBox: 101.03, clusterCapacity: 2222.6, capacityLicenses: 23, coreLicenses: 594 },
+            23: { capacityPerEBox: 101.51, clusterCapacity: 2334.7, capacityLicenses: 24, coreLicenses: 618 },
+            24: { capacityPerEBox: 101.95, clusterCapacity: 2446.8, capacityLicenses: 25, coreLicenses: 643 },
+            25: { capacityPerEBox: 102.36, clusterCapacity: 2558.9, capacityLicenses: 26, coreLicenses: 668 },
+            26: { capacityPerEBox: 102.73, clusterCapacity: 2670.9, capacityLicenses: 27, coreLicenses: 692 },
+            27: { capacityPerEBox: 103.07, clusterCapacity: 2783.0, capacityLicenses: 28, coreLicenses: 717 },
+            28: { capacityPerEBox: 103.39, clusterCapacity: 2894.9, capacityLicenses: 29, coreLicenses: 742 },
+            29: { capacityPerEBox: 103.69, clusterCapacity: 3006.9, capacityLicenses: 31, coreLicenses: 767 },
+            30: { capacityPerEBox: 103.96, clusterCapacity: 3118.8, capacityLicenses: 32, coreLicenses: 791 },
+            31: { capacityPerEBox: 104.22, clusterCapacity: 3230.7, capacityLicenses: 33, coreLicenses: 816 },
+            32: { capacityPerEBox: 104.46, clusterCapacity: 3342.6, capacityLicenses: 34, coreLicenses: 841 },
+            33: { capacityPerEBox: 104.68, clusterCapacity: 3454.5, capacityLicenses: 35, coreLicenses: 865 },
+            34: { capacityPerEBox: 104.89, clusterCapacity: 3566.4, capacityLicenses: 36, coreLicenses: 890 },
+            35: { capacityPerEBox: 105.09, clusterCapacity: 3678.3, capacityLicenses: 37, coreLicenses: 915 },
+            36: { capacityPerEBox: 105.28, clusterCapacity: 3790.1, capacityLicenses: 38, coreLicenses: 940 },
+            37: { capacityPerEBox: 105.46, clusterCapacity: 3902.0, capacityLicenses: 40, coreLicenses: 964 },
+            38: { capacityPerEBox: 105.63, clusterCapacity: 4013.8, capacityLicenses: 41, coreLicenses: 989 },
+            39: { capacityPerEBox: 105.78, clusterCapacity: 4125.6, capacityLicenses: 42, coreLicenses: 1014 },
+            40: { capacityPerEBox: 105.94, clusterCapacity: 4237.4, capacityLicenses: 43, coreLicenses: 1039 },
+            41: { capacityPerEBox: 106.08, clusterCapacity: 4349.2, capacityLicenses: 44, coreLicenses: 1063 },
+            42: { capacityPerEBox: 106.21, clusterCapacity: 4461.0, capacityLicenses: 45, coreLicenses: 1088 },
+            43: { capacityPerEBox: 106.34, clusterCapacity: 4572.8, capacityLicenses: 46, coreLicenses: 1113 },
+            44: { capacityPerEBox: 106.47, clusterCapacity: 4684.6, capacityLicenses: 47, coreLicenses: 1138 },
+            45: { capacityPerEBox: 106.59, clusterCapacity: 4796.4, capacityLicenses: 48, coreLicenses: 1162 },
+            46: { capacityPerEBox: 106.70, clusterCapacity: 4908.2, capacityLicenses: 50, coreLicenses: 1187 },
+            47: { capacityPerEBox: 106.81, clusterCapacity: 5019.9, capacityLicenses: 51, coreLicenses: 1212 },
+            48: { capacityPerEBox: 106.91, clusterCapacity: 5131.7, capacityLicenses: 52, coreLicenses: 1237 },
+            49: { capacityPerEBox: 107.01, clusterCapacity: 5243.4, capacityLicenses: 53, coreLicenses: 1261 },
+            50: { capacityPerEBox: 107.10, clusterCapacity: 5355.2, capacityLicenses: 54, coreLicenses: 1286 },
+            51: { capacityPerEBox: 107.20, clusterCapacity: 5467.0, capacityLicenses: 55, coreLicenses: 1311 },
+            52: { capacityPerEBox: 107.28, clusterCapacity: 5578.7, capacityLicenses: 56, coreLicenses: 1336 },
+            53: { capacityPerEBox: 107.37, clusterCapacity: 5690.5, capacityLicenses: 57, coreLicenses: 1360 },
+            54: { capacityPerEBox: 107.45, clusterCapacity: 5802.2, capacityLicenses: 59, coreLicenses: 1385 },
+            55: { capacityPerEBox: 107.53, clusterCapacity: 5913.9, capacityLicenses: 60, coreLicenses: 1410 },
+            56: { capacityPerEBox: 107.60, clusterCapacity: 6025.7, capacityLicenses: 61, coreLicenses: 1435 },
+            57: { capacityPerEBox: 107.67, clusterCapacity: 6137.4, capacityLicenses: 62, coreLicenses: 1459 },
+            58: { capacityPerEBox: 107.74, clusterCapacity: 6249.1, capacityLicenses: 63, coreLicenses: 1484 },
+            59: { capacityPerEBox: 107.81, clusterCapacity: 6360.9, capacityLicenses: 64, coreLicenses: 1509 },
+            60: { capacityPerEBox: 107.88, clusterCapacity: 6472.6, capacityLicenses: 65, coreLicenses: 1534 },
+            61: { capacityPerEBox: 107.94, clusterCapacity: 6584.3, capacityLicenses: 66, coreLicenses: 1558 },
+            62: { capacityPerEBox: 108.00, clusterCapacity: 6696.0, capacityLicenses: 67, coreLicenses: 1583 },
+            63: { capacityPerEBox: 108.06, clusterCapacity: 6807.8, capacityLicenses: 69, coreLicenses: 1608 },
+            64: { capacityPerEBox: 108.12, clusterCapacity: 6919.5, capacityLicenses: 70, coreLicenses: 1633 },
+            65: { capacityPerEBox: 108.17, clusterCapacity: 7031.2, capacityLicenses: 71, coreLicenses: 1658 },
+            66: { capacityPerEBox: 108.23, clusterCapacity: 7142.9, capacityLicenses: 72, coreLicenses: 1682 },
+            67: { capacityPerEBox: 108.28, clusterCapacity: 7254.6, capacityLicenses: 73, coreLicenses: 1707 },
+            68: { capacityPerEBox: 108.33, clusterCapacity: 7366.3, capacityLicenses: 74, coreLicenses: 1732 },
+            69: { capacityPerEBox: 108.38, clusterCapacity: 7478.0, capacityLicenses: 75, coreLicenses: 1757 },
+            70: { capacityPerEBox: 108.43, clusterCapacity: 7589.8, capacityLicenses: 76, coreLicenses: 1781 },
+            71: { capacityPerEBox: 108.47, clusterCapacity: 7701.5, capacityLicenses: 78, coreLicenses: 1806 },
+            72: { capacityPerEBox: 108.52, clusterCapacity: 7813.2, capacityLicenses: 79, coreLicenses: 1831 },
+            73: { capacityPerEBox: 108.56, clusterCapacity: 7924.9, capacityLicenses: 80, coreLicenses: 1856 },
+            74: { capacityPerEBox: 108.60, clusterCapacity: 8036.6, capacityLicenses: 81, coreLicenses: 1880 },
+            75: { capacityPerEBox: 108.64, clusterCapacity: 8148.3, capacityLicenses: 82, coreLicenses: 1905 },
+            76: { capacityPerEBox: 108.68, clusterCapacity: 8260.0, capacityLicenses: 83, coreLicenses: 1930 },
+            77: { capacityPerEBox: 108.68, clusterCapacity: 8368.7, capacityLicenses: 84, coreLicenses: 1955 },
+            78: { capacityPerEBox: 108.68, clusterCapacity: 8477.4, capacityLicenses: 85, coreLicenses: 1981 },
+            79: { capacityPerEBox: 108.68, clusterCapacity: 8586.0, capacityLicenses: 86, coreLicenses: 2006 },
+            80: { capacityPerEBox: 108.68, clusterCapacity: 8694.7, capacityLicenses: 87, coreLicenses: 2031 },
+            81: { capacityPerEBox: 108.68, clusterCapacity: 8803.4, capacityLicenses: 89, coreLicenses: 2057 },
+            82: { capacityPerEBox: 108.68, clusterCapacity: 8912.1, capacityLicenses: 90, coreLicenses: 2082 },
+            83: { capacityPerEBox: 108.68, clusterCapacity: 9020.8, capacityLicenses: 91, coreLicenses: 2108 },
+            84: { capacityPerEBox: 108.68, clusterCapacity: 9129.5, capacityLicenses: 92, coreLicenses: 2133 },
+            85: { capacityPerEBox: 108.68, clusterCapacity: 9238.1, capacityLicenses: 93, coreLicenses: 2158 },
+            86: { capacityPerEBox: 108.68, clusterCapacity: 9346.8, capacityLicenses: 94, coreLicenses: 2184 },
+            87: { capacityPerEBox: 108.68, clusterCapacity: 9455.5, capacityLicenses: 95, coreLicenses: 2209 },
+            88: { capacityPerEBox: 108.68, clusterCapacity: 9564.2, capacityLicenses: 96, coreLicenses: 2235 },
+            89: { capacityPerEBox: 108.68, clusterCapacity: 9672.9, capacityLicenses: 97, coreLicenses: 2260 },
+            90: { capacityPerEBox: 108.68, clusterCapacity: 9781.6, capacityLicenses: 98, coreLicenses: 2285 },
+            91: { capacityPerEBox: 108.68, clusterCapacity: 9890.2, capacityLicenses: 99, coreLicenses: 2311 },
+            92: { capacityPerEBox: 108.68, clusterCapacity: 9998.9, capacityLicenses: 100, coreLicenses: 2336 },
+            93: { capacityPerEBox: 108.68, clusterCapacity: 10107.6, capacityLicenses: 102, coreLicenses: 2362 },
+            94: { capacityPerEBox: 108.68, clusterCapacity: 10216.3, capacityLicenses: 103, coreLicenses: 2387 },
+            95: { capacityPerEBox: 108.68, clusterCapacity: 10325.0, capacityLicenses: 104, coreLicenses: 2412 },
+            96: { capacityPerEBox: 108.68, clusterCapacity: 10433.7, capacityLicenses: 105, coreLicenses: 2438 },
+            97: { capacityPerEBox: 108.68, clusterCapacity: 10542.4, capacityLicenses: 106, coreLicenses: 2463 },
+            98: { capacityPerEBox: 108.68, clusterCapacity: 10651.0, capacityLicenses: 107, coreLicenses: 2489 },
+            99: { capacityPerEBox: 108.68, clusterCapacity: 10759.7, capacityLicenses: 108, coreLicenses: 2514 },
+            100: { capacityPerEBox: 108.68, clusterCapacity: 10868.4, capacityLicenses: 109, coreLicenses: 2539 }
+        };
+
+        // VAST Licensing Data - EBox 430 (61.44TB drives)
+        // Format: { capacityPerEBox, clusterCapacity, capacityLicenses, coreLicenses }
+        const EBOX_430_LICENSE_DATA = {
+            8: { capacityPerEBox: 279.15, clusterCapacity: 2233.2, capacityLicenses: 23, coreLicenses: 0 },
+            9: { capacityPerEBox: 293.11, clusterCapacity: 2638.0, capacityLicenses: 27, coreLicenses: 0 },
+            10: { capacityPerEBox: 303.97, clusterCapacity: 3039.7, capacityLicenses: 31, coreLicenses: 0 },
+            11: { capacityPerEBox: 312.65, clusterCapacity: 3439.2, capacityLicenses: 35, coreLicenses: 0 },
+            12: { capacityPerEBox: 319.76, clusterCapacity: 3837.1, capacityLicenses: 39, coreLicenses: 0 },
+            13: { capacityPerEBox: 325.68, clusterCapacity: 4233.8, capacityLicenses: 43, coreLicenses: 0 },
+            14: { capacityPerEBox: 330.69, clusterCapacity: 4629.7, capacityLicenses: 47, coreLicenses: 0 },
+            15: { capacityPerEBox: 334.99, clusterCapacity: 5024.8, capacityLicenses: 51, coreLicenses: 0 },
+            16: { capacityPerEBox: 338.71, clusterCapacity: 5419.3, capacityLicenses: 55, coreLicenses: 0 },
+            17: { capacityPerEBox: 341.96, clusterCapacity: 5813.4, capacityLicenses: 59, coreLicenses: 0 },
+            18: { capacityPerEBox: 344.84, clusterCapacity: 6207.1, capacityLicenses: 63, coreLicenses: 0 },
+            19: { capacityPerEBox: 347.39, clusterCapacity: 6600.4, capacityLicenses: 67, coreLicenses: 0 },
+            20: { capacityPerEBox: 349.68, clusterCapacity: 6993.5, capacityLicenses: 70, coreLicenses: 0 },
+            21: { capacityPerEBox: 351.73, clusterCapacity: 7386.4, capacityLicenses: 74, coreLicenses: 0 },
+            22: { capacityPerEBox: 353.60, clusterCapacity: 7779.1, capacityLicenses: 78, coreLicenses: 0 },
+            23: { capacityPerEBox: 355.29, clusterCapacity: 8171.6, capacityLicenses: 82, coreLicenses: 0 },
+            24: { capacityPerEBox: 356.83, clusterCapacity: 8564.0, capacityLicenses: 86, coreLicenses: 0 },
+            25: { capacityPerEBox: 358.25, clusterCapacity: 8956.2, capacityLicenses: 90, coreLicenses: 0 },
+            26: { capacityPerEBox: 359.55, clusterCapacity: 9348.3, capacityLicenses: 94, coreLicenses: 0 },
+            27: { capacityPerEBox: 360.75, clusterCapacity: 9740.3, capacityLicenses: 98, coreLicenses: 0 },
+            28: { capacityPerEBox: 361.87, clusterCapacity: 10132.3, capacityLicenses: 102, coreLicenses: 0 },
+            29: { capacityPerEBox: 362.90, clusterCapacity: 10524.1, capacityLicenses: 106, coreLicenses: 0 },
+            30: { capacityPerEBox: 363.86, clusterCapacity: 10915.9, capacityLicenses: 110, coreLicenses: 0 },
+            31: { capacityPerEBox: 364.76, clusterCapacity: 11307.6, capacityLicenses: 114, coreLicenses: 0 },
+            32: { capacityPerEBox: 365.60, clusterCapacity: 11699.3, capacityLicenses: 117, coreLicenses: 0 },
+            33: { capacityPerEBox: 366.39, clusterCapacity: 12090.9, capacityLicenses: 121, coreLicenses: 0 },
+            34: { capacityPerEBox: 367.13, clusterCapacity: 12482.4, capacityLicenses: 125, coreLicenses: 0 },
+            35: { capacityPerEBox: 367.83, clusterCapacity: 12873.9, capacityLicenses: 129, coreLicenses: 0 },
+            36: { capacityPerEBox: 368.48, clusterCapacity: 13265.4, capacityLicenses: 133, coreLicenses: 0 },
+            37: { capacityPerEBox: 369.10, clusterCapacity: 13656.8, capacityLicenses: 137, coreLicenses: 0 },
+            38: { capacityPerEBox: 369.69, clusterCapacity: 14048.2, capacityLicenses: 141, coreLicenses: 0 },
+            39: { capacityPerEBox: 370.25, clusterCapacity: 14439.6, capacityLicenses: 145, coreLicenses: 0 },
+            40: { capacityPerEBox: 370.77, clusterCapacity: 14831.0, capacityLicenses: 149, coreLicenses: 0 },
+            41: { capacityPerEBox: 371.28, clusterCapacity: 15222.3, capacityLicenses: 153, coreLicenses: 0 },
+            42: { capacityPerEBox: 371.75, clusterCapacity: 15613.6, capacityLicenses: 157, coreLicenses: 0 },
+            43: { capacityPerEBox: 372.21, clusterCapacity: 16004.8, capacityLicenses: 161, coreLicenses: 0 },
+            44: { capacityPerEBox: 372.64, clusterCapacity: 16396.1, capacityLicenses: 164, coreLicenses: 0 },
+            45: { capacityPerEBox: 373.05, clusterCapacity: 16787.3, capacityLicenses: 168, coreLicenses: 0 },
+            46: { capacityPerEBox: 373.45, clusterCapacity: 17178.5, capacityLicenses: 172, coreLicenses: 0 },
+            47: { capacityPerEBox: 373.82, clusterCapacity: 17569.7, capacityLicenses: 176, coreLicenses: 0 },
+            48: { capacityPerEBox: 374.19, clusterCapacity: 17960.9, capacityLicenses: 180, coreLicenses: 0 },
+            49: { capacityPerEBox: 374.53, clusterCapacity: 18352.1, capacityLicenses: 184, coreLicenses: 0 },
+            50: { capacityPerEBox: 374.86, clusterCapacity: 18743.2, capacityLicenses: 188, coreLicenses: 0 },
+            51: { capacityPerEBox: 375.18, clusterCapacity: 19134.3, capacityLicenses: 192, coreLicenses: 0 },
+            52: { capacityPerEBox: 375.49, clusterCapacity: 19525.5, capacityLicenses: 196, coreLicenses: 0 },
+            53: { capacityPerEBox: 375.78, clusterCapacity: 19916.6, capacityLicenses: 200, coreLicenses: 0 },
+            54: { capacityPerEBox: 376.07, clusterCapacity: 20307.7, capacityLicenses: 204, coreLicenses: 0 },
+            55: { capacityPerEBox: 376.34, clusterCapacity: 20698.8, capacityLicenses: 207, coreLicenses: 0 },
+            56: { capacityPerEBox: 376.60, clusterCapacity: 21089.8, capacityLicenses: 211, coreLicenses: 0 },
+            57: { capacityPerEBox: 376.86, clusterCapacity: 21480.9, capacityLicenses: 215, coreLicenses: 0 },
+            58: { capacityPerEBox: 377.10, clusterCapacity: 21872.0, capacityLicenses: 219, coreLicenses: 0 },
+            59: { capacityPerEBox: 377.34, clusterCapacity: 22263.0, capacityLicenses: 223, coreLicenses: 0 },
+            60: { capacityPerEBox: 377.57, clusterCapacity: 22654.1, capacityLicenses: 227, coreLicenses: 0 },
+            61: { capacityPerEBox: 377.79, clusterCapacity: 23045.1, capacityLicenses: 231, coreLicenses: 0 },
+            62: { capacityPerEBox: 378.00, clusterCapacity: 23436.1, capacityLicenses: 235, coreLicenses: 0 },
+            63: { capacityPerEBox: 378.21, clusterCapacity: 23827.2, capacityLicenses: 239, coreLicenses: 0 },
+            64: { capacityPerEBox: 378.41, clusterCapacity: 24218.2, capacityLicenses: 243, coreLicenses: 0 },
+            65: { capacityPerEBox: 378.60, clusterCapacity: 24609.2, capacityLicenses: 247, coreLicenses: 0 },
+            66: { capacityPerEBox: 378.79, clusterCapacity: 25000.2, capacityLicenses: 251, coreLicenses: 0 },
+            67: { capacityPerEBox: 378.97, clusterCapacity: 25391.2, capacityLicenses: 254, coreLicenses: 0 },
+            68: { capacityPerEBox: 379.15, clusterCapacity: 25782.2, capacityLicenses: 258, coreLicenses: 0 },
+            69: { capacityPerEBox: 379.32, clusterCapacity: 26173.2, capacityLicenses: 262, coreLicenses: 0 },
+            70: { capacityPerEBox: 379.49, clusterCapacity: 26564.2, capacityLicenses: 266, coreLicenses: 0 },
+            71: { capacityPerEBox: 379.65, clusterCapacity: 26955.1, capacityLicenses: 270, coreLicenses: 0 },
+            72: { capacityPerEBox: 379.81, clusterCapacity: 27346.1, capacityLicenses: 274, coreLicenses: 0 },
+            73: { capacityPerEBox: 379.96, clusterCapacity: 27737.1, capacityLicenses: 278, coreLicenses: 0 },
+            74: { capacityPerEBox: 380.11, clusterCapacity: 28128.0, capacityLicenses: 282, coreLicenses: 0 },
+            75: { capacityPerEBox: 380.25, clusterCapacity: 28519.0, capacityLicenses: 286, coreLicenses: 0 },
+            76: { capacityPerEBox: 380.39, clusterCapacity: 28910.0, capacityLicenses: 290, coreLicenses: 0 },
+            77: { capacityPerEBox: 380.39, clusterCapacity: 29290.4, capacityLicenses: 293, coreLicenses: 0 },
+            78: { capacityPerEBox: 380.39, clusterCapacity: 29670.7, capacityLicenses: 297, coreLicenses: 0 },
+            79: { capacityPerEBox: 380.39, clusterCapacity: 30051.1, capacityLicenses: 301, coreLicenses: 0 },
+            80: { capacityPerEBox: 380.39, clusterCapacity: 30431.5, capacityLicenses: 305, coreLicenses: 0 },
+            81: { capacityPerEBox: 380.39, clusterCapacity: 30811.9, capacityLicenses: 309, coreLicenses: 0 },
+            82: { capacityPerEBox: 380.39, clusterCapacity: 31192.3, capacityLicenses: 312, coreLicenses: 0 },
+            83: { capacityPerEBox: 380.39, clusterCapacity: 31572.7, capacityLicenses: 316, coreLicenses: 0 },
+            84: { capacityPerEBox: 380.39, clusterCapacity: 31953.1, capacityLicenses: 320, coreLicenses: 0 },
+            85: { capacityPerEBox: 380.39, clusterCapacity: 32333.5, capacityLicenses: 324, coreLicenses: 0 },
+            86: { capacityPerEBox: 380.39, clusterCapacity: 32713.9, capacityLicenses: 328, coreLicenses: 0 },
+            87: { capacityPerEBox: 380.39, clusterCapacity: 33094.3, capacityLicenses: 331, coreLicenses: 0 },
+            88: { capacityPerEBox: 380.39, clusterCapacity: 33474.7, capacityLicenses: 335, coreLicenses: 0 },
+            89: { capacityPerEBox: 380.39, clusterCapacity: 33855.1, capacityLicenses: 339, coreLicenses: 0 },
+            90: { capacityPerEBox: 380.39, clusterCapacity: 34235.5, capacityLicenses: 343, coreLicenses: 0 },
+            91: { capacityPerEBox: 380.39, clusterCapacity: 34615.9, capacityLicenses: 347, coreLicenses: 0 },
+            92: { capacityPerEBox: 380.39, clusterCapacity: 34996.3, capacityLicenses: 350, coreLicenses: 0 },
+            93: { capacityPerEBox: 380.39, clusterCapacity: 35376.7, capacityLicenses: 354, coreLicenses: 0 },
+            94: { capacityPerEBox: 380.39, clusterCapacity: 35757.1, capacityLicenses: 358, coreLicenses: 0 },
+            95: { capacityPerEBox: 380.39, clusterCapacity: 36137.4, capacityLicenses: 362, coreLicenses: 0 },
+            96: { capacityPerEBox: 380.39, clusterCapacity: 36517.8, capacityLicenses: 366, coreLicenses: 0 },
+            97: { capacityPerEBox: 380.39, clusterCapacity: 36898.2, capacityLicenses: 369, coreLicenses: 0 },
+            98: { capacityPerEBox: 380.39, clusterCapacity: 37278.6, capacityLicenses: 373, coreLicenses: 0 },
+            99: { capacityPerEBox: 380.39, clusterCapacity: 37659.0, capacityLicenses: 377, coreLicenses: 0 },
+            100: { capacityPerEBox: 380.39, clusterCapacity: 38039.4, capacityLicenses: 381, coreLicenses: 0 }
+        };
+
+        // Function to get license data for a given EBox count and drive option
+        function getLicenseData(eboxCount, driveOptionIndex) {
+            // driveOptionIndex: 0 = 15.3TB (EBox 122), 1 = 30.7TB (EBox 244), 2 = 61.4TB (EBox 430)
+            let licenseData = null;
+            let eboxType = '';
+            
+            if (driveOptionIndex === 0) {
+                // EBox 122 (15.36TB drives)
+                eboxType = 'EBox 122';
+                const clampedCount = Math.min(Math.max(eboxCount, 8), 100);
+                licenseData = EBOX_122_LICENSE_DATA[clampedCount];
+            } else if (driveOptionIndex === 1) {
+                // EBox 244 (30.72TB drives)
+                eboxType = 'EBox 244';
+                const clampedCount = Math.min(Math.max(eboxCount, 8), 100);
+                licenseData = EBOX_244_LICENSE_DATA[clampedCount];
+            } else if (driveOptionIndex === 2) {
+                // EBox 430 (61.44TB drives)
+                eboxType = 'EBox 430';
+                const clampedCount = Math.min(Math.max(eboxCount, 8), 100);
+                licenseData = EBOX_430_LICENSE_DATA[clampedCount];
+            }
+            
+            return { licenseData, eboxType };
+        }
 
         function calculateMetrics() {
             const capacity = parseFloat(document.getElementById('capacity').value) || 0;
@@ -1352,10 +1740,10 @@
             const capacityType = document.getElementById('capacity-type').value;
 
             const capacityInTB = capacityUnit === 'PB' ? capacity * 1000 : capacity;
-            const capacityKey = capacityType === 'raw' ? 'raw' : 'usable';
 
-            const serversRequired = capacities.map(cap => 
-                Math.max(CONFIG.minServers, Math.ceil(capacityInTB / cap[capacityKey] || 0))
+            // Use dynamic capacity calculation based on server count
+            const serversRequired = [0, 1, 2].map(driveIdx => 
+                calculateServersRequired(capacityInTB, driveIdx, capacityType)
             );
             const racksRequired = serversRequired.map(servers => 
                 Math.ceil(servers / CONFIG.serversPerRack)
@@ -1365,12 +1753,31 @@
             const sizingResults = document.getElementById('sizing-results');
             if (capacity > 0) {
                 // Check if capacity is below minimum cluster size for each drive option
-                const minClusterCapacities = capacities.map(cap => CONFIG.minServers * cap[capacityKey]);
+                const minClusterCapacities = [0, 1, 2].map(driveIdx => {
+                    if (capacityType === 'raw') {
+                        return CONFIG.minServers * RAW_CAPACITIES[driveIdx];
+                    }
+                    return getTotalUsableCapacity(CONFIG.minServers, driveIdx);
+                });
                 const driveLabels = ['15.3TB', '30.7TB', '61.4TB'];
                 const driveColors = ['cyan', 'purple', 'green'];
                 
-                // Calculate actual servers needed (before min enforcement)
-                const actualServersNeeded = capacities.map(cap => Math.ceil(capacityInTB / cap[capacityKey] || 0));
+                // Calculate actual servers needed (before min enforcement) - for warning display
+                const actualServersNeeded = [0, 1, 2].map(driveIdx => {
+                    if (capacityType === 'raw') {
+                        return Math.ceil(capacityInTB / RAW_CAPACITIES[driveIdx] || 0);
+                    }
+                    // For usable, use iterative calculation but without min enforcement
+                    for (let servers = 1; servers <= 100; servers++) {
+                        const capacityPerEBox = getDynamicCapacityPerEBox(Math.max(servers, 8), driveIdx);
+                        const totalCapacity = servers * capacityPerEBox;
+                        if (totalCapacity >= capacityInTB) {
+                            return servers;
+                        }
+                    }
+                    const maxCapacityPerEBox = getDynamicCapacityPerEBox(100, driveIdx);
+                    return Math.ceil(capacityInTB / maxCapacityPerEBox);
+                });
                 
                 let warningHTML = '';
                 const warnings = [];
@@ -1452,8 +1859,10 @@
             const spineOpticsCostTotal = spineOptics * PRICING.spineOpticsCost;
             const totalOpticsCost = serverOpticsCostTotal + spineOpticsCostTotal;
             const totalPrice = serverCostTotal + driveCostTotal + switchesCostTotal + totalOpticsCost;
-            const pricePerTB = totalPrice / (servers * capacities[i].usable);
-            const totalUsableCapacity = servers * capacities[i].usable;
+            // Use dynamic capacity per EBox based on server count
+            const dynamicCapacityPerEBox = getDynamicCapacityPerEBox(servers, i);
+            const totalUsableCapacity = servers * dynamicCapacityPerEBox;
+            const pricePerTB = totalPrice / totalUsableCapacity;
             
             // Update BOM label
             document.getElementById('bom-drive-label').textContent = `(${driveLabels[i]} drives)`;
@@ -1576,6 +1985,155 @@
             // Update cloud comparison
             updateCloudComparison(totalUsableCapacity, totalPrice, pricePerTB);
             
+            // Update licensing info
+            updateLicensingInfo(servers, i);
+            
+            lucide.createIcons();
+        }
+        
+        function updateLicensingInfo(serverCount, driveOptionIndex) {
+            const licensingContent = document.getElementById('licensing-content');
+            const licenseEboxType = document.getElementById('license-ebox-type');
+            const driveLabels = ['15.3TB', '30.7TB', '61.4TB'];
+            const driveColors = ['cyan', 'purple', 'green'];
+            
+            // Get license data
+            const { licenseData, eboxType } = getLicenseData(serverCount, driveOptionIndex);
+            
+            if (!licenseData) {
+                // No license data available for 61.4TB drives
+                licenseEboxType.textContent = `(${driveLabels[driveOptionIndex]} drives)`;
+                licenseEboxType.className = `text-sm font-normal text-${driveColors[driveOptionIndex]}-400 ml-2`;
+                licensingContent.innerHTML = `
+                    <div class="p-4 bg-slate-800/50 rounded-lg text-center">
+                        <div class="text-gray-400">
+                            <i data-lucide="info" class="w-5 h-5 inline mr-2"></i>
+                            License data not available for 61.4TB drive configuration.
+                        </div>
+                        <div class="text-xs text-gray-500 mt-2">
+                            Contact VAST for licensing requirements for this configuration.
+                        </div>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+            
+            // Update header
+            licenseEboxType.textContent = `(${eboxType} - ${driveLabels[driveOptionIndex]} drives)`;
+            licenseEboxType.className = `text-sm font-normal text-${driveColors[driveOptionIndex]}-400 ml-2`;
+            
+            // Check if server count exceeds max for this EBox type (all types support up to 100)
+            const maxServers = 100;
+            const isExceeded = serverCount > maxServers;
+            const exceededWarning = isExceeded ? `
+                <div class="p-3 bg-red-900/30 border border-red-500/50 rounded-lg mb-4">
+                    <div class="flex items-start gap-2">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0"></i>
+                        <div class="text-xs">
+                            <div class="text-red-400 font-medium">Configuration exceeds single cluster maximum</div>
+                            <div class="text-gray-400 mt-1">${eboxType} supports up to ${maxServers} EBoxes per cluster. Your configuration of ${serverCount} servers would require multiple clusters.</div>
+                        </div>
+                    </div>
+                </div>
+            ` : '';
+            
+            // Check if this is EBox 430 (capacity-only licensing, no core licenses)
+            const isCapacityOnly = driveOptionIndex === 2;
+            
+            // Performance note for <12 EBoxes
+            const performanceNote = serverCount < 12 ? `
+                <div class="p-3 bg-yellow-900/30 border border-yellow-500/50 rounded-lg mb-4">
+                    <div class="flex items-start gap-2">
+                        <i data-lucide="alert-circle" class="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0"></i>
+                        <div class="text-xs">
+                            <div class="text-yellow-400 font-medium">Reduced Write Performance</div>
+                            <div class="text-gray-400 mt-1">
+                                Clusters with fewer than 12 EBoxes have reduced maximum write performance:
+                                <ul class="list-disc list-inside mt-1 space-y-0.5">
+                                    <li>8-10 EBoxes: 6+2 stripe (~15% less write bandwidth)</li>
+                                    <li>11 EBoxes: 8+2 stripe (~6% less write bandwidth)</li>
+                                    <li>12+ EBoxes: 10+2 stripe (full write bandwidth)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ` : '';
+            
+            licensingContent.innerHTML = `
+                ${exceededWarning}
+                ${performanceNote}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-3">
+                        <h4 class="text-sm font-medium text-gray-300">Cluster Configuration</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between p-2 bg-slate-800/50 rounded">
+                                <span class="text-gray-400">EBox Count</span>
+                                <span class="font-medium text-${driveColors[driveOptionIndex]}-400">${serverCount}</span>
+                            </div>
+                            <div class="flex justify-between p-2 bg-slate-800/50 rounded">
+                                <span class="text-gray-400">Capacity per EBox</span>
+                                <span class="font-medium">${licenseData.capacityPerEBox.toFixed(2)} TB</span>
+                            </div>
+                            <div class="flex justify-between p-2 bg-slate-800/50 rounded">
+                                <span class="text-gray-400">Cluster Capacity</span>
+                                <span class="font-medium">${(licenseData.clusterCapacity / 1000).toFixed(2)} PB</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <h4 class="text-sm font-medium text-gray-300">Monthly Licenses Required</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between p-3 bg-amber-900/30 border border-amber-500/30 rounded">
+                                <span class="text-gray-300">
+                                    <span class="tooltip" data-tip="100TB Capacity Licenses are billed monthly based on usable capacity">100TB Capacity Licenses</span>
+                                </span>
+                                <span class="font-bold text-amber-400">${licenseData.capacityLicenses}</span>
+                            </div>
+                            ${!isCapacityOnly ? `
+                            <div class="flex justify-between p-3 bg-blue-900/30 border border-blue-500/30 rounded">
+                                <span class="text-gray-300">
+                                    <span class="tooltip" data-tip="Core Licenses are based on cluster configuration and server count">Core Licenses</span>
+                                </span>
+                                <span class="font-bold text-blue-400">${licenseData.coreLicenses.toLocaleString()}</span>
+                            </div>
+                            ` : `
+                            <div class="flex justify-between p-3 bg-green-900/30 border border-green-500/30 rounded">
+                                <span class="text-gray-300">
+                                    <span class="tooltip" data-tip="EBox 430 uses capacity-only licensing - no core licenses required">Core Licenses</span>
+                                </span>
+                                <span class="font-bold text-green-400">Not Required</span>
+                            </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 p-3 bg-slate-800/50 rounded-lg">
+                    <div class="text-xs text-gray-400">
+                        <div class="grid grid-cols-2 md:grid-cols-${isCapacityOnly ? '3' : '4'} gap-4 text-center">
+                            <div>
+                                <div class="text-amber-400 font-bold text-lg">${licenseData.capacityLicenses}</div>
+                                <div class="text-gray-500">100TB Licenses</div>
+                            </div>
+                            ${!isCapacityOnly ? `
+                            <div>
+                                <div class="text-blue-400 font-bold text-lg">${licenseData.coreLicenses.toLocaleString()}</div>
+                                <div class="text-gray-500">Core Licenses</div>
+                            </div>
+                            ` : ''}
+                            <div>
+                                <div class="text-${driveColors[driveOptionIndex]}-400 font-bold text-lg">${(licenseData.clusterCapacity / 1000).toFixed(1)}</div>
+                                <div class="text-gray-500">Usable PB</div>
+                            </div>
+                            <div>
+                                <div class="text-green-400 font-bold text-lg">${licenseData.capacityPerEBox.toFixed(0)}</div>
+                                <div class="text-gray-500">TB/EBox</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
             lucide.createIcons();
         }
         
@@ -2200,15 +2758,16 @@
             const capacityInTB = capacityUnit === 'PB' ? capacity * 1000 : capacity;
             const capacityKey = capacityType === 'raw' ? 'raw' : 'usable';
             
-            const serversRequired = capacities.map(cap => 
-                Math.max(CONFIG.minServers, Math.ceil(capacityInTB / cap[capacityKey] || 0))
+            // Use dynamic capacity calculation based on server count
+            const serversRequired = [0, 1, 2].map(driveIdx => 
+                calculateServersRequired(capacityInTB, driveIdx, capacityType)
             );
             
             // Get selected drive option
             const driveLabels = ['15.3TB', '30.7TB', '61.4TB'];
             const driveColors = ['cyan', 'purple', 'green'];
             const selectedServers = serversRequired[driveOptionIndex];
-            const selectedCapacity = capacities[driveOptionIndex];
+            const selectedCapacityPerEBox = getDynamicCapacityPerEBox(selectedServers, driveOptionIndex);
             
             // Update drive label
             document.getElementById('rack-viz-drive-label').textContent = `(${driveLabels[driveOptionIndex]} drives)`;
@@ -2238,7 +2797,7 @@
             
             document.getElementById('rack-config-summary').innerHTML = `
                 <div class="flex justify-between"><span class="text-gray-400">Drive Option:</span><span class="text-${driveColors[driveOptionIndex]}-400 font-medium">${driveLabels[driveOptionIndex]}</span></div>
-                <div class="flex justify-between"><span class="text-gray-400">Usable per Server:</span><span>${selectedCapacity.usable} TB</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Usable per Server:</span><span>${selectedCapacityPerEBox.toFixed(2)} TB</span></div>
                 <div class="flex justify-between"><span class="text-gray-400">Servers Required:</span><span class="font-medium">${selectedServers}</span></div>
                 <div class="flex justify-between"><span class="text-gray-400">Racks Required:</span><span class="font-medium">${result.actualRacks}</span></div>
                 <div class="flex justify-between"><span class="text-gray-400">Servers per Rack:</span><span>${result.serversPerRack}</span></div>
@@ -2252,7 +2811,7 @@
             lucide.createIcons();
             
             // Update deployment scale summary
-            const totalUsableCapacity = selectedServers * selectedCapacity.usable;
+            const totalUsableCapacity = selectedServers * selectedCapacityPerEBox;
             const totalLeafSwitches = isUnified ? result.actualRacks : result.actualRacks * 2;
             const scalableUnits = Math.ceil(selectedServers / result.serversPerScalableUnit);
             // Spine switches: 2 for BE (always needed for multi-rack), 2 for FE if dedicated
@@ -2433,8 +2992,8 @@
             const rackPower = document.getElementById('rack-power').value;
             
             const capacityInTB = capacityUnit === 'PB' ? capacity * 1000 : capacity;
-            const capacityKey = capacityType === 'raw' ? 'raw' : 'usable';
-            const servers = Math.max(CONFIG.minServers, Math.ceil(capacityInTB / capacities[driveOption][capacityKey]));
+            // Use dynamic capacity calculation
+            const servers = calculateServersRequired(capacityInTB, driveOption, capacityType);
             const racks = Math.ceil(servers / CONFIG.serversPerRack);
             const rawSwitches = Math.ceil((servers * 2) / 32);
             const switches = rawSwitches + (rawSwitches % 2);
@@ -2448,7 +3007,10 @@
             const spineOptics = switches * CONFIG.spineOpticsPerSwitch;
             const opticsCostTotal = (serverOptics * PRICING.serverOpticsCost) + (spineOptics * PRICING.spineOpticsCost);
             const totalCost = serverCostTotal + driveCostTotal + switchesCostTotal + opticsCostTotal;
-            const pricePerTB = totalCost / (servers * capacities[driveOption].usable);
+            // Use dynamic capacity per EBox
+            const dynamicCapacityPerEBox = getDynamicCapacityPerEBox(servers, driveOption);
+            const totalUsableCapacity = servers * dynamicCapacityPerEBox;
+            const pricePerTB = totalCost / totalUsableCapacity;
             
             const summary = `VAST EBox Storage Configuration Summary
 ========================================
