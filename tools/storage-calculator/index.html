@@ -86,6 +86,9 @@
             align-items: center;
             justify-content: center;
         }
+        .rack-unit-2u {
+            height: 40px !important;
+        }
         .rack-server {
             background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
         }
@@ -624,10 +627,16 @@
                     Rack Layout Visualization
                     <span id="rack-viz-drive-label" class="text-sm font-normal text-purple-400 ml-2">(30.7TB drives)</span>
                 </h3>
-                <button onclick="exportRackVisualization()" class="flex items-center gap-2 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-sm transition-colors">
-                    <i data-lucide="download" class="w-4 h-4"></i>
-                    Export PNG
-                </button>
+                <div class="flex gap-2">
+                    <button onclick="exportRackVisualization()" class="flex items-center gap-2 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-sm transition-colors">
+                        <i data-lucide="image" class="w-4 h-4"></i>
+                        PNG
+                    </button>
+                    <button onclick="exportRackToDrawio()" class="flex items-center gap-2 px-3 py-1.5 bg-orange-600 hover:bg-orange-500 rounded-lg text-sm transition-colors">
+                        <i data-lucide="file-code" class="w-4 h-4"></i>
+                        Draw.io
+                    </button>
+                </div>
             </div>
             <p class="text-xs text-gray-500 mb-4">Showing 1 scalable unit (representative sample of full deployment)</p>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -657,10 +666,16 @@
                     <i data-lucide="network" class="w-5 h-5 text-purple-400"></i>
                     Dual-Network Topology (Frontend + Backend)
                 </h3>
-                <button onclick="exportNetworkDiagram()" class="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-sm transition-colors">
-                    <i data-lucide="download" class="w-4 h-4"></i>
-                    Export PNG
-                </button>
+                <div class="flex gap-2">
+                    <button onclick="exportNetworkDiagram()" class="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-sm transition-colors">
+                        <i data-lucide="image" class="w-4 h-4"></i>
+                        PNG
+                    </button>
+                    <button onclick="exportNetworkToDrawio()" class="flex items-center gap-2 px-3 py-1.5 bg-orange-600 hover:bg-orange-500 rounded-lg text-sm transition-colors">
+                        <i data-lucide="file-code" class="w-4 h-4"></i>
+                        Draw.io
+                    </button>
+                </div>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
@@ -2304,13 +2319,13 @@
                 rackHTML += '<div class="border border-slate-600 rounded">';
                 rackHTML += '<div class="text-xs text-center text-gray-500 py-1 bg-slate-800">Rack A (' + serversInFirstRack + ' servers)</div>';
                 let unitIndexA = CONFIG.rackUnits;
-                const switchHeightStyle = switchHeight === 2 ? 'height: 24px;' : '';
+                const switch2uClass = switchHeight === 2 ? ' rack-unit-2u' : '';
                 if (isUnified) {
-                    rackHTML += `<div class="rack-unit rack-switch-fe text-white text-xs" style="background: linear-gradient(90deg, #7c3aed 50%, #059669 50%); ${switchHeightStyle}">Unified${switchHeight === 2 ? ' (2U)' : ''}</div>`;
+                    rackHTML += `<div class="rack-unit${switch2uClass} rack-switch-fe text-white text-xs" style="background: linear-gradient(90deg, #7c3aed 50%, #059669 50%);">Unified${switchHeight === 2 ? ' (2U)' : ''}</div>`;
                     unitIndexA -= switchHeight;
                 } else {
-                    rackHTML += `<div class="rack-unit rack-switch-fe text-white text-xs" style="${switchHeightStyle}">FE Leaf${switchHeight === 2 ? ' (2U)' : ''}</div>`;
-                    rackHTML += `<div class="rack-unit rack-switch-be text-white text-xs" style="${switchHeightStyle}">BE Leaf${switchHeight === 2 ? ' (2U)' : ''}</div>`;
+                    rackHTML += `<div class="rack-unit${switch2uClass} rack-switch-fe text-white text-xs">FE Leaf${switchHeight === 2 ? ' (2U)' : ''}</div>`;
+                    rackHTML += `<div class="rack-unit${switch2uClass} rack-switch-be text-white text-xs">BE Leaf${switchHeight === 2 ? ' (2U)' : ''}</div>`;
                     unitIndexA -= switchHeight * 2;
                 }
                 for (let i = 0; i < serversInFirstRack && unitIndexA > 0; i++) {
@@ -2328,11 +2343,11 @@
                 rackHTML += '<div class="text-xs text-center text-gray-500 py-1 bg-slate-800">Rack B (' + serversInSecondRack + ' servers)</div>';
                 let unitIndexB = CONFIG.rackUnits;
                 if (isUnified) {
-                    rackHTML += `<div class="rack-unit rack-switch-fe text-white text-xs" style="background: linear-gradient(90deg, #7c3aed 50%, #059669 50%); ${switchHeightStyle}">Unified${switchHeight === 2 ? ' (2U)' : ''}</div>`;
+                    rackHTML += `<div class="rack-unit${switch2uClass} rack-switch-fe text-white text-xs" style="background: linear-gradient(90deg, #7c3aed 50%, #059669 50%);">Unified${switchHeight === 2 ? ' (2U)' : ''}</div>`;
                     unitIndexB -= switchHeight;
                 } else {
-                    rackHTML += `<div class="rack-unit rack-switch-fe text-white text-xs" style="${switchHeightStyle}">FE Leaf${switchHeight === 2 ? ' (2U)' : ''}</div>`;
-                    rackHTML += `<div class="rack-unit rack-switch-be text-white text-xs" style="${switchHeightStyle}">BE Leaf${switchHeight === 2 ? ' (2U)' : ''}</div>`;
+                    rackHTML += `<div class="rack-unit${switch2uClass} rack-switch-fe text-white text-xs">FE Leaf${switchHeight === 2 ? ' (2U)' : ''}</div>`;
+                    rackHTML += `<div class="rack-unit${switch2uClass} rack-switch-be text-white text-xs">BE Leaf${switchHeight === 2 ? ' (2U)' : ''}</div>`;
                     unitIndexB -= switchHeight * 2;
                 }
                 for (let i = 0; i < serversInSecondRack && unitIndexB > 0; i++) {
@@ -2360,17 +2375,17 @@
                 rackHTML += '<div class="border border-slate-600 rounded">';
                 
                 let unitIndex = CONFIG.rackUnits;
-                const switchHeightStyle = switchHeight === 2 ? 'height: 24px;' : '';
+                const switch2uClass = switchHeight === 2 ? ' rack-unit-2u' : '';
                 const switchSuffix = switchHeight === 2 ? ' (2U)' : '';
                 if (isUnified) {
-                    rackHTML += `<div class="rack-unit rack-switch-fe text-white" style="background: linear-gradient(90deg, #7c3aed 50%, #059669 50%); ${switchHeightStyle}">Unified 1${switchSuffix}</div>`;
-                    rackHTML += `<div class="rack-unit rack-switch-fe text-white" style="background: linear-gradient(90deg, #7c3aed 50%, #059669 50%); ${switchHeightStyle}">Unified 2${switchSuffix}</div>`;
+                    rackHTML += `<div class="rack-unit${switch2uClass} rack-switch-fe text-white" style="background: linear-gradient(90deg, #7c3aed 50%, #059669 50%);">Unified 1${switchSuffix}</div>`;
+                    rackHTML += `<div class="rack-unit${switch2uClass} rack-switch-fe text-white" style="background: linear-gradient(90deg, #7c3aed 50%, #059669 50%);">Unified 2${switchSuffix}</div>`;
                     unitIndex -= switchHeight * 2;
                 } else {
-                    rackHTML += `<div class="rack-unit rack-switch-fe text-white" style="${switchHeightStyle}">FE Leaf 1${switchSuffix}</div>`;
-                    rackHTML += `<div class="rack-unit rack-switch-fe text-white" style="${switchHeightStyle}">FE Leaf 2${switchSuffix}</div>`;
-                    rackHTML += `<div class="rack-unit rack-switch-be text-white" style="${switchHeightStyle}">BE Leaf 1${switchSuffix}</div>`;
-                    rackHTML += `<div class="rack-unit rack-switch-be text-white" style="${switchHeightStyle}">BE Leaf 2${switchSuffix}</div>`;
+                    rackHTML += `<div class="rack-unit${switch2uClass} rack-switch-fe text-white">FE Leaf 1${switchSuffix}</div>`;
+                    rackHTML += `<div class="rack-unit${switch2uClass} rack-switch-fe text-white">FE Leaf 2${switchSuffix}</div>`;
+                    rackHTML += `<div class="rack-unit${switch2uClass} rack-switch-be text-white">BE Leaf 1${switchSuffix}</div>`;
+                    rackHTML += `<div class="rack-unit${switch2uClass} rack-switch-be text-white">BE Leaf 2${switchSuffix}</div>`;
                     unitIndex -= switchHeight * 4;
                 }
                 
@@ -3192,6 +3207,326 @@ Configuration URL: ${generateShareableURL()}
             } finally {
                 document.body.removeChild(exportContainer);
             }
+        }
+
+        // Export rack visualization to draw.io XML format
+        function exportRackToDrawio() {
+            const capacity = parseFloat(document.getElementById('capacity').value) || 0;
+            const capacityUnit = document.getElementById('capacity-unit').value;
+            const capacityType = document.getElementById('capacity-type').value;
+            const driveOptionIndex = parseInt(document.getElementById('drive-option').value) || 1;
+            const switchType = document.getElementById('switchType')?.value || '32port';
+            const switchHeight = switchType === '64port' ? 2 : 1;
+            const isSplit = selectedRackLayout === 'split';
+            const isUnified = selectedNetworkDesign === 'unified';
+            
+            const capacityInTB = capacityUnit === 'PB' ? capacity * 1000 : capacity;
+            const servers = calculateServersRequired(capacityInTB, driveOptionIndex, capacityType);
+            const driveLabels = ['15.3TB', '30.7TB', '61.4TB'];
+            
+            // Calculate rack layout
+            const rackPower = parseFloat(document.getElementById('rack-power').value) || CONFIG.defaultRackPower;
+            const switchPower = switchType === '64port' ? CONFIG.switchPower64 : CONFIG.switchPower32;
+            const switchesInRack = isSplit ? (isUnified ? 1 : 2) : (isUnified ? 2 : 4);
+            const switchPowerPerRack = switchesInRack * switchPower / 1000;
+            const availablePowerForServers = rackPower - switchPowerPerRack;
+            const maxServersByPower = Math.floor(availablePowerForServers * 1000 / CONFIG.serverPower);
+            const maxServersBySpace = CONFIG.rackUnits - (switchesInRack * switchHeight);
+            const serversPerRack = Math.min(maxServersByPower, maxServersBySpace);
+            
+            // Draw.io XML generation
+            let cellId = 2;
+            const unitHeight = 20;
+            const rackWidth = 200;
+            const startX = 50;
+            const startY = 50;
+            
+            let cells = '';
+            let yPos = startY;
+            
+            // Title
+            cells += `<mxCell id="${cellId++}" value="VAST EBox Rack Layout - ${driveLabels[driveOptionIndex]} drives" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1" vertex="1" parent="1"><mxGeometry x="${startX}" y="${yPos}" width="${rackWidth * (isSplit ? 2.2 : 1)}" height="30" as="geometry"/></mxCell>`;
+            yPos += 40;
+            
+            // Rack frame
+            const rackHeight = (CONFIG.rackUnits + 1) * unitHeight;
+            
+            if (isSplit) {
+                // Rack A
+                cells += `<mxCell id="${cellId++}" value="Rack A" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=12;fontStyle=1" vertex="1" parent="1"><mxGeometry x="${startX}" y="${yPos}" width="${rackWidth}" height="20" as="geometry"/></mxCell>`;
+                // Rack B
+                cells += `<mxCell id="${cellId++}" value="Rack B" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=12;fontStyle=1" vertex="1" parent="1"><mxGeometry x="${startX + rackWidth + 20}" y="${yPos}" width="${rackWidth}" height="20" as="geometry"/></mxCell>`;
+                yPos += 25;
+                
+                // Rack A frame
+                cells += `<mxCell id="${cellId++}" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1a1a2e;strokeColor=#4a5568" vertex="1" parent="1"><mxGeometry x="${startX}" y="${yPos}" width="${rackWidth}" height="${rackHeight}" as="geometry"/></mxCell>`;
+                // Rack B frame
+                cells += `<mxCell id="${cellId++}" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1a1a2e;strokeColor=#4a5568" vertex="1" parent="1"><mxGeometry x="${startX + rackWidth + 20}" y="${yPos}" width="${rackWidth}" height="${rackHeight}" as="geometry"/></mxCell>`;
+                
+                let yPosA = yPos + 5;
+                let yPosB = yPos + 5;
+                
+                // Switches for Rack A
+                if (isUnified) {
+                    cells += `<mxCell id="${cellId++}" value="Unified Switch${switchHeight === 2 ? ' (2U)' : ''}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#7c3aed;strokeColor=#8b5cf6;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="${startX + 5}" y="${yPosA}" width="${rackWidth - 10}" height="${unitHeight * switchHeight}" as="geometry"/></mxCell>`;
+                    yPosA += unitHeight * switchHeight + 2;
+                } else {
+                    cells += `<mxCell id="${cellId++}" value="FE Leaf${switchHeight === 2 ? ' (2U)' : ''}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#7c3aed;strokeColor=#8b5cf6;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="${startX + 5}" y="${yPosA}" width="${rackWidth - 10}" height="${unitHeight * switchHeight}" as="geometry"/></mxCell>`;
+                    yPosA += unitHeight * switchHeight + 2;
+                    cells += `<mxCell id="${cellId++}" value="BE Leaf${switchHeight === 2 ? ' (2U)' : ''}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#059669;strokeColor=#10b981;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="${startX + 5}" y="${yPosA}" width="${rackWidth - 10}" height="${unitHeight * switchHeight}" as="geometry"/></mxCell>`;
+                    yPosA += unitHeight * switchHeight + 2;
+                }
+                
+                // Switches for Rack B
+                if (isUnified) {
+                    cells += `<mxCell id="${cellId++}" value="Unified Switch${switchHeight === 2 ? ' (2U)' : ''}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#7c3aed;strokeColor=#8b5cf6;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="${startX + rackWidth + 25}" y="${yPosB}" width="${rackWidth - 10}" height="${unitHeight * switchHeight}" as="geometry"/></mxCell>`;
+                    yPosB += unitHeight * switchHeight + 2;
+                } else {
+                    cells += `<mxCell id="${cellId++}" value="FE Leaf${switchHeight === 2 ? ' (2U)' : ''}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#7c3aed;strokeColor=#8b5cf6;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="${startX + rackWidth + 25}" y="${yPosB}" width="${rackWidth - 10}" height="${unitHeight * switchHeight}" as="geometry"/></mxCell>`;
+                    yPosB += unitHeight * switchHeight + 2;
+                    cells += `<mxCell id="${cellId++}" value="BE Leaf${switchHeight === 2 ? ' (2U)' : ''}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#059669;strokeColor=#10b981;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="${startX + rackWidth + 25}" y="${yPosB}" width="${rackWidth - 10}" height="${unitHeight * switchHeight}" as="geometry"/></mxCell>`;
+                    yPosB += unitHeight * switchHeight + 2;
+                }
+                
+                // Servers for Rack A
+                const serversInA = Math.ceil(Math.min(servers, serversPerRack * 2) / 2);
+                for (let i = 0; i < serversInA && i < serversPerRack; i++) {
+                    cells += `<mxCell id="${cellId++}" value="EBox ${i + 1}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0891b2;strokeColor=#06b6d4;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="${startX + 5}" y="${yPosA}" width="${rackWidth - 10}" height="${unitHeight}" as="geometry"/></mxCell>`;
+                    yPosA += unitHeight + 2;
+                }
+                
+                // Servers for Rack B
+                const serversInB = Math.floor(Math.min(servers, serversPerRack * 2) / 2);
+                for (let i = 0; i < serversInB && i < serversPerRack; i++) {
+                    cells += `<mxCell id="${cellId++}" value="EBox ${serversInA + i + 1}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0891b2;strokeColor=#06b6d4;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="${startX + rackWidth + 25}" y="${yPosB}" width="${rackWidth - 10}" height="${unitHeight}" as="geometry"/></mxCell>`;
+                    yPosB += unitHeight + 2;
+                }
+            } else {
+                // Single rack layout
+                cells += `<mxCell id="${cellId++}" value="Rack 1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=12;fontStyle=1" vertex="1" parent="1"><mxGeometry x="${startX}" y="${yPos}" width="${rackWidth}" height="20" as="geometry"/></mxCell>`;
+                yPos += 25;
+                
+                cells += `<mxCell id="${cellId++}" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1a1a2e;strokeColor=#4a5568" vertex="1" parent="1"><mxGeometry x="${startX}" y="${yPos}" width="${rackWidth}" height="${rackHeight}" as="geometry"/></mxCell>`;
+                
+                let unitY = yPos + 5;
+                
+                // Switches
+                if (isUnified) {
+                    for (let i = 0; i < 2; i++) {
+                        cells += `<mxCell id="${cellId++}" value="Unified ${i + 1}${switchHeight === 2 ? ' (2U)' : ''}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#7c3aed;strokeColor=#8b5cf6;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="${startX + 5}" y="${unitY}" width="${rackWidth - 10}" height="${unitHeight * switchHeight}" as="geometry"/></mxCell>`;
+                        unitY += unitHeight * switchHeight + 2;
+                    }
+                } else {
+                    for (let i = 0; i < 2; i++) {
+                        cells += `<mxCell id="${cellId++}" value="FE Leaf ${i + 1}${switchHeight === 2 ? ' (2U)' : ''}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#7c3aed;strokeColor=#8b5cf6;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="${startX + 5}" y="${unitY}" width="${rackWidth - 10}" height="${unitHeight * switchHeight}" as="geometry"/></mxCell>`;
+                        unitY += unitHeight * switchHeight + 2;
+                    }
+                    for (let i = 0; i < 2; i++) {
+                        cells += `<mxCell id="${cellId++}" value="BE Leaf ${i + 1}${switchHeight === 2 ? ' (2U)' : ''}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#059669;strokeColor=#10b981;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="${startX + 5}" y="${unitY}" width="${rackWidth - 10}" height="${unitHeight * switchHeight}" as="geometry"/></mxCell>`;
+                        unitY += unitHeight * switchHeight + 2;
+                    }
+                }
+                
+                // Servers
+                for (let i = 0; i < Math.min(servers, serversPerRack); i++) {
+                    cells += `<mxCell id="${cellId++}" value="EBox ${i + 1}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0891b2;strokeColor=#06b6d4;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="${startX + 5}" y="${unitY}" width="${rackWidth - 10}" height="${unitHeight}" as="geometry"/></mxCell>`;
+                    unitY += unitHeight + 2;
+                }
+            }
+            
+            // Build complete draw.io XML
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="${new Date().toISOString()}" agent="VAST EBox Calculator" version="21.0.0" type="device">
+  <diagram name="Rack Layout" id="rack-layout">
+    <mxGraphModel dx="1000" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        ${cells}
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>`;
+            
+            // Download as .drawio file
+            const blob = new Blob([xml], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `vast-rack-layout-${new Date().toISOString().split('T')[0]}.drawio`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // Export network topology to draw.io XML format
+        function exportNetworkToDrawio() {
+            const capacity = parseFloat(document.getElementById('capacity').value) || 0;
+            const capacityUnit = document.getElementById('capacity-unit').value;
+            const capacityType = document.getElementById('capacity-type').value;
+            const driveOptionIndex = parseInt(document.getElementById('drive-option').value) || 1;
+            const switchType = document.getElementById('switchType')?.value || '32port';
+            const isUnified = selectedNetworkDesign === 'unified';
+            const isSplit = selectedRackLayout === 'split';
+            
+            const capacityInTB = capacityUnit === 'PB' ? capacity * 1000 : capacity;
+            const servers = calculateServersRequired(capacityInTB, driveOptionIndex, capacityType);
+            const driveLabels = ['15.3TB', '30.7TB', '61.4TB'];
+            
+            // Calculate switches
+            const rackPower = parseFloat(document.getElementById('rack-power').value) || CONFIG.defaultRackPower;
+            const switchPower = switchType === '64port' ? CONFIG.switchPower64 : CONFIG.switchPower32;
+            const switchHeight = switchType === '64port' ? 2 : 1;
+            const switchesInRack = isSplit ? (isUnified ? 1 : 2) : (isUnified ? 2 : 4);
+            const switchPowerPerRack = switchesInRack * switchPower / 1000;
+            const availablePowerForServers = rackPower - switchPowerPerRack;
+            const maxServersByPower = Math.floor(availablePowerForServers * 1000 / CONFIG.serverPower);
+            const maxServersBySpace = CONFIG.rackUnits - (switchesInRack * switchHeight);
+            const serversPerRack = Math.min(maxServersByPower, maxServersBySpace);
+            const serversPerScalableUnit = isSplit ? serversPerRack * 2 : serversPerRack;
+            const scalableUnits = Math.ceil(servers / serversPerScalableUnit);
+            const actualRacks = scalableUnits * (isSplit ? 2 : 1);
+            const leafSwitches = isUnified ? actualRacks : actualRacks * 2;
+            
+            let cellId = 2;
+            let cells = '';
+            
+            // Title
+            cells += `<mxCell id="${cellId++}" value="VAST EBox Network Topology - ${servers} Servers (${driveLabels[driveOptionIndex]})" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1" vertex="1" parent="1"><mxGeometry x="200" y="20" width="400" height="30" as="geometry"/></mxCell>`;
+            
+            // Clients/Users at top
+            cells += `<mxCell id="${cellId++}" value="Clients / Users" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12" vertex="1" parent="1"><mxGeometry x="350" y="70" width="100" height="40" as="geometry"/></mxCell>`;
+            const clientId = cellId - 1;
+            
+            // Spine switches (if needed)
+            const needsSpine = actualRacks > (isSplit ? 2 : 1);
+            let spineY = 140;
+            let leafY = needsSpine ? 240 : 140;
+            let serverY = leafY + 100;
+            
+            let feSpineIds = [];
+            let beSpineIds = [];
+            
+            if (needsSpine) {
+                if (!isUnified) {
+                    // FE Spine switches
+                    cells += `<mxCell id="${cellId++}" value="FE Spine 1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11" vertex="1" parent="1"><mxGeometry x="250" y="${spineY}" width="80" height="40" as="geometry"/></mxCell>`;
+                    feSpineIds.push(cellId - 1);
+                    cells += `<mxCell id="${cellId++}" value="FE Spine 2" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11" vertex="1" parent="1"><mxGeometry x="350" y="${spineY}" width="80" height="40" as="geometry"/></mxCell>`;
+                    feSpineIds.push(cellId - 1);
+                }
+                // BE Spine switches
+                cells += `<mxCell id="${cellId++}" value="BE Spine 1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11" vertex="1" parent="1"><mxGeometry x="450" y="${spineY}" width="80" height="40" as="geometry"/></mxCell>`;
+                beSpineIds.push(cellId - 1);
+                cells += `<mxCell id="${cellId++}" value="BE Spine 2" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11" vertex="1" parent="1"><mxGeometry x="550" y="${spineY}" width="80" height="40" as="geometry"/></mxCell>`;
+                beSpineIds.push(cellId - 1);
+                
+                // Connect clients to FE spines
+                if (!isUnified) {
+                    feSpineIds.forEach(id => {
+                        cells += `<mxCell id="${cellId++}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;" edge="1" parent="1" source="${clientId}" target="${id}"><mxGeometry relative="1" as="geometry"/></mxCell>`;
+                    });
+                }
+            }
+            
+            // Leaf switches
+            let feLeafIds = [];
+            let beLeafIds = [];
+            const leafCount = Math.min(leafSwitches / (isUnified ? 1 : 2), 4); // Show max 4 for clarity
+            const leafSpacing = 120;
+            const leafStartX = 400 - (leafCount * leafSpacing / 2);
+            
+            if (isUnified) {
+                for (let i = 0; i < leafCount; i++) {
+                    cells += `<mxCell id="${cellId++}" value="Unified Leaf ${i + 1}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#7c3aed;strokeColor=#8b5cf6;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="${leafStartX + i * leafSpacing}" y="${leafY}" width="90" height="40" as="geometry"/></mxCell>`;
+                    feLeafIds.push(cellId - 1);
+                }
+            } else {
+                for (let i = 0; i < leafCount; i++) {
+                    cells += `<mxCell id="${cellId++}" value="FE Leaf ${i + 1}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#7c3aed;strokeColor=#8b5cf6;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="${leafStartX + i * leafSpacing - 50}" y="${leafY}" width="80" height="40" as="geometry"/></mxCell>`;
+                    feLeafIds.push(cellId - 1);
+                    cells += `<mxCell id="${cellId++}" value="BE Leaf ${i + 1}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#059669;strokeColor=#10b981;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="${leafStartX + i * leafSpacing + 40}" y="${leafY}" width="80" height="40" as="geometry"/></mxCell>`;
+                    beLeafIds.push(cellId - 1);
+                }
+            }
+            
+            // Connect spine to leaf if needed
+            if (needsSpine) {
+                if (!isUnified) {
+                    feSpineIds.forEach(spineId => {
+                        feLeafIds.forEach(leafId => {
+                            cells += `<mxCell id="${cellId++}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9673a6;" edge="1" parent="1" source="${spineId}" target="${leafId}"><mxGeometry relative="1" as="geometry"/></mxCell>`;
+                        });
+                    });
+                }
+                beSpineIds.forEach(spineId => {
+                    beLeafIds.forEach(leafId => {
+                        cells += `<mxCell id="${cellId++}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;" edge="1" parent="1" source="${spineId}" target="${leafId}"><mxGeometry relative="1" as="geometry"/></mxCell>`;
+                    });
+                });
+            } else {
+                // Connect clients directly to FE leaves
+                feLeafIds.forEach(leafId => {
+                    cells += `<mxCell id="${cellId++}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;" edge="1" parent="1" source="${clientId}" target="${leafId}"><mxGeometry relative="1" as="geometry"/></mxCell>`;
+                });
+            }
+            
+            // EBox servers
+            const serverCount = Math.min(servers, 8); // Show max 8 for clarity
+            const serverSpacing = 90;
+            const serverStartX = 400 - (serverCount * serverSpacing / 2);
+            
+            for (let i = 0; i < serverCount; i++) {
+                cells += `<mxCell id="${cellId++}" value="EBox ${i + 1}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0891b2;strokeColor=#06b6d4;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="${serverStartX + i * serverSpacing}" y="${serverY}" width="70" height="35" as="geometry"/></mxCell>`;
+                const serverId = cellId - 1;
+                
+                // Connect to leaves (simplified - connect to nearest)
+                const leafIdx = Math.floor(i / (serverCount / leafCount));
+                if (feLeafIds[leafIdx]) {
+                    cells += `<mxCell id="${cellId++}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#06b6d4;" edge="1" parent="1" source="${feLeafIds[leafIdx]}" target="${serverId}"><mxGeometry relative="1" as="geometry"/></mxCell>`;
+                }
+                if (!isUnified && beLeafIds[leafIdx]) {
+                    cells += `<mxCell id="${cellId++}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#10b981;" edge="1" parent="1" source="${beLeafIds[leafIdx]}" target="${serverId}"><mxGeometry relative="1" as="geometry"/></mxCell>`;
+                }
+            }
+            
+            // Add "..." if more servers
+            if (servers > serverCount) {
+                cells += `<mxCell id="${cellId++}" value="... +${servers - serverCount} more" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontStyle=2" vertex="1" parent="1"><mxGeometry x="${serverStartX + serverCount * serverSpacing}" y="${serverY}" width="100" height="35" as="geometry"/></mxCell>`;
+            }
+            
+            // Legend
+            const legendY = serverY + 80;
+            cells += `<mxCell id="${cellId++}" value="Legend" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontStyle=1" vertex="1" parent="1"><mxGeometry x="50" y="${legendY}" width="60" height="20" as="geometry"/></mxCell>`;
+            cells += `<mxCell id="${cellId++}" value="Frontend Network" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#7c3aed;strokeColor=#8b5cf6;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="50" y="${legendY + 25}" width="100" height="25" as="geometry"/></mxCell>`;
+            cells += `<mxCell id="${cellId++}" value="Backend Network" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#059669;strokeColor=#10b981;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="160" y="${legendY + 25}" width="100" height="25" as="geometry"/></mxCell>`;
+            cells += `<mxCell id="${cellId++}" value="EBox Server" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0891b2;strokeColor=#06b6d4;fontColor=#ffffff;fontSize=10" vertex="1" parent="1"><mxGeometry x="270" y="${legendY + 25}" width="100" height="25" as="geometry"/></mxCell>`;
+            
+            // Build complete draw.io XML
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="${new Date().toISOString()}" agent="VAST EBox Calculator" version="21.0.0" type="device">
+  <diagram name="Network Topology" id="network-topology">
+    <mxGraphModel dx="1000" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        ${cells}
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>`;
+            
+            // Download as .drawio file
+            const blob = new Blob([xml], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `vast-network-topology-${new Date().toISOString().split('T')[0]}.drawio`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
 
         // Add event listeners
