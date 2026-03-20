@@ -12,6 +12,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -617,11 +618,17 @@
 
         <!-- Rack Layout Visualization -->
         <div class="card rounded-xl p-6 mb-8">
-            <h3 class="text-lg font-semibold flex items-center gap-2 mb-4">
-                <i data-lucide="server" class="w-5 h-5 text-cyan-400"></i>
-                Rack Layout Visualization
-                <span id="rack-viz-drive-label" class="text-sm font-normal text-purple-400 ml-2">(30.7TB drives)</span>
-            </h3>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                    <i data-lucide="server" class="w-5 h-5 text-cyan-400"></i>
+                    Rack Layout Visualization
+                    <span id="rack-viz-drive-label" class="text-sm font-normal text-purple-400 ml-2">(30.7TB drives)</span>
+                </h3>
+                <button onclick="exportRackVisualization()" class="flex items-center gap-2 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-sm transition-colors">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    Export PNG
+                </button>
+            </div>
             <p class="text-xs text-gray-500 mb-4">Showing 1 scalable unit (representative sample of full deployment)</p>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
@@ -637,18 +644,24 @@
             </div>
             <div class="mt-4 flex flex-wrap gap-4 justify-center text-xs">
                 <div class="flex items-center gap-2"><div class="w-4 h-4 rack-server rounded"></div><span>EBox Server (1U)</span></div>
-                <div class="flex items-center gap-2"><div class="w-4 h-4 rack-switch-fe rounded"></div><span>Frontend Switch (1U)</span></div>
-                <div class="flex items-center gap-2"><div class="w-4 h-4 rack-switch-be rounded"></div><span>Backend Switch (1U)</span></div>
+                <div class="flex items-center gap-2"><div class="w-4 h-4 rack-switch-fe rounded"></div><span id="legend-switch-fe">Frontend Switch (1U)</span></div>
+                <div class="flex items-center gap-2"><div class="w-4 h-4 rack-switch-be rounded"></div><span id="legend-switch-be">Backend Switch (1U)</span></div>
                 <div class="flex items-center gap-2"><div class="w-4 h-4 rack-empty rounded border border-slate-600"></div><span>Empty</span></div>
             </div>
         </div>
 
         <!-- Network Topology -->
         <div class="card rounded-xl p-6 mb-8">
-            <h3 class="text-lg font-semibold flex items-center gap-2 mb-4">
-                <i data-lucide="network" class="w-5 h-5 text-purple-400"></i>
-                Dual-Network Topology (Frontend + Backend)
-            </h3>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                    <i data-lucide="network" class="w-5 h-5 text-purple-400"></i>
+                    Dual-Network Topology (Frontend + Backend)
+                </h3>
+                <button onclick="exportNetworkDiagram()" class="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-sm transition-colors">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    Export PNG
+                </button>
+            </div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
                     <h4 class="text-sm font-medium text-purple-400 mb-3">Frontend Network (Client Access)</h4>
@@ -2291,13 +2304,14 @@
                 rackHTML += '<div class="border border-slate-600 rounded">';
                 rackHTML += '<div class="text-xs text-center text-gray-500 py-1 bg-slate-800">Rack A (' + serversInFirstRack + ' servers)</div>';
                 let unitIndexA = CONFIG.rackUnits;
+                const switchHeightStyle = switchHeight === 2 ? 'height: 24px;' : '';
                 if (isUnified) {
-                    rackHTML += `<div class="rack-unit rack-switch-fe text-white text-xs" style="background: linear-gradient(90deg, #7c3aed 50%, #059669 50%);">Unified</div>`;
-                    unitIndexA -= 1;
+                    rackHTML += `<div class="rack-unit rack-switch-fe text-white text-xs" style="background: linear-gradient(90deg, #7c3aed 50%, #059669 50%); ${switchHeightStyle}">Unified${switchHeight === 2 ? ' (2U)' : ''}</div>`;
+                    unitIndexA -= switchHeight;
                 } else {
-                    rackHTML += `<div class="rack-unit rack-switch-fe text-white text-xs">FE Leaf</div>`;
-                    rackHTML += `<div class="rack-unit rack-switch-be text-white text-xs">BE Leaf</div>`;
-                    unitIndexA -= 2;
+                    rackHTML += `<div class="rack-unit rack-switch-fe text-white text-xs" style="${switchHeightStyle}">FE Leaf${switchHeight === 2 ? ' (2U)' : ''}</div>`;
+                    rackHTML += `<div class="rack-unit rack-switch-be text-white text-xs" style="${switchHeightStyle}">BE Leaf${switchHeight === 2 ? ' (2U)' : ''}</div>`;
+                    unitIndexA -= switchHeight * 2;
                 }
                 for (let i = 0; i < serversInFirstRack && unitIndexA > 0; i++) {
                     rackHTML += `<div class="rack-unit rack-server text-white text-xs">EBox ${i + 1}</div>`;
@@ -2314,12 +2328,12 @@
                 rackHTML += '<div class="text-xs text-center text-gray-500 py-1 bg-slate-800">Rack B (' + serversInSecondRack + ' servers)</div>';
                 let unitIndexB = CONFIG.rackUnits;
                 if (isUnified) {
-                    rackHTML += `<div class="rack-unit rack-switch-fe text-white text-xs" style="background: linear-gradient(90deg, #7c3aed 50%, #059669 50%);">Unified</div>`;
-                    unitIndexB -= 1;
+                    rackHTML += `<div class="rack-unit rack-switch-fe text-white text-xs" style="background: linear-gradient(90deg, #7c3aed 50%, #059669 50%); ${switchHeightStyle}">Unified${switchHeight === 2 ? ' (2U)' : ''}</div>`;
+                    unitIndexB -= switchHeight;
                 } else {
-                    rackHTML += `<div class="rack-unit rack-switch-fe text-white text-xs">FE Leaf</div>`;
-                    rackHTML += `<div class="rack-unit rack-switch-be text-white text-xs">BE Leaf</div>`;
-                    unitIndexB -= 2;
+                    rackHTML += `<div class="rack-unit rack-switch-fe text-white text-xs" style="${switchHeightStyle}">FE Leaf${switchHeight === 2 ? ' (2U)' : ''}</div>`;
+                    rackHTML += `<div class="rack-unit rack-switch-be text-white text-xs" style="${switchHeightStyle}">BE Leaf${switchHeight === 2 ? ' (2U)' : ''}</div>`;
+                    unitIndexB -= switchHeight * 2;
                 }
                 for (let i = 0; i < serversInSecondRack && unitIndexB > 0; i++) {
                     rackHTML += `<div class="rack-unit rack-server text-white text-xs">EBox ${serversInFirstRack + i + 1}</div>`;
@@ -2346,16 +2360,18 @@
                 rackHTML += '<div class="border border-slate-600 rounded">';
                 
                 let unitIndex = CONFIG.rackUnits;
+                const switchHeightStyle = switchHeight === 2 ? 'height: 24px;' : '';
+                const switchSuffix = switchHeight === 2 ? ' (2U)' : '';
                 if (isUnified) {
-                    rackHTML += `<div class="rack-unit rack-switch-fe text-white" style="background: linear-gradient(90deg, #7c3aed 50%, #059669 50%);">Unified 1</div>`;
-                    rackHTML += `<div class="rack-unit rack-switch-fe text-white" style="background: linear-gradient(90deg, #7c3aed 50%, #059669 50%);">Unified 2</div>`;
-                    unitIndex -= 2;
+                    rackHTML += `<div class="rack-unit rack-switch-fe text-white" style="background: linear-gradient(90deg, #7c3aed 50%, #059669 50%); ${switchHeightStyle}">Unified 1${switchSuffix}</div>`;
+                    rackHTML += `<div class="rack-unit rack-switch-fe text-white" style="background: linear-gradient(90deg, #7c3aed 50%, #059669 50%); ${switchHeightStyle}">Unified 2${switchSuffix}</div>`;
+                    unitIndex -= switchHeight * 2;
                 } else {
-                    rackHTML += `<div class="rack-unit rack-switch-fe text-white">FE Leaf 1</div>`;
-                    rackHTML += `<div class="rack-unit rack-switch-fe text-white">FE Leaf 2</div>`;
-                    rackHTML += `<div class="rack-unit rack-switch-be text-white">BE Leaf 1</div>`;
-                    rackHTML += `<div class="rack-unit rack-switch-be text-white">BE Leaf 2</div>`;
-                    unitIndex -= 4;
+                    rackHTML += `<div class="rack-unit rack-switch-fe text-white" style="${switchHeightStyle}">FE Leaf 1${switchSuffix}</div>`;
+                    rackHTML += `<div class="rack-unit rack-switch-fe text-white" style="${switchHeightStyle}">FE Leaf 2${switchSuffix}</div>`;
+                    rackHTML += `<div class="rack-unit rack-switch-be text-white" style="${switchHeightStyle}">BE Leaf 1${switchSuffix}</div>`;
+                    rackHTML += `<div class="rack-unit rack-switch-be text-white" style="${switchHeightStyle}">BE Leaf 2${switchSuffix}</div>`;
+                    unitIndex -= switchHeight * 4;
                 }
                 
                 for (let i = 0; i < serversInFirstRack && unitIndex > 0; i++) {
@@ -2780,6 +2796,13 @@
             const isUnified = selectedNetworkDesign === 'unified';
             const isSplit = selectedRackLayout === 'split';
             const connectionType = document.getElementById('connectionType')?.value || 'direct';
+            const switchType = document.getElementById('switchType')?.value || '32port';
+            const switchHeight = switchType === '64port' ? CONFIG.switchHeight64 : CONFIG.switchHeight32;
+            const switchSizeLabel = switchType === '64port' ? '2U' : '1U';
+            
+            // Update legend labels based on switch type
+            document.getElementById('legend-switch-fe').textContent = `Frontend Switch (${switchSizeLabel})`;
+            document.getElementById('legend-switch-be').textContent = `Backend Switch (${switchSizeLabel})`;
             
             // Check if unified design exceeds single ToR capacity (unified cannot use spine layer)
             const unifiedExceedsToR = isUnified && result.actualRacks > (isSplit ? 2 : 1);
@@ -2853,8 +2876,7 @@
                 </div>
             `;
             
-            // Port density validation
-            const switchType = document.getElementById('switchType')?.value || '32port';
+            // Port density validation (switchType already declared above)
             const switchPorts = switchType === '64port' ? 64 : 32;
             const switchRackUnits = switchType === '64port' ? 2 : 1;
             
@@ -3053,6 +3075,123 @@ Configuration URL: ${generateShareableURL()}
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        }
+
+        // Export rack visualization as PNG
+        async function exportRackVisualization() {
+            const element = document.getElementById('rack-viz-selected');
+            const legend = document.querySelector('.mt-4.flex.flex-wrap.gap-4.justify-center');
+            const configSummary = document.getElementById('rack-config-summary');
+            
+            // Create a temporary container for export
+            const exportContainer = document.createElement('div');
+            exportContainer.style.cssText = 'background: #0f172a; padding: 20px; border-radius: 12px; width: fit-content;';
+            
+            // Add title
+            const title = document.createElement('div');
+            title.style.cssText = 'color: #22d3ee; font-size: 18px; font-weight: bold; margin-bottom: 16px; text-align: center;';
+            title.textContent = 'VAST EBox Rack Layout';
+            exportContainer.appendChild(title);
+            
+            // Clone the rack visualization
+            const rackClone = element.cloneNode(true);
+            rackClone.style.cssText = 'background: #0f172a; padding: 8px; border-radius: 8px;';
+            exportContainer.appendChild(rackClone);
+            
+            // Clone legend
+            if (legend) {
+                const legendClone = legend.cloneNode(true);
+                legendClone.style.cssText = 'display: flex; gap: 16px; justify-content: center; margin-top: 16px; font-size: 12px; color: #9ca3af;';
+                exportContainer.appendChild(legendClone);
+            }
+            
+            // Add timestamp
+            const timestamp = document.createElement('div');
+            timestamp.style.cssText = 'color: #6b7280; font-size: 10px; text-align: center; margin-top: 12px;';
+            timestamp.textContent = `Generated: ${new Date().toLocaleString()}`;
+            exportContainer.appendChild(timestamp);
+            
+            document.body.appendChild(exportContainer);
+            
+            try {
+                const canvas = await html2canvas(exportContainer, {
+                    backgroundColor: '#0f172a',
+                    scale: 2
+                });
+                
+                const link = document.createElement('a');
+                link.download = `vast-rack-layout-${new Date().toISOString().split('T')[0]}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (error) {
+                console.error('Export failed:', error);
+                alert('Export failed. Please try again.');
+            } finally {
+                document.body.removeChild(exportContainer);
+            }
+        }
+        
+        // Export network diagram as PNG
+        async function exportNetworkDiagram() {
+            const networkDiagram = document.getElementById('network-diagram');
+            const feInfo = document.getElementById('frontend-network-info');
+            const beInfo = document.getElementById('backend-network-info');
+            
+            // Create a temporary container for export
+            const exportContainer = document.createElement('div');
+            exportContainer.style.cssText = 'background: #0f172a; padding: 20px; border-radius: 12px; width: fit-content; min-width: 800px;';
+            
+            // Add title
+            const title = document.createElement('div');
+            title.style.cssText = 'color: #a855f7; font-size: 18px; font-weight: bold; margin-bottom: 16px; text-align: center;';
+            title.textContent = 'VAST EBox Network Topology';
+            exportContainer.appendChild(title);
+            
+            // Add network info summary
+            const infoContainer = document.createElement('div');
+            infoContainer.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;';
+            
+            const feBox = document.createElement('div');
+            feBox.style.cssText = 'background: #1e1b4b; padding: 12px; border-radius: 8px; border: 1px solid #7c3aed;';
+            feBox.innerHTML = `<div style="color: #a855f7; font-weight: bold; margin-bottom: 8px;">Frontend Network</div><div style="color: #9ca3af; font-size: 12px;">${feInfo ? feInfo.innerHTML : ''}</div>`;
+            infoContainer.appendChild(feBox);
+            
+            const beBox = document.createElement('div');
+            beBox.style.cssText = 'background: #052e16; padding: 12px; border-radius: 8px; border: 1px solid #22c55e;';
+            beBox.innerHTML = `<div style="color: #22c55e; font-weight: bold; margin-bottom: 8px;">Backend Network</div><div style="color: #9ca3af; font-size: 12px;">${beInfo ? beInfo.innerHTML : ''}</div>`;
+            infoContainer.appendChild(beBox);
+            
+            exportContainer.appendChild(infoContainer);
+            
+            // Clone the network diagram
+            const diagramClone = networkDiagram.cloneNode(true);
+            diagramClone.style.cssText = 'background: #0f172a; padding: 16px; border-radius: 8px; overflow: visible;';
+            exportContainer.appendChild(diagramClone);
+            
+            // Add timestamp
+            const timestamp = document.createElement('div');
+            timestamp.style.cssText = 'color: #6b7280; font-size: 10px; text-align: center; margin-top: 12px;';
+            timestamp.textContent = `Generated: ${new Date().toLocaleString()}`;
+            exportContainer.appendChild(timestamp);
+            
+            document.body.appendChild(exportContainer);
+            
+            try {
+                const canvas = await html2canvas(exportContainer, {
+                    backgroundColor: '#0f172a',
+                    scale: 2
+                });
+                
+                const link = document.createElement('a');
+                link.download = `vast-network-topology-${new Date().toISOString().split('T')[0]}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (error) {
+                console.error('Export failed:', error);
+                alert('Export failed. Please try again.');
+            } finally {
+                document.body.removeChild(exportContainer);
+            }
         }
 
         // Add event listeners
