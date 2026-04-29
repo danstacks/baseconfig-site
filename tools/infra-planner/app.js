@@ -4908,12 +4908,15 @@ function calculateMigrationEfficiency() {
 // ============================================
 // STORAGE CALCULATOR
 // ============================================
+// SYNC: VAST EBox config also defined in:
+//   tools/storage-calculator/index.html (CONFIG, LIST_PRICING, EBOX_*_LICENSE_DATA)
+//   frontend/src/lib/sizing.js (VAST_CONFIG, VAST_DRIVE_OPTIONS)
 
-// Storage Calculator Pricing (pre-discounted with standard conservative discounts - not configurable)
+// Storage Calculator Pricing (pre-discounted at 75% off CCW list - not configurable)
 const STORAGE_PRICING = {
     serverCost: 26066.39,
     switchCost: 19475.05,
-    serverOpticsCost: 155.88,
+    serverOpticsCost: 779.38,
     spineOpticsCost: 875.00,
     drives: {
         '15.3TB': 5488.12,
@@ -4927,7 +4930,7 @@ const STORAGE_PRICING = {
 const STORAGE_CONFIG = {
     serversPerRack: 30,
     switchesPerRack: 2,
-    opticsPerServer: 2,
+    opticsPerServer: 4,       // 4x 200G optics per server (2 per CX7 NIC)
     spineOpticsPerSwitch: 4,
     minServers: 8
 };
@@ -4941,9 +4944,9 @@ const storageDriveCosts = [
 
 // Capacity per server (raw and usable)
 const storageCapacities = [
-    { raw: 122.40, usable: 100.00 },
-    { raw: 245.60, usable: 200.00 },
-    { raw: 429.80, usable: 350.00 }
+    { raw: 122.88, usable: 100.00 },  // EBox 122: 8 × 15.36TB
+    { raw: 245.76, usable: 200.00 },  // EBox 244: 8 × 30.72TB
+    { raw: 430.08, usable: 350.00 }   // EBox 430: 7 × 61.44TB
 ];
 
 function calculateStorageMetrics() {
