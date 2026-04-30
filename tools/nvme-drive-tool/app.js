@@ -119,9 +119,9 @@ const SERVER_MODELS = {
                 label: '24 SFF SAS/SATA',
                 driveType: 'SFF',
                 totalBays: 24,
-                nvmeFrontBays: [1, 2, 3, 4],
+                nvmeFrontBays: [1, 2],
                 nvmeRearBays: [101, 102, 103, 104],
-                description: '24x 2.5-inch SFF SAS/SATA bays, front bays 1\u20134 support U.3 NVMe',
+                description: '24x 2.5-inch SFF SAS/SATA bays, front bays 1\u20132 support NVMe via Y-cable from CPU1',
             },
             'UCSC-C240-M7SN': {
                 label: '24 NVMe',
@@ -139,6 +139,8 @@ const SERVER_MODELS = {
             'UEFI boot mode required (legacy boot not supported for NVMe)',
             'NVMe SSDs cannot be controlled by SAS RAID controller',
             'U.3 NVMe drives supported (tri-mode backplane)',
+            'CBL-SAS24-C240M7= Y-cable required \u2014 connects CPU1 to drives 1\u20132 and RAID/HBA slot',
+            'If no RAID/HBA installed, leave controller end of Y-cable disconnected',
         ],
         rearNvmeRisers: ['Riser 1B', 'Riser 3B'],
         controllerOptions: [
@@ -157,11 +159,20 @@ const SERVER_MODELS = {
 const CABLES = {
     'CBL-NVME-C240SFF': {
         pid: 'CBL-NVME-C240SFF',
-        description: 'NVMe PCIe cable for C240 M6/M7 SFF front-loading drives',
-        servers: ['C240-M6', 'C240-M7'],
+        description: 'NVMe PCIe cable for C240 M6 SFF front-loading drives',
+        servers: ['C240-M6'],
         location: 'front',
         driveConnections: 'Connects front NVMe bays to PCIe switch/CPU',
-        notes: 'Required for front-loading SFF NVMe drives',
+        notes: 'Required for front-loading SFF NVMe drives on C240 M6',
+    },
+    'CBL-SAS24-C240M7': {
+        pid: 'CBL-SAS24-C240M7=',
+        description: 'SAS/NVMe Y-cable for C240 M7 (CPU1 to front drives 1\u20132)',
+        servers: ['C240-M7'],
+        location: 'front',
+        driveConnections: 'Y-cable from P-1 (CPU1) to RAID/HBA slot AND front drive slots 1\u20132',
+        notes: 'Leave RAID/HBA end disconnected if no storage controller is installed',
+        defaultForNoController: true,
     },
     'CBL-FNVME-240M6': {
         pid: 'CBL-FNVME-240M6=',
