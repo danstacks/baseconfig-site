@@ -56,10 +56,12 @@ const SERVER_MODELS = {
         },
         requirements: [
             'Two CPUs must be installed for NVMe support',
+            'Front NVMe bays 1–2 connect to CPU1; bays 3–4 connect to CPU2',
+            'If ordering 3–4 NVMe drives, two CPUs are required',
             'BIOS hot-plug support must be enabled',
             'UEFI boot mode required (legacy boot not supported for NVMe)',
             'NVMe SSDs cannot be controlled by SAS RAID controller',
-            'NVMe SSDs do not show in SAS RAID controller configuration utilities',
+            'SED drives can be mixed with non-SED drives in same server',
         ],
         rearNvmeRisers: ['Riser 1A', 'Riser 3A'],
         controllerOptions: [
@@ -92,12 +94,14 @@ const SERVER_MODELS = {
         },
         requirements: [
             'Two CPUs must be installed for NVMe support',
+            'Front NVMe bays 1–2 connect to CPU1; bays 3–4 connect to CPU2',
+            'If ordering 3–4 NVMe drives, two CPUs are required',
             'BIOS hot-plug support must be enabled',
             'UEFI boot mode required (legacy boot not supported for NVMe)',
             'NVMe SSDs cannot be controlled by SAS RAID controller',
             'When mixing NVMe form factors, drives must be the same brand',
         ],
-        rearNvmeRisers: ['Riser 1B (slots 2\u20133)', 'Riser 3B (slots 7\u20138)'],
+        rearNvmeRisers: ['Riser 1B (slots 2–3)', 'Riser 3B (slots 7–8)'],
         controllerOptions: [
             { id: 'mraid', pid: 'UCSC-RAID-M6SD', label: 'Cisco 12G Modular RAID Controller (28 Drives)', description: 'Modular 12G SAS RAID with 4GB FBWC — supports up to 28 SAS/SATA drives' },
             { id: 'dual-hba', pid: 'UCSC-SAS-240M6', label: 'Dual SAS HBAs (x2)', description: 'Two 12G SAS HBAs — JBOD/pass-through mode' },
@@ -122,7 +126,7 @@ const SERVER_MODELS = {
                 totalBays: 24,
                 nvmeFrontBays: [1, 2, 3, 4],
                 nvmeRearBays: [101, 102, 103, 104],
-                description: '24x 2.5-inch SFF SAS/SATA bays, front bays 1–4 support U.3 NVMe (bays 5–24 SAS/SATA/U.3 only)',
+                description: '24x 2.5-inch SFF bays, front bays 1\u20134 support direct-attach NVMe (bays 5\u201324 SAS/SATA only, or U.3 with tri-mode RAID)',
             },
             'UCSC-C240-M7SN': {
                 label: '24 NVMe',
@@ -135,11 +139,13 @@ const SERVER_MODELS = {
         },
         requirements: [
             'Two CPUs must be installed for NVMe support',
+            'Front NVMe bays 1–2 connect directly to CPU1; bays 3–4 connect to CPU2',
+            'If ordering 3–4 direct-attach NVMe drives, two CPUs are required',
             'PCIe Riser 2 not available in single-CPU configurations',
             'BIOS hot-plug support must be enabled',
             'UEFI boot mode required (legacy boot not supported for NVMe)',
-            'NVMe SSDs cannot be controlled by SAS RAID controller',
-            'U.3 NVMe drives supported (tri-mode backplane)',
+            'Only U.3 NVMe drives are allowed with 24G Tri-mode RAID controllers',
+            'SED drives can be mixed with non-SED drives in same server',
         ],
         rearNvmeRisers: ['Riser 1B', 'Riser 3B'],
         controllerOptions: [
@@ -252,28 +258,62 @@ const M7_CABLE_MATRIX = {
 };
 
 const NVME_DRIVES = {
-    // M6 Generation
-    'UCS-SD960G6I1X-EV':   { pid: 'UCS-SD960G6I1X-EV',   capacity: '960 GB',  capacityBytes: 960e9,   formFactor: '2.5-inch U.2', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M6','C245-M6'], vendor: 'Intel/Solidigm' },
-    'UCS-SD19T6G6I1X-EV':  { pid: 'UCS-SD19T6G6I1X-EV',  capacity: '1.92 TB', capacityBytes: 1.92e12, formFactor: '2.5-inch U.2', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M6','C245-M6'], vendor: 'Intel/Solidigm' },
-    'UCS-SD38T3G6I1X-EV':  { pid: 'UCS-SD38T3G6I1X-EV',  capacity: '3.84 TB', capacityBytes: 3.84e12, formFactor: '2.5-inch U.2', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M6','C245-M6'], vendor: 'Intel/Solidigm' },
-    'UCS-SD76T8G6I1X-EV':  { pid: 'UCS-SD76T8G6I1X-EV',  capacity: '7.68 TB', capacityBytes: 7.68e12, formFactor: '2.5-inch U.2', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M6','C245-M6'], vendor: 'Intel/Solidigm' },
-    'UCS-SD960GK6I1X-EV':  { pid: 'UCS-SD960GK6I1X-EV',  capacity: '960 GB',  capacityBytes: 960e9,   formFactor: '2.5-inch U.2', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M6','C245-M6'], vendor: 'KIOXIA' },
-    'UCS-SD19T6G6K1X-EV':  { pid: 'UCS-SD19T6G6K1X-EV',  capacity: '1.92 TB', capacityBytes: 1.92e12, formFactor: '2.5-inch U.2', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M6','C245-M6'], vendor: 'KIOXIA' },
-    'UCS-SD38T3G6K1X-EV':  { pid: 'UCS-SD38T3G6K1X-EV',  capacity: '3.84 TB', capacityBytes: 3.84e12, formFactor: '2.5-inch U.2', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M6','C245-M6'], vendor: 'KIOXIA' },
-    'UCS-SD76T8G6K1X-EV':  { pid: 'UCS-SD76T8G6K1X-EV',  capacity: '7.68 TB', capacityBytes: 7.68e12, formFactor: '2.5-inch U.2', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M6','C245-M6'], vendor: 'KIOXIA' },
-    'UCS-SD960GM6I1X-EV':  { pid: 'UCS-SD960GM6I1X-EV',  capacity: '960 GB',  capacityBytes: 960e9,   formFactor: '2.5-inch U.2', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
-    'UCS-SD19T6G6M1X-EV':  { pid: 'UCS-SD19T6G6M1X-EV',  capacity: '1.92 TB', capacityBytes: 1.92e12, formFactor: '2.5-inch U.2', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
-    // M7 Generation
-    'UCS-SD960G7I1X-EV':   { pid: 'UCS-SD960G7I1X-EV',   capacity: '960 GB',  capacityBytes: 960e9,   formFactor: '2.5-inch U.3', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M7'], vendor: 'Intel/Solidigm' },
-    'UCS-SD19T6G7I1X-EV':  { pid: 'UCS-SD19T6G7I1X-EV',  capacity: '1.92 TB', capacityBytes: 1.92e12, formFactor: '2.5-inch U.3', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M7'], vendor: 'Intel/Solidigm' },
-    'UCS-SD38T3G7I1X-EV':  { pid: 'UCS-SD38T3G7I1X-EV',  capacity: '3.84 TB', capacityBytes: 3.84e12, formFactor: '2.5-inch U.3', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M7'], vendor: 'Intel/Solidigm' },
-    'UCS-SD76T8G7I1X-EV':  { pid: 'UCS-SD76T8G7I1X-EV',  capacity: '7.68 TB', capacityBytes: 7.68e12, formFactor: '2.5-inch U.3', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M7'], vendor: 'Intel/Solidigm' },
-    'UCS-SD960G7K1X-EV':   { pid: 'UCS-SD960G7K1X-EV',   capacity: '960 GB',  capacityBytes: 960e9,   formFactor: '2.5-inch U.3', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M7'], vendor: 'KIOXIA' },
-    'UCS-SD19T6G7K1X-EV':  { pid: 'UCS-SD19T6G7K1X-EV',  capacity: '1.92 TB', capacityBytes: 1.92e12, formFactor: '2.5-inch U.3', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M7'], vendor: 'KIOXIA' },
-    'UCS-SD38T3G7K1X-EV':  { pid: 'UCS-SD38T3G7K1X-EV',  capacity: '3.84 TB', capacityBytes: 3.84e12, formFactor: '2.5-inch U.3', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M7'], vendor: 'KIOXIA' },
-    'UCS-SD76T8G7K1X-EV':  { pid: 'UCS-SD76T8G7K1X-EV',  capacity: '7.68 TB', capacityBytes: 7.68e12, formFactor: '2.5-inch U.3', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M7'], vendor: 'KIOXIA' },
-    'UCS-SD960G7M1X-EV':   { pid: 'UCS-SD960G7M1X-EV',   capacity: '960 GB',  capacityBytes: 960e9,   formFactor: '2.5-inch U.3', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M7'], vendor: 'Micron' },
-    'UCS-SD19T6G7M1X-EV':  { pid: 'UCS-SD19T6G7M1X-EV',  capacity: '1.92 TB', capacityBytes: 1.92e12, formFactor: '2.5-inch U.3', interface: 'NVMe PCIe Gen4 x4', endurance: 'Mixed Use', servers: ['C240-M7'], vendor: 'Micron' },
+    // ── C240 M6 / C245 M6 — Solidigm P5520 (U.2, Medium Endurance 1X DWPD) ──
+    'UCS-NVB1T9O1VM6':  { pid: 'UCS-NVB1T9O1VM6',  capacity: '1.9 TB',  capacityBytes: 1.9e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M6','C245-M6'], vendor: 'Solidigm' },
+    'UCS-NVB3T8O1VM6':  { pid: 'UCS-NVB3T8O1VM6',  capacity: '3.8 TB',  capacityBytes: 3.8e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M6','C245-M6'], vendor: 'Solidigm' },
+    'UCS-NVB7T6O1VM6':  { pid: 'UCS-NVB7T6O1VM6',  capacity: '7.6 TB',  capacityBytes: 7.6e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M6','C245-M6'], vendor: 'Solidigm' },
+    'UCS-NVB15TO1VM6':  { pid: 'UCS-NVB15TO1VM6',  capacity: '15.3 TB', capacityBytes: 15.3e12,  formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M6','C245-M6'], vendor: 'Solidigm' },
+    // ── C240 M6 / C245 M6 — Solidigm P5620 (U.2, High Endurance 3X DWPD) ──
+    'UCS-NVB1T6O1PM6':  { pid: 'UCS-NVB1T6O1PM6',  capacity: '1.6 TB',  capacityBytes: 1.6e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M6','C245-M6'], vendor: 'Solidigm' },
+    'UCS-NVB3T2O1PM6':  { pid: 'UCS-NVB3T2O1PM6',  capacity: '3.2 TB',  capacityBytes: 3.2e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M6','C245-M6'], vendor: 'Solidigm' },
+    'UCS-NVB6T4O1PM6':  { pid: 'UCS-NVB6T4O1PM6',  capacity: '6.4 TB',  capacityBytes: 6.4e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M6','C245-M6'], vendor: 'Solidigm' },
+    // ── C240 M6 / C245 M6 — Solidigm P5316 (U.2, Low Endurance <0.5 DWPD) ──
+    'UCS-NVB15T3O1LM6': { pid: 'UCS-NVB15T3O1LM6', capacity: '15.3 TB', capacityBytes: 15.3e12,  formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Low Endurance (<0.5 DWPD)', model: 'Solidigm P5316', servers: ['C240-M6','C245-M6'], vendor: 'Solidigm' },
+    // ── C240 M6 / C245 M6 — Micron P7450 (U.3, Medium Endurance) ──
+    'UCS-NVMEG4-M960':  { pid: 'UCS-NVMEG4-M960',  capacity: '960 GB',  capacityBytes: 960e9,    formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
+    'UCS-NVMEG4-M1920': { pid: 'UCS-NVMEG4-M1920', capacity: '1.9 TB',  capacityBytes: 1.9e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
+    'UCS-NVMEG4-M3840': { pid: 'UCS-NVMEG4-M3840', capacity: '3.8 TB',  capacityBytes: 3.8e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
+    'UCS-NVMEG4-M7680': { pid: 'UCS-NVMEG4-M7680', capacity: '7.6 TB',  capacityBytes: 7.6e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
+    'UCS-NVMEG4-M1536': { pid: 'UCS-NVMEG4-M1536', capacity: '15.3 TB', capacityBytes: 15.3e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
+    // ── C240 M6 / C245 M6 — Micron P7450 (U.3, High Endurance) ──
+    'UCS-NVMEG4-M1600': { pid: 'UCS-NVMEG4-M1600', capacity: '1.6 TB',  capacityBytes: 1.6e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
+    'UCS-NVMEG4-M3200': { pid: 'UCS-NVMEG4-M3200', capacity: '3.2 TB',  capacityBytes: 3.2e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
+    'UCS-NVMEG4-M6400': { pid: 'UCS-NVMEG4-M6400', capacity: '6.4 TB',  capacityBytes: 6.4e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
+    // ── C240 M6 / C245 M6 — Intel Optane P5800X (U.2, Extreme Performance) ──
+    'UCS-NVMEXP-I400':  { pid: 'UCS-NVMEXP-I400',  capacity: '400 GB',  capacityBytes: 400e9,    formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Extreme Perf (30\u2013100 DWPD)', model: 'Intel Optane P5800X', servers: ['C240-M6','C245-M6'], vendor: 'Intel' },
+    'UCS-NVMEXP-I800':  { pid: 'UCS-NVMEXP-I800',  capacity: '800 GB',  capacityBytes: 800e9,    formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Extreme Perf (30\u2013100 DWPD)', model: 'Intel Optane P5800X', servers: ['C240-M6','C245-M6'], vendor: 'Intel' },
+
+    // ── C240 M7 — Solidigm P5520 (U.2, Medium Endurance 1X DWPD) ──
+    'UCS-NVB1T9O1V':    { pid: 'UCS-NVB1T9O1V',    capacity: '1.9 TB',  capacityBytes: 1.9e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M7'], vendor: 'Solidigm' },
+    'UCS-NVB3T8O1V':    { pid: 'UCS-NVB3T8O1V',    capacity: '3.8 TB',  capacityBytes: 3.8e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M7'], vendor: 'Solidigm' },
+    'UCS-NVB7T6O1V':    { pid: 'UCS-NVB7T6O1V',    capacity: '7.6 TB',  capacityBytes: 7.6e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M7'], vendor: 'Solidigm' },
+    'UCS-NVB15TO1V':    { pid: 'UCS-NVB15TO1V',    capacity: '15.3 TB', capacityBytes: 15.3e12,  formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M7'], vendor: 'Solidigm' },
+    // ── C240 M7 — Solidigm P5620 (U.2, High Endurance 3X DWPD) ──
+    'UCS-NVB1T6O1P':    { pid: 'UCS-NVB1T6O1P',    capacity: '1.6 TB',  capacityBytes: 1.6e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M7'], vendor: 'Solidigm' },
+    'UCS-NVB3T2O1P':    { pid: 'UCS-NVB3T2O1P',    capacity: '3.2 TB',  capacityBytes: 3.2e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M7'], vendor: 'Solidigm' },
+    'UCS-NVB6T4O1P':    { pid: 'UCS-NVB6T4O1P',    capacity: '6.4 TB',  capacityBytes: 6.4e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M7'], vendor: 'Solidigm' },
+    'UCS-NVB12T8O1P':   { pid: 'UCS-NVB12T8O1P',   capacity: '12.8 TB', capacityBytes: 12.8e12,  formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M7'], vendor: 'Solidigm' },
+    // ── C240 M7 — Solidigm P5316 (U.2, Low Endurance <0.5 DWPD) ──
+    'UCS-NVB15T3O1L':   { pid: 'UCS-NVB15T3O1L',   capacity: '15.3 TB', capacityBytes: 15.3e12,  formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Low Endurance (<0.5 DWPD)', model: 'Solidigm P5316', servers: ['C240-M7'], vendor: 'Solidigm' },
+    // ── C240 M7 — Micron P7450 (U.3, Medium Endurance) ──
+    'UCS-NVMEG4-M960-D':  { pid: 'UCS-NVMEG4-M960-D',  capacity: '960 GB',  capacityBytes: 960e9,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M7'], vendor: 'Micron' },
+    'UCS-NVMEG4-M1920D':  { pid: 'UCS-NVMEG4-M1920D',  capacity: '1.9 TB',  capacityBytes: 1.9e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M7'], vendor: 'Micron' },
+    'UCS-NVMEG4-M3840D':  { pid: 'UCS-NVMEG4-M3840D',  capacity: '3.8 TB',  capacityBytes: 3.8e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M7'], vendor: 'Micron' },
+    'UCS-NVMEG4-M7680D':  { pid: 'UCS-NVMEG4-M7680D',  capacity: '7.6 TB',  capacityBytes: 7.6e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M7'], vendor: 'Micron' },
+    'UCS-NVMEG4-M1536D':  { pid: 'UCS-NVMEG4-M1536D',  capacity: '15.3 TB', capacityBytes: 15.3e12, formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M7'], vendor: 'Micron' },
+    // ── C240 M7 — Micron P7450 (U.3, High Endurance) ──
+    'UCS-NVMEG4-M1600D':  { pid: 'UCS-NVMEG4-M1600D',  capacity: '1.6 TB',  capacityBytes: 1.6e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M7'], vendor: 'Micron' },
+    'UCS-NVMEG4-M3200D':  { pid: 'UCS-NVMEG4-M3200D',  capacity: '3.2 TB',  capacityBytes: 3.2e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M7'], vendor: 'Micron' },
+    'UCS-NVMEG4-M6400D':  { pid: 'UCS-NVMEG4-M6400D',  capacity: '6.4 TB',  capacityBytes: 6.4e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M7'], vendor: 'Micron' },
+    // ── C240 M7 — Micron 7500 (U.3, Medium Endurance 1X DWPD) ──
+    'UCS-NVB960M2V':    { pid: 'UCS-NVB960M2V',    capacity: '960 GB',  capacityBytes: 960e9,    formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Micron 7500', servers: ['C240-M7'], vendor: 'Micron' },
+    'UCS-NVB1T9M2V':    { pid: 'UCS-NVB1T9M2V',    capacity: '1.9 TB',  capacityBytes: 1.9e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Micron 7500', servers: ['C240-M7'], vendor: 'Micron' },
+    'UCS-NVB3T8M2V':    { pid: 'UCS-NVB3T8M2V',    capacity: '3.8 TB',  capacityBytes: 3.8e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Micron 7500', servers: ['C240-M7'], vendor: 'Micron' },
+    // ── C240 M7 — Micron 7500 (U.3, High Endurance 3X DWPD) ──
+    'UCS-NVB3T2M2P':    { pid: 'UCS-NVB3T2M2P',    capacity: '3.2 TB',  capacityBytes: 3.2e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Micron 7500', servers: ['C240-M7'], vendor: 'Micron' },
+    // ── C240 M7 — Intel Optane P5800X (U.2, Extreme Performance) ──
+    'UCS-NVMEXP-I400-D': { pid: 'UCS-NVMEXP-I400-D', capacity: '400 GB',  capacityBytes: 400e9,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Extreme Perf (30\u2013100 DWPD)', model: 'Intel Optane P5800X', servers: ['C240-M7'], vendor: 'Intel' },
+    'UCS-NVMEXP-I800-D': { pid: 'UCS-NVMEXP-I800-D', capacity: '800 GB',  capacityBytes: 800e9,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Extreme Perf (30\u2013100 DWPD)', model: 'Intel Optane P5800X', servers: ['C240-M7'], vendor: 'Intel' },
 };
 
 const DOCUMENTATION = {
@@ -304,12 +344,39 @@ const state = {
     selectedBays: [],
     selectedDrive: null,
     expandedVendor: null,
+    driveFilterFF: null,       // form factor filter: 'U.2', 'U.3', or null (all)
+    driveFilterEnd: null,      // endurance filter: 'low', 'med', 'high', 'extreme', or null (all)
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function getCompatibleDrives(serverKey) {
     return Object.values(NVME_DRIVES).filter(d => d.servers.includes(serverKey));
+}
+
+function getEnduranceTier(endurance) {
+    const e = endurance.toLowerCase();
+    if (e.includes('extreme')) return 'extreme';
+    if (e.includes('high')) return 'high';
+    if (e.includes('low')) return 'low';
+    return 'med';
+}
+
+function getFilteredDrives(serverKey) {
+    return getCompatibleDrives(serverKey).filter(d => {
+        if (state.driveFilterFF && d.formFactor !== state.driveFilterFF) return false;
+        if (state.driveFilterEnd && getEnduranceTier(d.endurance) !== state.driveFilterEnd) return false;
+        return true;
+    });
+}
+
+function getCpuForBay(serverKey, bay) {
+    // Per spec sheet caveats: NVMe 1-2 → CPU1, NVMe 3-4 → CPU2 (unless tri-mode controller)
+    if (bay >= 100) {
+        // Rear: riser 1B → CPU1, riser 3B → CPU2
+        return bay <= 102 ? 'CPU1' : 'CPU2';
+    }
+    return bay <= 2 ? 'CPU1' : 'CPU2';
 }
 
 function cablesDependOnController(serverKey) {
@@ -399,7 +466,7 @@ function generateBOMItems() {
     // Drive
     const drive = NVME_DRIVES[state.selectedDrive];
     if (drive) {
-        items.push({ pid: drive.pid, description: `${drive.capacity} ${drive.formFactor} NVMe SSD (${drive.vendor})`, qty: state.selectedBays.length });
+        items.push({ pid: drive.pid, description: `${drive.capacity} ${drive.formFactor} NVMe SSD (${drive.model})`, qty: state.selectedBays.length });
     }
 
     // Front cables
@@ -582,7 +649,7 @@ function renderConfigure() {
                 const ctrlOpt = server.controllerOptions?.find(o => o.id === state.selectedController);
                 return ctrlOpt ? `<span class="flex items-center gap-1 text-purple-400"><i data-lucide="cpu" class="w-4 h-4"></i> ${ctrlOpt.label}</span>` : '';
             })() : ''}
-            ${state.selectedDrive ? `<span class="flex items-center gap-1 text-green-400"><i data-lucide="check-circle" class="w-4 h-4"></i> ${NVME_DRIVES[state.selectedDrive].capacity}</span>` : ''}
+            ${state.selectedDrive ? `<span class="flex items-center gap-1 text-green-400"><i data-lucide="check-circle" class="w-4 h-4"></i> ${NVME_DRIVES[state.selectedDrive].capacity} ${NVME_DRIVES[state.selectedDrive].model}</span>` : ''}
         </div>
     </div>`;
 
@@ -674,12 +741,13 @@ function renderBayMap(config) {
         let cls = 'bay-disabled';
         if (isSelected) cls = 'bay-selected';
         else if (isNvme) cls = 'bay-available';
+        const cpu = isNvme ? getCpuForBay(state.serverKey, bay) : null;
 
         html += `<button onclick="${isNvme ? `toggleBay(${bay})` : ''}" ${!isNvme ? 'disabled' : ''}
             class="bay-btn relative h-12 rounded-lg border text-xs font-mono flex flex-col items-center justify-center ${cls}"
-            title="${isNvme ? `Bay ${bay} \u2014 NVMe supported` : `Bay ${bay} \u2014 SAS/SATA only`}">
+            title="${isNvme ? `Bay ${bay} \u2014 NVMe supported (${cpu})` : `Bay ${bay} \u2014 SAS/SATA only`}">
             <span class="font-bold">${bay}</span>
-            ${isNvme ? '<span class="text-[9px] opacity-60">NVMe</span>' : ''}
+            ${isNvme ? `<span class="text-[9px] opacity-60">${cpu}</span>` : ''}
             ${isSelected ? '<div class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-cyan-500"></div>' : ''}
         </button>`;
     });
@@ -714,36 +782,77 @@ function renderBayMap(config) {
 // ─── Drive Selector ──────────────────────────────────────────────────────────
 
 function renderDriveSelector() {
-    const drives = getCompatibleDrives(state.serverKey);
+    const allDrives = getCompatibleDrives(state.serverKey);
+    const filteredDrives = getFilteredDrives(state.serverKey);
+
+    // Compute available filter options from all compatible drives
+    const formFactors = [...new Set(allDrives.map(d => d.formFactor))].sort();
+    const enduranceTiers = [...new Set(allDrives.map(d => getEnduranceTier(d.endurance)))];
+    const tierOrder = ['low', 'med', 'high', 'extreme'];
+    enduranceTiers.sort((a, b) => tierOrder.indexOf(a) - tierOrder.indexOf(b));
+    const tierLabels = { low: 'Low', med: 'Medium', high: 'High', extreme: 'Extreme' };
+    const tierColors = { low: 'text-gray-400 bg-gray-700/50', med: 'text-blue-400 bg-blue-900/30', high: 'text-amber-400 bg-amber-900/30', extreme: 'text-red-400 bg-red-900/30' };
+
+    // Group filtered drives by model (e.g. "Solidigm P5520")
     const grouped = {};
-    drives.forEach(d => {
-        if (!grouped[d.vendor]) grouped[d.vendor] = [];
-        grouped[d.vendor].push(d);
+    filteredDrives.forEach(d => {
+        const key = d.model;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(d);
     });
+    // Sort each group by capacity
+    Object.values(grouped).forEach(arr => arr.sort((a, b) => a.capacityBytes - b.capacityBytes));
 
     let html = `<div class="card rounded-xl p-5 space-y-3">
-        <h4 class="text-sm font-semibold text-gray-300 flex items-center gap-2">
-            <i data-lucide="hard-drive" class="w-4 h-4 text-cyan-400"></i> Compatible NVMe Drives
-        </h4>
+        <div class="flex items-center justify-between">
+            <h4 class="text-sm font-semibold text-gray-300 flex items-center gap-2">
+                <i data-lucide="hard-drive" class="w-4 h-4 text-cyan-400"></i> Compatible NVMe Drives
+            </h4>
+            <span class="text-xs text-gray-500">${filteredDrives.length} of ${allDrives.length} drives</span>
+        </div>
         <div class="text-xs text-amber-400/80 flex items-center gap-1 mb-2">
             <i data-lucide="alert-triangle" class="w-3 h-3"></i>
             Always verify latest compatibility on <a href="https://ucshcltool.cloudapps.cisco.com/public/" target="_blank" rel="noopener" class="underline hover:text-amber-300 ml-1">Cisco HCL Tool</a>
         </div>`;
 
-    Object.entries(grouped).forEach(([vendor, vendorDrives]) => {
-        const isExpanded = state.expandedVendor === vendor;
+    // Filter bar
+    html += '<div class="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-600/30">';
+    html += '<span class="text-xs text-gray-500 mr-1">Form:</span>';
+    html += `<button onclick="setDriveFilterFF(null)" class="px-2 py-0.5 text-xs rounded ${!state.driveFilterFF ? 'bg-cyan-600 text-white' : 'bg-slate-700 text-gray-400 hover:bg-slate-600'}">All</button>`;
+    formFactors.forEach(ff => {
+        html += `<button onclick="setDriveFilterFF('${ff}')" class="px-2 py-0.5 text-xs rounded ${state.driveFilterFF === ff ? 'bg-cyan-600 text-white' : 'bg-slate-700 text-gray-400 hover:bg-slate-600'}">${ff}</button>`;
+    });
+    html += '<span class="text-xs text-gray-500 ml-3 mr-1">Endurance:</span>';
+    html += `<button onclick="setDriveFilterEnd(null)" class="px-2 py-0.5 text-xs rounded ${!state.driveFilterEnd ? 'bg-cyan-600 text-white' : 'bg-slate-700 text-gray-400 hover:bg-slate-600'}">All</button>`;
+    enduranceTiers.forEach(tier => {
+        html += `<button onclick="setDriveFilterEnd('${tier}')" class="px-2 py-0.5 text-xs rounded ${state.driveFilterEnd === tier ? 'bg-cyan-600 text-white' : 'bg-slate-700 text-gray-400 hover:bg-slate-600'}">${tierLabels[tier]}</button>`;
+    });
+    html += '</div>';
+
+    if (Object.keys(grouped).length === 0) {
+        html += '<div class="text-center text-gray-500 text-sm py-4">No drives match the selected filters</div>';
+    }
+
+    Object.entries(grouped).forEach(([modelName, modelDrives]) => {
+        const isExpanded = state.expandedVendor === modelName;
+        const sample = modelDrives[0];
+        const tier = getEnduranceTier(sample.endurance);
         html += `<div class="card rounded-lg overflow-hidden">
-            <button onclick="toggleVendor('${vendor}')" class="vendor-header w-full flex items-center justify-between px-4 py-3">
-                <span class="font-medium text-sm">${vendor}</span>
+            <button onclick="toggleVendor('${modelName}')" class="vendor-header w-full flex items-center justify-between px-4 py-3">
+                <div class="flex items-center gap-2">
+                    <span class="font-medium text-sm">${modelName}</span>
+                    <span class="px-1.5 py-0.5 text-[10px] rounded ${tierColors[tier]}">${sample.endurance}</span>
+                    <span class="px-1.5 py-0.5 text-[10px] rounded bg-slate-700 text-gray-300">${sample.formFactor}</span>
+                </div>
                 <div class="flex items-center gap-2 text-xs text-gray-400">
-                    <span>${vendorDrives.length} drives</span>
+                    <span>${modelDrives.length} cap${modelDrives.length > 1 ? 's' : ''}</span>
                     <i data-lucide="${isExpanded ? 'chevron-up' : 'chevron-down'}" class="w-4 h-4"></i>
                 </div>
             </button>`;
 
         if (isExpanded) {
             html += '<div class="border-t border-slate-600/50">';
-            vendorDrives.forEach(drive => {
+            modelDrives.forEach(drive => {
                 const isSelected = state.selectedDrive === drive.pid;
                 html += `<button onclick="selectDrive('${drive.pid}')"
                     class="drive-row ${isSelected ? 'drive-row-selected' : ''} w-full flex items-center justify-between px-4 py-3 text-sm">
@@ -754,10 +863,7 @@ function renderDriveSelector() {
                             <div class="text-gray-400 text-xs mt-0.5">${drive.formFactor} &bull; ${drive.interface}</div>
                         </div>
                     </div>
-                    <div class="text-right">
-                        <span class="font-bold text-white">${drive.capacity}</span>
-                        <div class="text-xs text-gray-500">${drive.endurance}</div>
-                    </div>
+                    <span class="font-bold text-white">${drive.capacity}</span>
                 </button>`;
             });
             html += '</div>';
@@ -927,12 +1033,24 @@ function renderValidation() {
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
+function setDriveFilterFF(val) {
+    state.driveFilterFF = val;
+    render();
+}
+
+function setDriveFilterEnd(val) {
+    state.driveFilterEnd = val;
+    render();
+}
+
 function selectServer(key) {
     state.serverKey = key;
     state.pid = null;
     state.selectedBays = [];
     state.selectedDrive = null;
     state.expandedVendor = null;
+    state.driveFilterFF = null;
+    state.driveFilterEnd = null;
     // Auto-select if only one PID
     const pids = Object.keys(SERVER_MODELS[key].pids);
     if (pids.length === 1) {
@@ -950,6 +1068,8 @@ function selectPid(pid) {
     state.selectedBays = [];
     state.selectedDrive = null;
     state.expandedVendor = null;
+    state.driveFilterFF = null;
+    state.driveFilterEnd = null;
     state.step = 2;
     render();
 }
@@ -991,6 +1111,8 @@ function resetTool() {
     state.selectedBays = [];
     state.selectedDrive = null;
     state.expandedVendor = null;
+    state.driveFilterFF = null;
+    state.driveFilterEnd = null;
     render();
 }
 
