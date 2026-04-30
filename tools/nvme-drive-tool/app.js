@@ -62,6 +62,11 @@ const SERVER_MODELS = {
             'NVMe SSDs do not show in SAS RAID controller configuration utilities',
         ],
         rearNvmeRisers: ['Riser 1A', 'Riser 3A'],
+        controllerOptions: [
+            { id: 'mraid', pid: 'UCSC-RAID-M6SD', label: 'Cisco 12G SAS RAID Controller', description: 'MegaRAID SAS controller for SAS/SATA + NVMe pass-through' },
+            { id: 'hba', pid: 'UCSC-SAS-M6HD', label: 'Cisco 12G SAS HBA', description: 'SAS HBA — drives presented directly to OS (JBOD)' },
+            { id: 'none', pid: null, label: 'No SAS Controller', description: 'NVMe-only configuration, no SAS/SATA drives' },
+        ],
         biosSettings: {
             path: 'BIOS > Advanced > PCI Configuration',
             setting: 'NVMe Hot-Plug Support',
@@ -92,6 +97,10 @@ const SERVER_MODELS = {
             'When mixing NVMe form factors, drives must be the same brand',
         ],
         rearNvmeRisers: ['Riser 1B (slots 2\u20133)', 'Riser 3B (slots 7\u20138)'],
+        controllerOptions: [
+            { id: 'mraid', pid: 'UCSC-RAID-M6SD', label: 'Cisco 12G Modular RAID Controller', description: 'RAID controller — requires cable CBL-SDFNVME-245M6 for front NVMe' },
+            { id: 'dual-hba', pid: 'UCSC-SAS-240M6', label: 'Dual SAS HBAs (x2)', description: 'Two SAS HBAs — requires cable CBL-FNVME-C245M6 for front NVMe' },
+        ],
         biosSettings: {
             path: 'BIOS > Advanced > PCI Configuration',
             setting: 'NVMe Hot-Plug Support',
@@ -131,6 +140,11 @@ const SERVER_MODELS = {
             'U.3 NVMe drives supported (tri-mode backplane)',
         ],
         rearNvmeRisers: ['Riser 1B', 'Riser 3B'],
+        controllerOptions: [
+            { id: 'mraid', pid: 'UCSC-RAID-M7', label: 'Cisco 12G SAS RAID Controller', description: 'MegaRAID controller — SAS/SATA + NVMe pass-through via tri-mode backplane' },
+            { id: 'hba', pid: 'UCSC-SAS-M7HD', label: 'Cisco 12G SAS HBA', description: 'SAS HBA — JBOD mode, drives presented directly to OS' },
+            { id: 'none', pid: null, label: 'No SAS Controller (NVMe only)', description: 'NVMe-only configuration using U.3 tri-mode backplane' },
+        ],
         biosSettings: {
             path: 'BIOS > Advanced > PCI Configuration',
             setting: 'NVMe Hot-Plug Support',
@@ -253,6 +267,7 @@ const state = {
     step: 0,           // 0=server, 1=pid, 2=configure
     serverKey: null,
     pid: null,
+    selectedController: null,  // controller id (e.g. 'mraid', 'dual-hba', 'hba', 'none')
     selectedBays: [],
     selectedDrive: null,
     expandedVendor: null,
@@ -265,7 +280,20 @@ function getCompatibleDrives(serverKey) {
 }
 
 function getRequiredCables(serverKey, location) {
-    return Object.values(CABLES).filter(c => c.servers.includes(serverKey) && c.location === location);
+    const server = SERVER_MODELS[serverKey];
+    return Object.values(CABLES).filter(c => {
+        if (!c.servers.includes(serverKey)) return false;
+        if (c.location !== location) return false;
+        // Filter by controller if the cable requires one
+        if (c.requiresController && state.selectedController) {
+            const selectedOpt = server.controllerOptions?.find(o => o.id === state.selectedController);
+            if (!selectedOpt) return false;
+            // Match: cable's requiresController should match selected controller PID or contain it
+            const cableCtrl = c.requiresController.replace(/\s*\(x2\)/, '');
+            if (selectedOpt.pid !== cableCtrl) return false;
+        }
+        return true;
+    });
 }
 
 function getServerConfig() {
@@ -475,9 +503,16 @@ function renderConfigure() {
                 <i data-lucide="hard-drive" class="w-4 h-4"></i>
                 ${state.selectedBays.length} bay${state.selectedBays.length !== 1 ? 's' : ''} selected
             </span>
+            ${state.selectedController ? (() => {
+                const ctrlOpt = server.controllerOptions?.find(o => o.id === state.selectedController);
+                return ctrlOpt ? `<span class="flex items-center gap-1 text-purple-400"><i data-lucide="cpu" class="w-4 h-4"></i> ${ctrlOpt.label}</span>` : '';
+            })() : ''}
             ${state.selectedDrive ? `<span class="flex items-center gap-1 text-green-400"><i data-lucide="check-circle" class="w-4 h-4"></i> ${NVME_DRIVES[state.selectedDrive].capacity}</span>` : ''}
         </div>
     </div>`;
+
+    // Controller selection (if applicable)
+    html += renderControllerPicker();
 
     // 2-column layout
     html += '<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">';
@@ -497,6 +532,54 @@ function renderConfigure() {
     html += '</div>';
 
     html += '</div></div>';
+    return html;
+}
+
+// ─── Controller Picker ───────────────────────────────────────────────────────
+
+function renderControllerPicker() {
+    const server = SERVER_MODELS[state.serverKey];
+    if (!server || !server.controllerOptions || server.controllerOptions.length === 0) return '';
+
+    const hasControllerCables = Object.values(CABLES).some(
+        c => c.servers.includes(state.serverKey) && c.requiresController
+    );
+
+    let html = `<div class="card rounded-xl p-5 space-y-4">
+        <h4 class="text-sm font-semibold text-gray-300 flex items-center gap-2">
+            <i data-lucide="cpu" class="w-4 h-4 text-purple-400"></i> Storage Controller
+            ${hasControllerCables ? '<span class="text-xs font-normal text-amber-400 ml-2">* Determines which NVMe cable is required</span>' : ''}
+        </h4>
+        <p class="text-xs text-gray-500">What storage controller is installed in this server?</p>
+        <div class="grid grid-cols-1 md:grid-cols-${Math.min(server.controllerOptions.length, 3)} gap-3">`;
+
+    server.controllerOptions.forEach(opt => {
+        const isSelected = state.selectedController === opt.id;
+        html += `<button onclick="selectController('${opt.id}')"
+            class="p-4 rounded-lg border text-left transition-all ${
+                isSelected
+                    ? 'bg-purple-500/15 border-purple-500 shadow-lg shadow-purple-500/10'
+                    : 'bg-slate-800/50 border-slate-600 hover:border-purple-500/50'
+            }">
+            <div class="flex items-center justify-between mb-1">
+                <span class="font-semibold text-sm ${isSelected ? 'text-purple-300' : 'text-white'}">${opt.label}</span>
+                ${isSelected ? '<i data-lucide="check-circle" class="w-4 h-4 text-purple-400"></i>' : ''}
+            </div>
+            ${opt.pid ? `<span class="font-mono text-xs ${isSelected ? 'text-purple-400' : 'text-cyan-400'}">${opt.pid}</span>` : ''}
+            <p class="text-xs text-gray-500 mt-1">${opt.description}</p>
+        </button>`;
+    });
+
+    html += '</div>';
+
+    if (!state.selectedController && hasControllerCables) {
+        html += `<div class="flex items-center gap-2 text-xs text-amber-400/80 mt-2">
+            <i data-lucide="alert-triangle" class="w-3 h-3"></i>
+            Select a controller to see the correct cable recommendation
+        </div>`;
+    }
+
+    html += '</div>';
     return html;
 }
 
@@ -616,13 +699,27 @@ function renderDriveSelector() {
 // ─── Cable Summary ───────────────────────────────────────────────────────────
 
 function renderCableSummary() {
+    const server = SERVER_MODELS[state.serverKey];
+    const hasControllerCables = Object.values(CABLES).some(
+        c => c.servers.includes(state.serverKey) && c.requiresController
+    );
+    const needsControllerFirst = hasControllerCables && !state.selectedController;
+
     const frontCables = getRequiredCables(state.serverKey, 'front');
     const rearCables = hasRearDrives() ? getRequiredCables(state.serverKey, 'rear') : [];
     const allCables = [...frontCables, ...rearCables];
 
     let html = '<div class="card rounded-xl p-5 space-y-3">';
 
-    if (allCables.length === 0) {
+    if (needsControllerFirst) {
+        html += `<h4 class="text-sm font-semibold text-gray-300 flex items-center gap-2">
+            <i data-lucide="cable" class="w-4 h-4 text-amber-400"></i> Required Cables
+        </h4>
+        <div class="flex items-center gap-3 text-sm text-amber-400/80 p-3 rounded-lg bg-amber-900/10 border border-amber-800/30">
+            <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0"></i>
+            Select a storage controller above to determine which NVMe cable is needed for this server.
+        </div>`;
+    } else if (allCables.length === 0) {
         html += `<div class="flex items-center gap-3 text-sm text-gray-400">
             <i data-lucide="info" class="w-4 h-4 text-blue-400"></i>
             No special cables required for this configuration &mdash; drives connect via backplane.
@@ -778,10 +875,16 @@ function selectServer(key) {
 
 function selectPid(pid) {
     state.pid = pid;
+    state.selectedController = null;
     state.selectedBays = [];
     state.selectedDrive = null;
     state.expandedVendor = null;
     state.step = 2;
+    render();
+}
+
+function selectController(id) {
+    state.selectedController = state.selectedController === id ? null : id;
     render();
 }
 
@@ -813,6 +916,7 @@ function resetTool() {
     state.step = 0;
     state.serverKey = null;
     state.pid = null;
+    state.selectedController = null;
     state.selectedBays = [];
     state.selectedDrive = null;
     state.expandedVendor = null;
