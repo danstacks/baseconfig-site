@@ -171,6 +171,7 @@ const CABLES = {
         sparePid: 'CBL-FNVME-240M6=',
         description: 'C240 M6 Front NVMe cable kit (two cables)',
         servers: ['C240-M6'],
+        pids: ['UCSC-C240-M6SX', 'UCSC-C240-M6SN', 'UCSC-C240-M6S', 'UCSC-C240-M6N'],
         location: 'front',
         driveConnections: 'NVMe-C cable (MB NVMe-C \u2192 BP NVMe-C, drives 1\u20132) + NVMe-D cable (MB NVMe-D \u2192 BP NVMe-D, drives 3\u20134)',
         notes: 'Included when ordering front NVMe drives with or without RAID controller. Single cable set covers all 4 front NVMe bays.',
