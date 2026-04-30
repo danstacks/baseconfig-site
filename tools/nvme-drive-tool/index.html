@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NVMe Drive Compatibility Tool | BaseConfig</title>
+    <meta name="description" content="Check NVMe drive compatibility, required cables, and BIOS settings for Cisco UCS C240 M6, C245 M6, and C240 M7 servers.">
+    <link rel="icon" type="image/png" href="/assets/logo.jpg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        primary: '#22d3ee',
+                        secondary: '#64748b',
+                        accent: '#06b6d4',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="gradient-bg min-h-screen font-sans text-gray-100">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-700/50">
+        <div class="max-w-6xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <a href="https://baseconfig.tech" class="flex items-center gap-2 font-mono font-bold text-cyan-400">
+                    <span class="text-lg">&gt;BASE CONFIG</span><span class="cursor-blink">_</span>
+                </a>
+                <div class="flex items-center gap-4">
+                    <a href="/tools/ai-factory-sizer/" class="text-gray-300 hover:text-cyan-400 transition-colors text-sm">AI Factory Sizer</a>
+                    <a href="/tools/infra-planner/" class="text-gray-300 hover:text-cyan-400 transition-colors text-sm">Infrastructure Planner</a>
+                    <a href="/tools/storage-calculator/" class="text-gray-300 hover:text-cyan-400 transition-colors text-sm">Storage Calculator</a>
+                    <a href="https://baseconfig.tech" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-colors">
+                        &larr; Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="pt-24 px-6 pb-6 border-b border-slate-700/50">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center glow-amber">
+                        <i data-lucide="hard-drive" class="w-7 h-7 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold">
+                            <span class="text-cyan-500">&gt;</span> NVMe Drive <span class="gradient-text">Compatibility</span>
+                        </h1>
+                        <p class="text-sm text-gray-400 font-mono">nvme_drive_tool<span class="cursor-blink">_</span></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2" id="headerActions">
+                    <!-- Dynamic action buttons injected by JS -->
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto w-full px-6 py-8" id="app">
+        <!-- Content rendered by app.js -->
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-700/50 px-6 py-4 mt-auto">
+        <div class="max-w-6xl mx-auto flex items-center justify-between text-sm text-gray-500">
+            <div class="flex items-center gap-2">
+                <span class="font-mono text-cyan-400">&gt;</span>
+                <span>NVMe Drive Tool v1.0</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="https://baseconfig.tech" class="hover:text-cyan-400 transition-colors">BaseConfig</a>
+                <span>&bull;</span>
+                <span>Built by <a href="https://baseconfig.tech" class="text-cyan-400 hover:text-cyan-300">Dan Stacks</a></span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
