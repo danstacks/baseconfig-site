@@ -183,6 +183,7 @@ const CABLES = {
         pid: 'CBL-NVME-C240LFF',
         description: 'NVMe PCIe cable for C240 M6 LFF configuration',
         servers: ['C240-M6'],
+        pids: ['UCSC-C240-M6L'],
         location: 'front',
         driveConnections: 'Connects LFF bays with SFF NVMe sled adapters',
         notes: 'Requires UCS-LFF-SFF-SLED2 adapter in each LFF bay',
@@ -430,6 +431,8 @@ function getRequiredCables(serverKey, location) {
         // ── C240 M6: CBL-FNVME-240M6 always applies (no controller dependency) ──
         if (serverKey === 'C240-M6' && location === 'front') {
             if (frontNvmeCount === 0) return false;
+            // Cable restricted to specific PIDs (e.g. LFF-only cable)
+            if (c.pids && !c.pids.includes(state.pid)) return false;
             return true;
         }
 
