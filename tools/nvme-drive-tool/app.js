@@ -16,9 +16,9 @@ const SERVER_MODELS = {
                 label: '24 SFF SAS/SATA',
                 driveType: 'SFF',
                 totalBays: 24,
-                nvmeFrontBays: [1, 4],
+                nvmeFrontBays: [1, 2, 3, 4],
                 nvmeRearBays: [101, 102, 103, 104],
-                description: '24x 2.5-inch SFF SAS/SATA drive bays, front bays 1 and 4 support NVMe',
+                description: '24x 2.5-inch SFF SAS/SATA bays, front bays 1–4 support NVMe (bays 5–24 SAS/SATA only)',
             },
             'UCSC-C240-M6SN': {
                 label: '24 NVMe',
@@ -32,9 +32,9 @@ const SERVER_MODELS = {
                 label: '12 SAS/SATA + Optical',
                 driveType: 'SFF',
                 totalBays: 12,
-                nvmeFrontBays: [1, 4],
+                nvmeFrontBays: [1, 2, 3, 4],
                 nvmeRearBays: [103, 104],
-                description: '12x 2.5-inch SFF SAS/SATA bays with DVD option, front bays 1 and 4 support NVMe',
+                description: '12x 2.5-inch SFF SAS/SATA bays with DVD option, front bays 1–4 support NVMe (bays 5–12 SAS/SATA only)',
             },
             'UCSC-C240-M6N': {
                 label: '12 NVMe',
@@ -63,8 +63,9 @@ const SERVER_MODELS = {
         ],
         rearNvmeRisers: ['Riser 1A', 'Riser 3A'],
         controllerOptions: [
-            { id: 'mraid', pid: 'UCSC-RAID-M6SD', label: 'Cisco 12G SAS RAID Controller', description: 'MegaRAID SAS controller for SAS/SATA + NVMe pass-through' },
-            { id: 'hba', pid: 'UCSC-SAS-M6HD', label: 'Cisco 12G SAS HBA', description: 'SAS HBA — drives presented directly to OS (JBOD)' },
+            { id: 'mraid-28', pid: 'UCSC-RAID-M6SD', label: 'Cisco 12G SAS RAID Controller (28 Drives)', description: 'Modular 12G SAS RAID with 4GB FBWC — supports up to 28 SAS/SATA drives' },
+            { id: 'mraid-16', pid: 'UCSC-RAID-240M6', label: 'Cisco 12G SAS RAID Controller (16 Drives)', description: '12G SAS RAID with 4GB FBWC — supports up to 16 SAS/SATA drives' },
+            { id: 'hba', pid: 'UCSC-SAS-240M6', label: 'Cisco 12G SAS HBA (16 Drives)', description: 'SAS HBA — drives presented directly to OS (JBOD)' },
             { id: 'none', pid: null, label: 'No Storage Controller (M.2 Boot Only)', description: 'No SAS/RAID controller installed — server boots from M.2, front bays available for NVMe' },
         ],
         biosSettings: {
@@ -85,8 +86,8 @@ const SERVER_MODELS = {
                 driveType: 'SFF',
                 totalBays: 24,
                 nvmeFrontBays: [1, 2, 3, 4],
-                nvmeRearBays: [],
-                description: '24x 2.5-inch SFF SAS/SATA drive bays, front bays 1\u20134 support NVMe',
+                nvmeRearBays: [101, 102, 103, 104],
+                description: '24x 2.5-inch SFF SAS/SATA bays, front bays 1\u20134 support NVMe (bays 5\u201324 SAS/SATA only)',
             },
         },
         requirements: [
@@ -98,9 +99,9 @@ const SERVER_MODELS = {
         ],
         rearNvmeRisers: ['Riser 1B (slots 2\u20133)', 'Riser 3B (slots 7\u20138)'],
         controllerOptions: [
-            { id: 'mraid', pid: 'UCSC-RAID-M6SD', label: 'Cisco 12G Modular RAID Controller', description: 'RAID controller — requires cable CBL-SDFNVME-245M6 for front NVMe' },
-            { id: 'dual-hba', pid: 'UCSC-SAS-240M6', label: 'Dual SAS HBAs (x2)', description: 'Two SAS HBAs — requires cable CBL-FNVME-C245M6 for front NVMe' },
-            { id: 'none', pid: null, label: 'No Storage Controller (M.2 Boot Only)', description: 'No SAS/RAID controller installed — NVMe drives connect via direct PCIe cable' },
+            { id: 'mraid', pid: 'UCSC-RAID-M6SD', label: 'Cisco 12G Modular RAID Controller (28 Drives)', description: 'Modular 12G SAS RAID with 4GB FBWC — supports up to 28 SAS/SATA drives' },
+            { id: 'dual-hba', pid: 'UCSC-SAS-240M6', label: 'Dual SAS HBAs (x2)', description: 'Two 12G SAS HBAs — JBOD/pass-through mode' },
+            { id: 'none', pid: null, label: 'No Storage Controller (M.2 Boot Only)', description: 'No SAS/RAID controller installed — NVMe via direct PCIe' },
         ],
         biosSettings: {
             path: 'BIOS > Advanced > PCI Configuration',
@@ -142,9 +143,12 @@ const SERVER_MODELS = {
         ],
         rearNvmeRisers: ['Riser 1B', 'Riser 3B'],
         controllerOptions: [
-            { id: 'mraid', pid: 'UCSC-RAID-M7', label: 'Cisco 12G SAS RAID Controller', description: 'MegaRAID controller — SAS/SATA + NVMe pass-through via tri-mode backplane' },
-            { id: 'hba', pid: 'UCSC-SAS-M7HD', label: 'Cisco 12G SAS HBA', description: 'SAS HBA — JBOD mode, drives presented directly to OS' },
-            { id: 'none', pid: null, label: 'No Storage Controller (M.2 Boot Only)', description: 'No SAS/RAID controller installed — server boots from M.2, NVMe via direct PCIe' },
+            { id: 'raid-hp', pid: 'UCSC-RAID-HP', label: 'Cisco 24G Tri-mode RAID (16 Drives)', description: '24G Tri-mode RAID with cache backup — SAS/SATA/NVMe' },
+            { id: 'raid-mp1', pid: 'UCSC-RAID-MP1L32', label: 'Cisco 24G Tri-mode MP1 RAID (32 Drives)', description: '24G Tri-Mode MP1 RAID with 4GB FBWC — SAS/SATA/NVMe' },
+            { id: 'raid-sd', pid: 'UCSC-RAID-SD-D', label: 'Cisco 12G Modular RAID Controller', description: '12G SAS modular RAID controller' },
+            { id: 'hba-m1', pid: 'UCSC-HBA-M1L16', label: 'Cisco 24G Tri-mode HBA (16 Drives)', description: '24G Tri-mode M1 HBA — JBOD/pass-through for SAS/SATA/NVMe' },
+            { id: 'hba-sas', pid: 'UCSC-SAS-T-D', label: 'Cisco 12G SAS HBA (Pass-through)', description: '12G SAS pass-through HBA' },
+            { id: 'none', pid: null, label: 'No Storage Controller (M.2 Boot Only)', description: 'No SAS/RAID controller installed — NVMe via direct PCIe' },
         ],
         biosSettings: {
             path: 'BIOS > Advanced > PCI Configuration',
@@ -155,24 +159,18 @@ const SERVER_MODELS = {
 };
 
 const CABLES = {
-    'CBL-NVME-C240SFF': {
-        pid: 'CBL-NVME-C240SFF',
-        description: 'NVMe PCIe cable for C240 M6/M7 SFF front-loading drives',
-        servers: ['C240-M6', 'C240-M7'],
-        location: 'front',
-        driveConnections: 'Carries PCIe signal from front-panel drive backplane to PCIe riser 1B or 3B',
-        notes: 'Required for front-loading SFF NVMe drives',
-    },
+    // ── C240 M6 Cables (per c240m6-sff-specsheet.pdf) ──
     'CBL-FNVME-240M6': {
-        pid: 'CBL-FNVME-240M6=',
-        description: 'Front NVMe cable kit for C240 M6 24-drive SFF configurations',
+        pid: 'CBL-FNVME-240M6',
+        sparePid: 'CBL-FNVME-240M6=',
+        description: 'C240 M6 Front NVMe cable kit (two cables)',
         servers: ['C240-M6'],
         location: 'front',
-        driveConnections: 'Includes cable 74-126742-01 (drives 1\u20132) and 74-124687-01 (drives 3\u20134)',
-        notes: 'For UCSC-C240-M6SX and UCSC-C240-M6SN PIDs',
+        driveConnections: 'NVMe-C cable (MB NVMe-C \u2192 BP NVMe-C, drives 1\u20132) + NVMe-D cable (MB NVMe-D \u2192 BP NVMe-D, drives 3\u20134)',
+        notes: 'Included when ordering front NVMe drives with or without RAID controller. Single cable set covers all 4 front NVMe bays.',
         subCables: [
-            { partNumber: '74-126742-01', drives: [1, 2] },
-            { partNumber: '74-124687-01', drives: [3, 4] },
+            { partNumber: 'NVMe-C cable', drives: [1, 2], routing: 'MB NVMe-C \u2192 BP NVMe-C' },
+            { partNumber: 'NVMe-D cable', drives: [3, 4], routing: 'MB NVMe-D \u2192 BP NVMe-D' },
         ],
     },
     'CBL-NVME-C240LFF': {
@@ -183,23 +181,16 @@ const CABLES = {
         driveConnections: 'Connects LFF bays with SFF NVMe sled adapters',
         notes: 'Requires UCS-LFF-SFF-SLED2 adapter in each LFF bay',
     },
-    'CBL-RNVME-240M6': {
-        pid: 'CBL-RNVME-240M6=',
-        description: 'Rear NVMe cable kit for C240 M6',
-        servers: ['C240-M6'],
-        location: 'rear',
-        driveConnections: 'Connects rear NVMe bays 101\u2013104 to riser slots',
-        notes: 'Requires Riser 1A or 3A installed',
-    },
+
+    // ── C245 M6 Cables (per c245m6-sff-specsheet.pdf) ──
     'CBL-SDFNVME-245M6': {
         pid: 'CBL-SDFNVME-245M6',
-        description: 'NVMe cable for C245 M6 (with RAID controller or no controller)',
+        sparePid: 'CBL-SDFNVME-245M6=',
+        description: 'C245 M6 Front NVMe cable kit (two cables)',
         servers: ['C245-M6'],
         location: 'front',
-        driveConnections: 'NVMe-C cable (drives 1\u20132 via MB NVMe-C \u2192 BP NVMe-C) + NVMe-B cable (drives 3\u20134 via MB NVMe-B \u2192 BP NVMe-D)',
-        notes: 'Default cable \u2014 included when ordering NVMe drives with or without RAID controller (UCSC-RAID-M6SD)',
-        requiresController: 'UCSC-RAID-M6SD',
-        defaultForNoController: true,
+        driveConnections: 'NVMe-C cable (MB NVMe-C \u2192 BP NVMe-C, drives 1\u20132) + NVMe-B cable (MB NVMe-B \u2192 BP NVMe-D, drives 3\u20134)',
+        notes: 'Included when ordering NVMe drives with RAID controller (UCSC-RAID-M6SD) or without controller',
         subCables: [
             { partNumber: 'NVMe-C cable', drives: [1, 2], routing: 'MB NVMe-C \u2192 BP NVMe-C' },
             { partNumber: 'NVMe-B cable', drives: [3, 4], routing: 'MB NVMe-B \u2192 BP NVMe-D' },
@@ -207,21 +198,57 @@ const CABLES = {
     },
     'CBL-FNVME-C245M6': {
         pid: 'CBL-FNVME-C245M6',
-        description: 'NVMe cable for C245 M6 with dual SAS HBAs',
+        sparePid: 'CBL-FNVME-C245M6=',
+        description: 'C245 M6 Front NVMe cable (single Y cable)',
         servers: ['C245-M6'],
         location: 'front',
-        driveConnections: 'Single cable from MB CPU2 NVMe-C \u2192 BP NVMe-C and NVMe-D (drives 1\u20134)',
-        notes: 'Use only when server has dual SAS HBAs (UCSC-SAS-240M6)',
-        requiresController: 'UCSC-SAS-240M6 (x2)',
+        driveConnections: 'MB CPU2(NVMe-C) \u2192 BP NVMe-C & NVMe-D (drives 1\u20134)',
+        notes: 'Included when ordering NVMe drives with dual SAS HBAs (UCSC-SAS-240M6 x2)',
     },
-    'CBL-RNVME-C240M7': {
-        pid: 'CBL-RNVME-C240M7=',
-        description: 'Rear NVMe cable kit for C240 M7',
+
+    // ── C240 M7 Cables (per c240m7-sff-specsheet.pdf, Table 15) ──
+    'CBL-NVME-C240M7': {
+        pid: 'CBL-NVME-C240M7',
+        sparePid: 'CBL-NVME-C240M7=',
+        description: 'C240 M7 NVMe cable \u2014 MB P-2 to HBPLN (NVMe 1\u20132)',
         servers: ['C240-M7'],
-        location: 'rear',
-        driveConnections: 'Connects rear NVMe bays 101\u2013104 to riser slots',
-        notes: 'Requires Riser 1B or 3B, and PCIe Riser 2B or 2C installed',
+        location: 'front',
+        driveConnections: 'Motherboard P-2 \u2192 half-backplane (NVMe drives 1\u20132)',
+        notes: 'Required with tri-mode RAID controllers (UCSC-RAID-HP, UCSC-RAID-MP1L32, UCSC-RAID-SD-D) or tri-mode HBA (UCSC-HBA-M1L16) with 2 CPUs. Covers NVMe qty 1\u20134.',
     },
+    'CBL-FNVME-C240M7': {
+        pid: 'CBL-FNVME-C240M7',
+        sparePid: 'CBL-FNVME-C240M7=',
+        description: 'C240 M7 NVMe cable \u2014 MB P-4 to BP (NVMe 3\u20134)',
+        servers: ['C240-M7'],
+        location: 'front',
+        driveConnections: 'Motherboard P-4 \u2192 backplane (NVMe drives 3\u20134)',
+        notes: 'Required when front NVMe qty is 3 or 4. Always paired with either CBL-NVME-C240M7 or CBL-SAS24-C240M7.',
+    },
+    'CBL-SAS24-C240M7': {
+        pid: 'CBL-SAS24-C240M7',
+        sparePid: 'CBL-SAS24-C240M7=',
+        description: 'C240 M7 SAS/NVMe Y-cable \u2014 MB CPU1 P-1 to PB/PR2 & HDD 1\u20132',
+        servers: ['C240-M7'],
+        location: 'front',
+        driveConnections: 'Motherboard CPU1 P-1 \u2192 passback/PCIe riser 2 + front HDD bays 1\u20132',
+        notes: 'Required with SAS HBA (UCSC-SAS-T-D), no controller, or tri-mode HBA (UCSC-HBA-M1L16) with 1 CPU. This is the Y-cable that splits to both riser and drive bays.',
+    },
+};
+
+// ── C240 M7 Cable Selection Matrix (per spec sheet Table 15) ──
+// Maps controller PID → cable requirements by NVMe drive quantity
+const M7_CABLE_MATRIX = {
+    // Tri-mode RAID controllers
+    'UCSC-RAID-HP':     { qty1_2: ['CBL-NVME-C240M7'], qty3_4: ['CBL-NVME-C240M7', 'CBL-FNVME-C240M7'] },
+    'UCSC-RAID-MP1L32': { qty1_2: ['CBL-NVME-C240M7'], qty3_4: ['CBL-NVME-C240M7', 'CBL-FNVME-C240M7'] },
+    'UCSC-RAID-SD-D':   { qty1_2: ['CBL-NVME-C240M7'], qty3_4: ['CBL-NVME-C240M7', 'CBL-FNVME-C240M7'] },
+    // SAS HBA (pass-through) or No Controller
+    'UCSC-SAS-T-D':     { qty1_2: ['CBL-SAS24-C240M7'], qty3_4: ['CBL-SAS24-C240M7', 'CBL-FNVME-C240M7'] },
+    'none':             { qty1_2: ['CBL-SAS24-C240M7'], qty3_4: ['CBL-SAS24-C240M7', 'CBL-FNVME-C240M7'] },
+    // Tri-mode HBA (depends on CPU count)
+    'UCSC-HBA-M1L16-1cpu': { qty1_2: ['CBL-SAS24-C240M7'], qty3_4: null },  // N/A for 3-4 with 1 CPU
+    'UCSC-HBA-M1L16-2cpu': { qty1_2: ['CBL-NVME-C240M7'], qty3_4: ['CBL-NVME-C240M7', 'CBL-FNVME-C240M7'] },
 };
 
 const NVME_DRIVES = {
@@ -285,28 +312,62 @@ function getCompatibleDrives(serverKey) {
     return Object.values(NVME_DRIVES).filter(d => d.servers.includes(serverKey));
 }
 
+function cablesDependOnController(serverKey) {
+    return serverKey === 'C245-M6' || serverKey === 'C240-M7';
+}
+
 function getRequiredCables(serverKey, location) {
     const server = SERVER_MODELS[serverKey];
+    const frontNvmeCount = state.selectedBays.filter(b => b < 100).length;
+
     return Object.values(CABLES).filter(c => {
         if (!c.servers.includes(serverKey)) return false;
         if (c.location !== location) return false;
 
-        // Cable has no controller dependency — always show
-        if (!c.requiresController) return true;
+        // ── C240 M7: Use spec-sheet cable matrix (Table 15) ──
+        if (serverKey === 'C240-M7' && location === 'front') {
+            if (frontNvmeCount === 0) return false;
+            if (!state.selectedController) return false;
 
-        // Controller not yet selected — hide controller-dependent cables
-        if (!state.selectedController) return false;
+            const ctrlOpt = server.controllerOptions?.find(o => o.id === state.selectedController);
+            let matrixKey;
+            if (!ctrlOpt || !ctrlOpt.pid) {
+                matrixKey = 'none';
+            } else if (ctrlOpt.pid === 'UCSC-HBA-M1L16') {
+                // NVMe requires 2 CPUs per spec sheet, so always use 2cpu variant
+                matrixKey = 'UCSC-HBA-M1L16-2cpu';
+            } else {
+                matrixKey = ctrlOpt.pid;
+            }
 
-        // "No controller" selected — show cables marked as default for no-controller
-        if (state.selectedController === 'none') {
-            return c.defaultForNoController === true;
+            const entry = M7_CABLE_MATRIX[matrixKey];
+            if (!entry) return false;
+
+            const requiredCables = frontNvmeCount <= 2 ? entry.qty1_2 : entry.qty3_4;
+            if (!requiredCables) return false; // N/A case (e.g. HBA 1-CPU + qty 3-4)
+            return requiredCables.includes(c.pid);
         }
 
-        // Match selected controller PID against cable's required controller
-        const selectedOpt = server.controllerOptions?.find(o => o.id === state.selectedController);
-        if (!selectedOpt || !selectedOpt.pid) return false;
-        const cableCtrl = c.requiresController.replace(/\s*\(x2\)/, '');
-        return selectedOpt.pid === cableCtrl;
+        // ── C245 M6: Controller-dependent cable selection ──
+        if (serverKey === 'C245-M6' && location === 'front') {
+            if (frontNvmeCount === 0) return false;
+            if (!state.selectedController) return false;
+
+            if (state.selectedController === 'dual-hba') {
+                return c.pid === 'CBL-FNVME-C245M6';
+            }
+            // RAID or no controller → CBL-SDFNVME-245M6
+            return c.pid === 'CBL-SDFNVME-245M6';
+        }
+
+        // ── C240 M6: CBL-FNVME-240M6 always applies (no controller dependency) ──
+        if (serverKey === 'C240-M6' && location === 'front') {
+            if (frontNvmeCount === 0) return false;
+            return true;
+        }
+
+        // Default: show the cable
+        return true;
     });
 }
 
@@ -555,14 +616,12 @@ function renderControllerPicker() {
     const server = SERVER_MODELS[state.serverKey];
     if (!server || !server.controllerOptions || server.controllerOptions.length === 0) return '';
 
-    const hasControllerCables = Object.values(CABLES).some(
-        c => c.servers.includes(state.serverKey) && c.requiresController
-    );
+    const controllerAffectsCables = cablesDependOnController(state.serverKey);
 
     let html = `<div class="card rounded-xl p-5 space-y-4">
         <h4 class="text-sm font-semibold text-gray-300 flex items-center gap-2">
             <i data-lucide="cpu" class="w-4 h-4 text-purple-400"></i> Storage Controller
-            ${hasControllerCables ? '<span class="text-xs font-normal text-amber-400 ml-2">* Determines which NVMe cable is required</span>' : ''}
+            ${controllerAffectsCables ? '<span class="text-xs font-normal text-amber-400 ml-2">* Determines which NVMe cable is required</span>' : ''}
         </h4>
         <p class="text-xs text-gray-500">What storage controller is installed in this server?</p>
         <div class="grid grid-cols-1 md:grid-cols-${Math.min(server.controllerOptions.length, 3)} gap-3">`;
@@ -586,7 +645,7 @@ function renderControllerPicker() {
 
     html += '</div>';
 
-    if (!state.selectedController && hasControllerCables) {
+    if (!state.selectedController && controllerAffectsCables) {
         html += `<div class="flex items-center gap-2 text-xs text-amber-400/80 mt-2">
             <i data-lucide="alert-triangle" class="w-3 h-3"></i>
             Select a controller to see the correct cable recommendation
@@ -714,10 +773,8 @@ function renderDriveSelector() {
 
 function renderCableSummary() {
     const server = SERVER_MODELS[state.serverKey];
-    const hasControllerCables = Object.values(CABLES).some(
-        c => c.servers.includes(state.serverKey) && c.requiresController
-    );
-    const needsControllerFirst = hasControllerCables && !state.selectedController;
+    const controllerAffectsCables = cablesDependOnController(state.serverKey);
+    const needsControllerFirst = controllerAffectsCables && !state.selectedController;
 
     const frontCables = getRequiredCables(state.serverKey, 'front');
     const rearCables = hasRearDrives() ? getRequiredCables(state.serverKey, 'rear') : [];
