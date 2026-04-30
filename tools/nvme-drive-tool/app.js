@@ -9,7 +9,7 @@ const SERVER_MODELS = {
     'C240-M6': {
         name: 'Cisco UCS C240 M6',
         generation: 'M6',
-        processor: 'Intel Xeon Scalable (3rd Gen)',
+        processor: 'Intel Xeon Scalable 3rd Gen (e.g. 8358P)',
         formFactors: ['2U Rack'],
         pids: {
             'UCSC-C240-M6SX': {
@@ -65,7 +65,7 @@ const SERVER_MODELS = {
         controllerOptions: [
             { id: 'mraid', pid: 'UCSC-RAID-M6SD', label: 'Cisco 12G SAS RAID Controller', description: 'MegaRAID SAS controller for SAS/SATA + NVMe pass-through' },
             { id: 'hba', pid: 'UCSC-SAS-M6HD', label: 'Cisco 12G SAS HBA', description: 'SAS HBA — drives presented directly to OS (JBOD)' },
-            { id: 'none', pid: null, label: 'No SAS Controller', description: 'NVMe-only configuration, no SAS/SATA drives' },
+            { id: 'none', pid: null, label: 'No Storage Controller (M.2 Boot Only)', description: 'No SAS/RAID controller installed — server boots from M.2, front bays available for NVMe' },
         ],
         biosSettings: {
             path: 'BIOS > Advanced > PCI Configuration',
@@ -77,7 +77,7 @@ const SERVER_MODELS = {
     'C245-M6': {
         name: 'Cisco UCS C245 M6',
         generation: 'M6',
-        processor: 'AMD EPYC 7003 Series',
+        processor: 'AMD EPYC 7003 Series (e.g. 7763)',
         formFactors: ['2U Rack'],
         pids: {
             'UCSC-C245-M6SX': {
@@ -100,6 +100,7 @@ const SERVER_MODELS = {
         controllerOptions: [
             { id: 'mraid', pid: 'UCSC-RAID-M6SD', label: 'Cisco 12G Modular RAID Controller', description: 'RAID controller — requires cable CBL-SDFNVME-245M6 for front NVMe' },
             { id: 'dual-hba', pid: 'UCSC-SAS-240M6', label: 'Dual SAS HBAs (x2)', description: 'Two SAS HBAs — requires cable CBL-FNVME-C245M6 for front NVMe' },
+            { id: 'none', pid: null, label: 'No Storage Controller (M.2 Boot Only)', description: 'No SAS/RAID controller installed — NVMe drives connect via direct PCIe cable' },
         ],
         biosSettings: {
             path: 'BIOS > Advanced > PCI Configuration',
@@ -111,7 +112,7 @@ const SERVER_MODELS = {
     'C240-M7': {
         name: 'Cisco UCS C240 M7',
         generation: 'M7',
-        processor: 'Intel Xeon Scalable (4th Gen)',
+        processor: 'Intel Xeon Scalable 4th Gen (e.g. 6530)',
         formFactors: ['2U Rack'],
         pids: {
             'UCSC-C240-M7SX': {
@@ -143,7 +144,7 @@ const SERVER_MODELS = {
         controllerOptions: [
             { id: 'mraid', pid: 'UCSC-RAID-M7', label: 'Cisco 12G SAS RAID Controller', description: 'MegaRAID controller — SAS/SATA + NVMe pass-through via tri-mode backplane' },
             { id: 'hba', pid: 'UCSC-SAS-M7HD', label: 'Cisco 12G SAS HBA', description: 'SAS HBA — JBOD mode, drives presented directly to OS' },
-            { id: 'none', pid: null, label: 'No SAS Controller (NVMe only)', description: 'NVMe-only configuration using U.3 tri-mode backplane' },
+            { id: 'none', pid: null, label: 'No Storage Controller (M.2 Boot Only)', description: 'No SAS/RAID controller installed — server boots from M.2, NVMe via direct PCIe' },
         ],
         biosSettings: {
             path: 'BIOS > Advanced > PCI Configuration',
@@ -201,12 +202,13 @@ const CABLES = {
     },
     'CBL-FNVME-C245M6': {
         pid: 'CBL-FNVME-C245M6',
-        description: 'NVMe cable for C245 M6 with dual SAS HBAs',
+        description: 'NVMe cable for C245 M6 (non-RAID path)',
         servers: ['C245-M6'],
         location: 'front',
-        driveConnections: 'Front NVMe drives 1\u20134 when dual UCSC-SAS-240M6 HBAs installed',
-        notes: 'Use when server has dual SAS HBAs (UCSC-SAS-240M6)',
+        driveConnections: 'Front NVMe drives 1\u20134 via direct PCIe connection to CPU',
+        notes: 'Use when server has dual SAS HBAs or no storage controller',
         requiresController: 'UCSC-SAS-240M6 (x2)',
+        defaultForNoController: true,
     },
     'CBL-RNVME-C240M7': {
         pid: 'CBL-RNVME-C240M7=',
@@ -284,15 +286,23 @@ function getRequiredCables(serverKey, location) {
     return Object.values(CABLES).filter(c => {
         if (!c.servers.includes(serverKey)) return false;
         if (c.location !== location) return false;
-        // Filter by controller if the cable requires one
-        if (c.requiresController && state.selectedController) {
-            const selectedOpt = server.controllerOptions?.find(o => o.id === state.selectedController);
-            if (!selectedOpt) return false;
-            // Match: cable's requiresController should match selected controller PID or contain it
-            const cableCtrl = c.requiresController.replace(/\s*\(x2\)/, '');
-            if (selectedOpt.pid !== cableCtrl) return false;
+
+        // Cable has no controller dependency — always show
+        if (!c.requiresController) return true;
+
+        // Controller not yet selected — hide controller-dependent cables
+        if (!state.selectedController) return false;
+
+        // "No controller" selected — show cables marked as default for no-controller
+        if (state.selectedController === 'none') {
+            return c.defaultForNoController === true;
         }
-        return true;
+
+        // Match selected controller PID against cable's required controller
+        const selectedOpt = server.controllerOptions?.find(o => o.id === state.selectedController);
+        if (!selectedOpt || !selectedOpt.pid) return false;
+        const cableCtrl = c.requiresController.replace(/\s*\(x2\)/, '');
+        return selectedOpt.pid === cableCtrl;
     });
 }
 
