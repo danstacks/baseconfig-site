@@ -119,9 +119,9 @@ const SERVER_MODELS = {
                 label: '24 SFF SAS/SATA',
                 driveType: 'SFF',
                 totalBays: 24,
-                nvmeFrontBays: [1, 4],
+                nvmeFrontBays: [1, 2, 3, 4],
                 nvmeRearBays: [101, 102, 103, 104],
-                description: '24x 2.5-inch SFF SAS/SATA bays, front bays 1 and 4 support U.3 NVMe',
+                description: '24x 2.5-inch SFF SAS/SATA bays, front bays 1–4 support U.3 NVMe (bays 5–24 SAS/SATA/U.3 only)',
             },
             'UCSC-C240-M7SN': {
                 label: '24 NVMe',
