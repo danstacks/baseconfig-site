@@ -162,6 +162,167 @@ const SERVER_MODELS = {
             value: 'Enabled',
         },
     },
+
+    'C220-M6': {
+        name: 'Cisco UCS C220 M6',
+        generation: 'M6',
+        processor: 'Intel Xeon Scalable 3rd Gen (e.g. 8358P)',
+        formFactors: ['1U Rack'],
+        pids: {
+            'UCSC-C220-M6S': {
+                label: '10 SFF SAS/SATA',
+                driveType: 'SFF',
+                totalBays: 10,
+                nvmeFrontBays: [1, 2],
+                nvmeRearBays: [],
+                description: '10x 2.5-inch SFF bays, front bays 1\u20132 support NVMe via PCIe riser 2 (bays 3\u201310 SAS/SATA only)',
+            },
+            'UCSC-C220-M6N': {
+                label: '10 NVMe',
+                driveType: 'SFF',
+                totalBays: 10,
+                nvmeFrontBays: Array.from({ length: 10 }, (_, i) => i + 1),
+                nvmeRearBays: [],
+                description: '10x 2.5-inch NVMe drive bays, bays 1\u20132 via PCIe riser 2, bays 3\u201310 via NVMe switch card',
+            },
+        },
+        requirements: [
+            'Two CPUs must be installed for NVMe support',
+            'NVMe drives connect directly to CPU2 \u2014 not managed by SAS RAID controller',
+            'PCIe riser 2 not available in single-CPU configurations',
+            'NVMe-optimized (M6N) includes factory-installed NVMe switch card for bays 3\u201310',
+            'BIOS hot-plug support must be enabled',
+            'UEFI boot mode required (legacy boot not supported for NVMe)',
+            'Hot-removal supported in all OS except VMware ESXi (surprise-remove not supported)',
+        ],
+        rearNvmeRisers: [],
+        controllerOptions: [
+            { id: 'mraid', pid: 'UCSC-RAID-M6SD', label: 'Cisco 12G Modular RAID Controller', description: '12G SAS modular RAID with 4GB FBWC \u2014 does not manage NVMe' },
+            { id: 'hba', pid: 'UCSC-SAS-240M6', label: 'Cisco 12G SAS HBA', description: '12G SAS HBA \u2014 JBOD/pass-through for SAS/SATA' },
+            { id: 'none', pid: null, label: 'No Storage Controller (M.2 Boot Only)', description: 'No SAS/RAID controller \u2014 NVMe via direct PCIe' },
+        ],
+        biosSettings: {
+            path: 'BIOS > Advanced > PCI Subsystem Settings',
+            setting: 'NVMe SSD Hot-Plug Support',
+            value: 'Enabled',
+        },
+    },
+
+    'C220-M7': {
+        name: 'Cisco UCS C220 M7',
+        generation: 'M7',
+        processor: 'Intel Xeon Scalable 4th/5th Gen',
+        formFactors: ['1U Rack'],
+        pids: {
+            'UCSC-C220-M7SX': {
+                label: '10 SFF SAS/SATA',
+                driveType: 'SFF',
+                totalBays: 10,
+                nvmeFrontBays: [1, 2],
+                nvmeRearBays: [],
+                description: '10x 2.5-inch SFF bays, front bays 1\u20132 support direct-attach NVMe (bays 3\u201310 SAS/SATA only)',
+            },
+            'UCSC-C220-M7SN': {
+                label: '10 NVMe',
+                driveType: 'SFF',
+                totalBays: 10,
+                nvmeFrontBays: Array.from({ length: 10 }, (_, i) => i + 1),
+                nvmeRearBays: [],
+                description: '10x 2.5-inch NVMe drive bays, all front bays support NVMe',
+            },
+        },
+        requirements: [
+            'Two CPUs recommended for NVMe support',
+            'PCIe riser 2 not available in single-CPU config with 2 FHFL risers',
+            'In single-CPU config with 3 HHHL risers, riser 1 and 2 are both on CPU1',
+            'BIOS hot-plug support must be enabled',
+            'UEFI boot mode required (legacy boot not supported for NVMe)',
+            'NVMe SSDs cannot be controlled by SAS RAID controller',
+            'Hot-removal supported in all OS except VMware ESXi (surprise-remove not supported)',
+        ],
+        rearNvmeRisers: [],
+        controllerOptions: [
+            { id: 'raid-hp', pid: 'UCSC-RAID-HP', label: 'Cisco 24G Tri-mode RAID', description: '24G Tri-mode RAID with cache backup \u2014 SAS/SATA/NVMe' },
+            { id: 'hba-m1', pid: 'UCSC-HBA-M1L16', label: 'Cisco 24G Tri-mode HBA', description: '24G Tri-mode HBA \u2014 JBOD/pass-through' },
+            { id: 'hba-sas', pid: 'UCSC-SAS-T-D', label: 'Cisco 12G SAS HBA', description: '12G SAS pass-through HBA' },
+            { id: 'none', pid: null, label: 'No Storage Controller (M.2 Boot Only)', description: 'No SAS/RAID controller \u2014 NVMe via direct PCIe' },
+        ],
+        biosSettings: {
+            path: 'BIOS > Advanced > PCI Subsystem Settings',
+            setting: 'NVMe SSD Hot-Plug Support',
+            value: 'Enabled',
+        },
+    },
+
+    'X210c-M7': {
+        name: 'Cisco UCS X210c M7',
+        generation: 'M7',
+        processor: 'Intel Xeon Scalable 4th/5th Gen',
+        formFactors: ['X-Series Compute Node'],
+        pids: {
+            'UCSX-210C-M7': {
+                label: '6 SFF (Front Mezzanine)',
+                driveType: 'SFF',
+                totalBays: 6,
+                nvmeFrontBays: [1, 2, 3, 4, 5, 6],
+                nvmeRearBays: [],
+                description: '6x 2.5-inch hot-pluggable drives in front mezzanine module, all bays support NVMe',
+            },
+        },
+        requirements: [
+            'Requires Cisco UCS X9508 Server Chassis',
+            'Managed exclusively via Cisco Intersight (minimum Essentials license)',
+            'Drives require a RAID or passthrough controller in the front mezzanine module slot',
+            'Optional front mezzanine GPU module supports 2 NVMe + 2 HHHL GPUs',
+            'M.2 boot drives available (SATA with RAID or NVMe pass-through)',
+            'Up to 8TB memory with 5th Gen Intel Xeon Scalable processors',
+        ],
+        rearNvmeRisers: [],
+        controllerOptions: [
+            { id: 'mraid', pid: 'UCSX-M7RAID1-E', label: 'Front Mezzanine RAID Controller', description: 'Tri-mode RAID in front mezzanine module' },
+            { id: 'passthrough', pid: 'UCSX-M7PT1-PT', label: 'Front Mezzanine Passthrough', description: 'NVMe/SAS/SATA pass-through in mezzanine module' },
+        ],
+        biosSettings: {
+            path: 'Cisco Intersight > Server Profile > BIOS Policy',
+            setting: 'NVMe SSD Hot-Plug Support',
+            value: 'Enabled',
+        },
+    },
+
+    'X410c-M7': {
+        name: 'Cisco UCS X410c M7',
+        generation: 'M7',
+        processor: 'Intel Xeon Scalable 4th Gen (4-socket)',
+        formFactors: ['X-Series Compute Node'],
+        pids: {
+            'UCSX-410C-M7': {
+                label: '6 SFF (Front Mezzanine)',
+                driveType: 'SFF',
+                totalBays: 6,
+                nvmeFrontBays: [1, 2, 3, 4, 5, 6],
+                nvmeRearBays: [],
+                description: '6x 2.5-inch hot-pluggable drives in front mezzanine module, all bays support NVMe',
+            },
+        },
+        requirements: [
+            'Requires Cisco UCS X9508 Server Chassis (occupies 2 node slots)',
+            'Managed exclusively via Cisco Intersight (minimum Essentials license)',
+            'Drives require a RAID or passthrough controller in the front mezzanine module slot',
+            '4-socket compute node \u2014 up to 4x Intel Xeon Scalable 4th Gen CPUs',
+            'Up to 16TB memory with 64x 256GB DDR5-4800 DIMMs',
+            'M.2 boot drives available (SATA with RAID or NVMe pass-through)',
+        ],
+        rearNvmeRisers: [],
+        controllerOptions: [
+            { id: 'mraid', pid: 'UCSX-M7RAID1-E', label: 'Front Mezzanine RAID Controller', description: 'Tri-mode RAID in front mezzanine module' },
+            { id: 'passthrough', pid: 'UCSX-M7PT1-PT', label: 'Front Mezzanine Passthrough', description: 'NVMe/SAS/SATA pass-through in mezzanine module' },
+        ],
+        biosSettings: {
+            path: 'Cisco Intersight > Server Profile > BIOS Policy',
+            setting: 'NVMe SSD Hot-Plug Support',
+            value: 'Enabled',
+        },
+    },
 };
 
 const CABLES = {
@@ -242,6 +403,32 @@ const CABLES = {
         driveConnections: 'Motherboard CPU1 P-1 \u2192 passback/PCIe riser 2 + front HDD bays 1\u20132',
         notes: 'Required with SAS HBA (UCSC-SAS-T-D), no controller, or tri-mode HBA (UCSC-HBA-M1L16) with 1 CPU. This is the Y-cable that splits to both riser and drive bays.',
     },
+
+    // ── C220 M6 Cable (per c220m6-sff-specsheet.pdf) ──
+    'CBL-FNVME-220M6': {
+        pid: 'CBL-FNVME-220M6',
+        sparePid: 'CBL-FNVME-220M6=',
+        description: 'C220 M6 Front NVMe Y-cable (backplane to motherboard)',
+        servers: ['C220-M6'],
+        location: 'front',
+        driveConnections: 'Backplane connectors B1 & B2 → Motherboard NVMe B connector',
+        notes: 'Y-cable with 2 backplane connectors and 1 motherboard connector. Required for all C220 M6 NVMe configurations.',
+        subCables: [
+            { partNumber: 'B1 connector', drives: [1, 2, 3, 4, 5], routing: 'Backplane B1 → MB NVMe B' },
+            { partNumber: 'B2 connector', drives: [6, 7, 8, 9, 10], routing: 'Backplane B2 → MB NVMe B' },
+        ],
+    },
+
+    // ── C220 M7 Cable (per C220 M7 Install Guide) ──
+    'CBL-FNVME-C220M7': {
+        pid: 'CBL-FNVME-C220M7',
+        sparePid: 'CBL-FNVME-C220M7=',
+        description: 'C220 M7 Front NVMe PCIe cable (backplane to motherboard)',
+        servers: ['C220-M7'],
+        location: 'front',
+        driveConnections: 'Front-panel drive backplane → Motherboard (PCIe signal cable)',
+        notes: 'Carries PCIe signal from front-panel drive backplane to motherboard. Required for all NVMe configurations.',
+    },
 };
 
 // ── C240 M7 Cable Selection Matrix (per spec sheet Table 15) ──
@@ -261,61 +448,61 @@ const M7_CABLE_MATRIX = {
 
 const NVME_DRIVES = {
     // ── C240 M6 / C245 M6 — Solidigm P5520 (U.2, Medium Endurance 1X DWPD) ──
-    'UCS-NVB1T9O1VM6':  { pid: 'UCS-NVB1T9O1VM6',  capacity: '1.9 TB',  capacityBytes: 1.9e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M6','C245-M6'], vendor: 'Solidigm' },
-    'UCS-NVB3T8O1VM6':  { pid: 'UCS-NVB3T8O1VM6',  capacity: '3.8 TB',  capacityBytes: 3.8e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M6','C245-M6'], vendor: 'Solidigm' },
-    'UCS-NVB7T6O1VM6':  { pid: 'UCS-NVB7T6O1VM6',  capacity: '7.6 TB',  capacityBytes: 7.6e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M6','C245-M6'], vendor: 'Solidigm' },
-    'UCS-NVB15TO1VM6':  { pid: 'UCS-NVB15TO1VM6',  capacity: '15.3 TB', capacityBytes: 15.3e12,  formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M6','C245-M6'], vendor: 'Solidigm' },
+    'UCS-NVB1T9O1VM6':  { pid: 'UCS-NVB1T9O1VM6',  capacity: '1.9 TB',  capacityBytes: 1.9e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Solidigm' },
+    'UCS-NVB3T8O1VM6':  { pid: 'UCS-NVB3T8O1VM6',  capacity: '3.8 TB',  capacityBytes: 3.8e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Solidigm' },
+    'UCS-NVB7T6O1VM6':  { pid: 'UCS-NVB7T6O1VM6',  capacity: '7.6 TB',  capacityBytes: 7.6e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Solidigm' },
+    'UCS-NVB15TO1VM6':  { pid: 'UCS-NVB15TO1VM6',  capacity: '15.3 TB', capacityBytes: 15.3e12,  formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Solidigm' },
     // ── C240 M6 / C245 M6 — Solidigm P5620 (U.2, High Endurance 3X DWPD) ──
-    'UCS-NVB1T6O1PM6':  { pid: 'UCS-NVB1T6O1PM6',  capacity: '1.6 TB',  capacityBytes: 1.6e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M6','C245-M6'], vendor: 'Solidigm' },
-    'UCS-NVB3T2O1PM6':  { pid: 'UCS-NVB3T2O1PM6',  capacity: '3.2 TB',  capacityBytes: 3.2e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M6','C245-M6'], vendor: 'Solidigm' },
-    'UCS-NVB6T4O1PM6':  { pid: 'UCS-NVB6T4O1PM6',  capacity: '6.4 TB',  capacityBytes: 6.4e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M6','C245-M6'], vendor: 'Solidigm' },
+    'UCS-NVB1T6O1PM6':  { pid: 'UCS-NVB1T6O1PM6',  capacity: '1.6 TB',  capacityBytes: 1.6e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Solidigm' },
+    'UCS-NVB3T2O1PM6':  { pid: 'UCS-NVB3T2O1PM6',  capacity: '3.2 TB',  capacityBytes: 3.2e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Solidigm' },
+    'UCS-NVB6T4O1PM6':  { pid: 'UCS-NVB6T4O1PM6',  capacity: '6.4 TB',  capacityBytes: 6.4e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Solidigm' },
     // ── C240 M6 / C245 M6 — Solidigm P5316 (U.2, Low Endurance <0.5 DWPD) ──
-    'UCS-NVB15T3O1LM6': { pid: 'UCS-NVB15T3O1LM6', capacity: '15.3 TB', capacityBytes: 15.3e12,  formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Low Endurance (<0.5 DWPD)', model: 'Solidigm P5316', servers: ['C240-M6','C245-M6'], vendor: 'Solidigm' },
+    'UCS-NVB15T3O1LM6': { pid: 'UCS-NVB15T3O1LM6', capacity: '15.3 TB', capacityBytes: 15.3e12,  formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Low Endurance (<0.5 DWPD)', model: 'Solidigm P5316', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Solidigm' },
     // ── C240 M6 / C245 M6 — Micron P7450 (U.3, Medium Endurance) ──
-    'UCS-NVMEG4-M960':  { pid: 'UCS-NVMEG4-M960',  capacity: '960 GB',  capacityBytes: 960e9,    formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
-    'UCS-NVMEG4-M1920': { pid: 'UCS-NVMEG4-M1920', capacity: '1.9 TB',  capacityBytes: 1.9e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
-    'UCS-NVMEG4-M3840': { pid: 'UCS-NVMEG4-M3840', capacity: '3.8 TB',  capacityBytes: 3.8e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
-    'UCS-NVMEG4-M7680': { pid: 'UCS-NVMEG4-M7680', capacity: '7.6 TB',  capacityBytes: 7.6e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
-    'UCS-NVMEG4-M1536': { pid: 'UCS-NVMEG4-M1536', capacity: '15.3 TB', capacityBytes: 15.3e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
+    'UCS-NVMEG4-M960':  { pid: 'UCS-NVMEG4-M960',  capacity: '960 GB',  capacityBytes: 960e9,    formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Micron' },
+    'UCS-NVMEG4-M1920': { pid: 'UCS-NVMEG4-M1920', capacity: '1.9 TB',  capacityBytes: 1.9e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Micron' },
+    'UCS-NVMEG4-M3840': { pid: 'UCS-NVMEG4-M3840', capacity: '3.8 TB',  capacityBytes: 3.8e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Micron' },
+    'UCS-NVMEG4-M7680': { pid: 'UCS-NVMEG4-M7680', capacity: '7.6 TB',  capacityBytes: 7.6e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Micron' },
+    'UCS-NVMEG4-M1536': { pid: 'UCS-NVMEG4-M1536', capacity: '15.3 TB', capacityBytes: 15.3e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Micron' },
     // ── C240 M6 / C245 M6 — Micron P7450 (U.3, High Endurance) ──
-    'UCS-NVMEG4-M1600': { pid: 'UCS-NVMEG4-M1600', capacity: '1.6 TB',  capacityBytes: 1.6e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
-    'UCS-NVMEG4-M3200': { pid: 'UCS-NVMEG4-M3200', capacity: '3.2 TB',  capacityBytes: 3.2e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
-    'UCS-NVMEG4-M6400': { pid: 'UCS-NVMEG4-M6400', capacity: '6.4 TB',  capacityBytes: 6.4e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6'], vendor: 'Micron' },
+    'UCS-NVMEG4-M1600': { pid: 'UCS-NVMEG4-M1600', capacity: '1.6 TB',  capacityBytes: 1.6e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Micron' },
+    'UCS-NVMEG4-M3200': { pid: 'UCS-NVMEG4-M3200', capacity: '3.2 TB',  capacityBytes: 3.2e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Micron' },
+    'UCS-NVMEG4-M6400': { pid: 'UCS-NVMEG4-M6400', capacity: '6.4 TB',  capacityBytes: 6.4e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Micron' },
     // ── C240 M6 / C245 M6 — Intel Optane P5800X (U.2, Extreme Performance) ──
-    'UCS-NVMEXP-I400':  { pid: 'UCS-NVMEXP-I400',  capacity: '400 GB',  capacityBytes: 400e9,    formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Extreme Perf (30\u2013100 DWPD)', model: 'Intel Optane P5800X', servers: ['C240-M6','C245-M6'], vendor: 'Intel' },
-    'UCS-NVMEXP-I800':  { pid: 'UCS-NVMEXP-I800',  capacity: '800 GB',  capacityBytes: 800e9,    formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Extreme Perf (30\u2013100 DWPD)', model: 'Intel Optane P5800X', servers: ['C240-M6','C245-M6'], vendor: 'Intel' },
+    'UCS-NVMEXP-I400':  { pid: 'UCS-NVMEXP-I400',  capacity: '400 GB',  capacityBytes: 400e9,    formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Extreme Perf (30\u2013100 DWPD)', model: 'Intel Optane P5800X', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Intel' },
+    'UCS-NVMEXP-I800':  { pid: 'UCS-NVMEXP-I800',  capacity: '800 GB',  capacityBytes: 800e9,    formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Extreme Perf (30\u2013100 DWPD)', model: 'Intel Optane P5800X', servers: ['C240-M6','C245-M6','C220-M6'], vendor: 'Intel' },
 
     // ── C240 M7 — Solidigm P5520 (U.2, Medium Endurance 1X DWPD) ──
-    'UCS-NVB1T9O1V':    { pid: 'UCS-NVB1T9O1V',    capacity: '1.9 TB',  capacityBytes: 1.9e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M7'], vendor: 'Solidigm' },
-    'UCS-NVB3T8O1V':    { pid: 'UCS-NVB3T8O1V',    capacity: '3.8 TB',  capacityBytes: 3.8e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M7'], vendor: 'Solidigm' },
-    'UCS-NVB7T6O1V':    { pid: 'UCS-NVB7T6O1V',    capacity: '7.6 TB',  capacityBytes: 7.6e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M7'], vendor: 'Solidigm' },
-    'UCS-NVB15TO1V':    { pid: 'UCS-NVB15TO1V',    capacity: '15.3 TB', capacityBytes: 15.3e12,  formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M7'], vendor: 'Solidigm' },
+    'UCS-NVB1T9O1V':    { pid: 'UCS-NVB1T9O1V',    capacity: '1.9 TB',  capacityBytes: 1.9e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Solidigm' },
+    'UCS-NVB3T8O1V':    { pid: 'UCS-NVB3T8O1V',    capacity: '3.8 TB',  capacityBytes: 3.8e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Solidigm' },
+    'UCS-NVB7T6O1V':    { pid: 'UCS-NVB7T6O1V',    capacity: '7.6 TB',  capacityBytes: 7.6e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Solidigm' },
+    'UCS-NVB15TO1V':    { pid: 'UCS-NVB15TO1V',    capacity: '15.3 TB', capacityBytes: 15.3e12,  formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Solidigm P5520', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Solidigm' },
     // ── C240 M7 — Solidigm P5620 (U.2, High Endurance 3X DWPD) ──
-    'UCS-NVB1T6O1P':    { pid: 'UCS-NVB1T6O1P',    capacity: '1.6 TB',  capacityBytes: 1.6e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M7'], vendor: 'Solidigm' },
-    'UCS-NVB3T2O1P':    { pid: 'UCS-NVB3T2O1P',    capacity: '3.2 TB',  capacityBytes: 3.2e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M7'], vendor: 'Solidigm' },
-    'UCS-NVB6T4O1P':    { pid: 'UCS-NVB6T4O1P',    capacity: '6.4 TB',  capacityBytes: 6.4e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M7'], vendor: 'Solidigm' },
-    'UCS-NVB12T8O1P':   { pid: 'UCS-NVB12T8O1P',   capacity: '12.8 TB', capacityBytes: 12.8e12,  formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M7'], vendor: 'Solidigm' },
+    'UCS-NVB1T6O1P':    { pid: 'UCS-NVB1T6O1P',    capacity: '1.6 TB',  capacityBytes: 1.6e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Solidigm' },
+    'UCS-NVB3T2O1P':    { pid: 'UCS-NVB3T2O1P',    capacity: '3.2 TB',  capacityBytes: 3.2e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Solidigm' },
+    'UCS-NVB6T4O1P':    { pid: 'UCS-NVB6T4O1P',    capacity: '6.4 TB',  capacityBytes: 6.4e12,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Solidigm' },
+    'UCS-NVB12T8O1P':   { pid: 'UCS-NVB12T8O1P',   capacity: '12.8 TB', capacityBytes: 12.8e12,  formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Solidigm P5620', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Solidigm' },
     // ── C240 M7 — Solidigm P5316 (U.2, Low Endurance <0.5 DWPD) ──
-    'UCS-NVB15T3O1L':   { pid: 'UCS-NVB15T3O1L',   capacity: '15.3 TB', capacityBytes: 15.3e12,  formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Low Endurance (<0.5 DWPD)', model: 'Solidigm P5316', servers: ['C240-M7'], vendor: 'Solidigm' },
+    'UCS-NVB15T3O1L':   { pid: 'UCS-NVB15T3O1L',   capacity: '15.3 TB', capacityBytes: 15.3e12,  formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Low Endurance (<0.5 DWPD)', model: 'Solidigm P5316', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Solidigm' },
     // ── C240 M7 — Micron P7450 (U.3, Medium Endurance) ──
-    'UCS-NVMEG4-M960-D':  { pid: 'UCS-NVMEG4-M960-D',  capacity: '960 GB',  capacityBytes: 960e9,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M7'], vendor: 'Micron' },
-    'UCS-NVMEG4-M1920D':  { pid: 'UCS-NVMEG4-M1920D',  capacity: '1.9 TB',  capacityBytes: 1.9e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M7'], vendor: 'Micron' },
-    'UCS-NVMEG4-M3840D':  { pid: 'UCS-NVMEG4-M3840D',  capacity: '3.8 TB',  capacityBytes: 3.8e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M7'], vendor: 'Micron' },
-    'UCS-NVMEG4-M7680D':  { pid: 'UCS-NVMEG4-M7680D',  capacity: '7.6 TB',  capacityBytes: 7.6e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M7'], vendor: 'Micron' },
-    'UCS-NVMEG4-M1536D':  { pid: 'UCS-NVMEG4-M1536D',  capacity: '15.3 TB', capacityBytes: 15.3e12, formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M7'], vendor: 'Micron' },
+    'UCS-NVMEG4-M960-D':  { pid: 'UCS-NVMEG4-M960-D',  capacity: '960 GB',  capacityBytes: 960e9,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Micron' },
+    'UCS-NVMEG4-M1920D':  { pid: 'UCS-NVMEG4-M1920D',  capacity: '1.9 TB',  capacityBytes: 1.9e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Micron' },
+    'UCS-NVMEG4-M3840D':  { pid: 'UCS-NVMEG4-M3840D',  capacity: '3.8 TB',  capacityBytes: 3.8e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Micron' },
+    'UCS-NVMEG4-M7680D':  { pid: 'UCS-NVMEG4-M7680D',  capacity: '7.6 TB',  capacityBytes: 7.6e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Micron' },
+    'UCS-NVMEG4-M1536D':  { pid: 'UCS-NVMEG4-M1536D',  capacity: '15.3 TB', capacityBytes: 15.3e12, formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance', model: 'Micron P7450', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Micron' },
     // ── C240 M7 — Micron P7450 (U.3, High Endurance) ──
-    'UCS-NVMEG4-M1600D':  { pid: 'UCS-NVMEG4-M1600D',  capacity: '1.6 TB',  capacityBytes: 1.6e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M7'], vendor: 'Micron' },
-    'UCS-NVMEG4-M3200D':  { pid: 'UCS-NVMEG4-M3200D',  capacity: '3.2 TB',  capacityBytes: 3.2e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M7'], vendor: 'Micron' },
-    'UCS-NVMEG4-M6400D':  { pid: 'UCS-NVMEG4-M6400D',  capacity: '6.4 TB',  capacityBytes: 6.4e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M7'], vendor: 'Micron' },
+    'UCS-NVMEG4-M1600D':  { pid: 'UCS-NVMEG4-M1600D',  capacity: '1.6 TB',  capacityBytes: 1.6e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Micron' },
+    'UCS-NVMEG4-M3200D':  { pid: 'UCS-NVMEG4-M3200D',  capacity: '3.2 TB',  capacityBytes: 3.2e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Micron' },
+    'UCS-NVMEG4-M6400D':  { pid: 'UCS-NVMEG4-M6400D',  capacity: '6.4 TB',  capacityBytes: 6.4e12,  formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance', model: 'Micron P7450', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Micron' },
     // ── C240 M7 — Micron 7500 (U.3, Medium Endurance 1X DWPD) ──
-    'UCS-NVB960M2V':    { pid: 'UCS-NVB960M2V',    capacity: '960 GB',  capacityBytes: 960e9,    formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Micron 7500', servers: ['C240-M7'], vendor: 'Micron' },
-    'UCS-NVB1T9M2V':    { pid: 'UCS-NVB1T9M2V',    capacity: '1.9 TB',  capacityBytes: 1.9e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Micron 7500', servers: ['C240-M7'], vendor: 'Micron' },
-    'UCS-NVB3T8M2V':    { pid: 'UCS-NVB3T8M2V',    capacity: '3.8 TB',  capacityBytes: 3.8e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Micron 7500', servers: ['C240-M7'], vendor: 'Micron' },
+    'UCS-NVB960M2V':    { pid: 'UCS-NVB960M2V',    capacity: '960 GB',  capacityBytes: 960e9,    formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Micron 7500', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Micron' },
+    'UCS-NVB1T9M2V':    { pid: 'UCS-NVB1T9M2V',    capacity: '1.9 TB',  capacityBytes: 1.9e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Micron 7500', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Micron' },
+    'UCS-NVB3T8M2V':    { pid: 'UCS-NVB3T8M2V',    capacity: '3.8 TB',  capacityBytes: 3.8e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'Med Endurance (1 DWPD)', model: 'Micron 7500', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Micron' },
     // ── C240 M7 — Micron 7500 (U.3, High Endurance 3X DWPD) ──
-    'UCS-NVB3T2M2P':    { pid: 'UCS-NVB3T2M2P',    capacity: '3.2 TB',  capacityBytes: 3.2e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Micron 7500', servers: ['C240-M7'], vendor: 'Micron' },
+    'UCS-NVB3T2M2P':    { pid: 'UCS-NVB3T2M2P',    capacity: '3.2 TB',  capacityBytes: 3.2e12,   formFactor: 'U.3', interface: 'NVMe PCIe Gen4', endurance: 'High Endurance (3 DWPD)', model: 'Micron 7500', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Micron' },
     // ── C240 M7 — Intel Optane P5800X (U.2, Extreme Performance) ──
-    'UCS-NVMEXP-I400-D': { pid: 'UCS-NVMEXP-I400-D', capacity: '400 GB',  capacityBytes: 400e9,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Extreme Perf (30\u2013100 DWPD)', model: 'Intel Optane P5800X', servers: ['C240-M7'], vendor: 'Intel' },
-    'UCS-NVMEXP-I800-D': { pid: 'UCS-NVMEXP-I800-D', capacity: '800 GB',  capacityBytes: 800e9,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Extreme Perf (30\u2013100 DWPD)', model: 'Intel Optane P5800X', servers: ['C240-M7'], vendor: 'Intel' },
+    'UCS-NVMEXP-I400-D': { pid: 'UCS-NVMEXP-I400-D', capacity: '400 GB',  capacityBytes: 400e9,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Extreme Perf (30\u2013100 DWPD)', model: 'Intel Optane P5800X', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Intel' },
+    'UCS-NVMEXP-I800-D': { pid: 'UCS-NVMEXP-I800-D', capacity: '800 GB',  capacityBytes: 800e9,   formFactor: 'U.2', interface: 'NVMe PCIe Gen4', endurance: 'Extreme Perf (30\u2013100 DWPD)', model: 'Intel Optane P5800X', servers: ['C240-M7','C220-M7','X210c-M7','X410c-M7'], vendor: 'Intel' },
 };
 
 const DOCUMENTATION = {
@@ -333,6 +520,89 @@ const DOCUMENTATION = {
         installGuide: 'https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/c/hw/C240M7/install/b-cisco-c240-m7-install/m-maintaining.html',
         specSheet: 'https://www.cisco.com/c/dam/en/us/products/collateral/servers-unified-computing/ucs-c-series-rack-servers/c240m7-sff-specsheet.pdf',
         hcl: 'https://ucshcltool.cloudapps.cisco.com/public/',
+    },
+    'C220-M6': {
+        installGuide: 'https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/c/hw/c220m6/install/c220m6/m_maintaining_the_server.html',
+        specSheet: 'https://www.cisco.com/c/dam/en/us/products/collateral/servers-unified-computing/ucs-c-series-rack-servers/c220m6-sff-specsheet.pdf',
+        hcl: 'https://ucshcltool.cloudapps.cisco.com/public/',
+    },
+    'C220-M7': {
+        installGuide: 'https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/c/hw/C220M7/install/b-c220-m7-installation-guide/m-servicing.html',
+        specSheet: 'https://www.cisco.com/c/dam/en/us/products/collateral/servers-unified-computing/ucs-c-series-rack-servers/c220m7-sff-specsheet.pdf',
+        hcl: 'https://ucshcltool.cloudapps.cisco.com/public/',
+    },
+    'X210c-M7': {
+        installGuide: 'https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/x/hw/x210c-m7/install/b-cisco-ucs-x210c-m7-install-guide/m-servicing-the-compute-node.html',
+        specSheet: 'https://www.cisco.com/c/dam/en/us/products/collateral/servers-unified-computing/ucs-x-series-modular-system/x210cm7-specsheet.pdf',
+        hcl: 'https://ucshcltool.cloudapps.cisco.com/public/',
+    },
+    'X410c-M7': {
+        installGuide: 'https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/x/hw/x410c-m7/install/b-cisco-ucs-x410c-m7-install-guide/m-overview.html',
+        specSheet: 'https://www.cisco.com/c/dam/en/us/products/collateral/servers-unified-computing/ucs-x-series-modular-system/x410cm7-specsheet.pdf',
+        hcl: 'https://ucshcltool.cloudapps.cisco.com/public/',
+    },
+};
+
+// ─── Firmware / Driver Compatibility Notes ───────────────────────────────────
+
+const FIRMWARE_COMPAT = {
+    'C240-M6': {
+        management: 'Cisco IMC / UCS Manager',
+        notes: [
+            'NVMe hot-plug enabled via BIOS > PCI Configuration',
+            'Intel Optane P5800X end-of-life — check HCL for replacement options',
+            'U.3 drives (Micron P7450) require tri-mode RAID controller for RAID support',
+        ],
+    },
+    'C245-M6': {
+        management: 'Cisco IMC / UCS Manager',
+        notes: [
+            'AMD EPYC platform — verify HCL for OS driver support',
+            'NVMe cable selection depends on storage controller installed',
+            'U.3 drives (Micron P7450) require tri-mode RAID controller for RAID support',
+        ],
+    },
+    'C240-M7': {
+        management: 'Cisco IMC / UCS Manager',
+        notes: [
+            'Tri-mode RAID controllers support SAS/SATA/NVMe on the same controller',
+            '5th Gen Xeon support requires updated firmware — check release notes',
+            'Cable selection varies by controller type — see cable matrix above',
+        ],
+    },
+    'C220-M6': {
+        management: 'Cisco IMC / UCS Manager',
+        notes: [
+            'NVMe switch card (M6N) firmware updated via Host Upgrade Utility (HUU)',
+            'All NVMe drives connect to CPU2 — ensure CPU2 is populated',
+            '1RU form factor — no rear NVMe bay support',
+        ],
+    },
+    'C220-M7': {
+        management: 'Cisco IMC / UCS Manager',
+        notes: [
+            '5th Gen Xeon Scalable support requires updated firmware',
+            'Single-CPU NVMe support depends on riser configuration (3 HHHL vs 2 FHFL)',
+            '1RU form factor — no rear NVMe bay support',
+        ],
+    },
+    'X210c-M7': {
+        management: 'Cisco Intersight (IMM only)',
+        notes: [
+            'No standalone CIMC management — Intersight Managed Mode required',
+            'Drives managed via front mezzanine module RAID/passthrough controller',
+            'Firmware updates delivered through Intersight HCL-validated bundles',
+            'GPU mezzanine module option reduces available NVMe bays to 2',
+        ],
+    },
+    'X410c-M7': {
+        management: 'Cisco Intersight (IMM only)',
+        notes: [
+            'No standalone CIMC management — Intersight Managed Mode required',
+            '4-socket node occupies 2 node slots in X9508 chassis',
+            'Firmware updates delivered through Intersight HCL-validated bundles',
+            'Drives managed via front mezzanine module RAID/passthrough controller',
+        ],
     },
 };
 
@@ -373,11 +643,15 @@ function getFilteredDrives(serverKey) {
 }
 
 function getCpuForBay(serverKey, bay) {
-    // Per spec sheet caveats: NVMe 1-2 → CPU1, NVMe 3-4 → CPU2 (unless tri-mode controller)
     if (bay >= 100) {
         // Rear: riser 1B → CPU1, riser 3B → CPU2
         return bay <= 102 ? 'CPU1' : 'CPU2';
     }
+    // C220 M6: All NVMe drives connect to CPU2
+    if (serverKey === 'C220-M6') return 'CPU2';
+    // X-Series: drives route through mezzanine controller (CPU affinity depends on controller config)
+    if (serverKey === 'X210c-M7' || serverKey === 'X410c-M7') return 'Mezz';
+    // C-Series default: bays 1-2 → CPU1, bays 3+ → CPU2
     return bay <= 2 ? 'CPU1' : 'CPU2';
 }
 
@@ -437,7 +711,8 @@ function getRequiredCables(serverKey, location) {
             return true;
         }
 
-        // Default: show the cable
+        // Default: show front cables only when NVMe bays are selected
+        if (location === 'front' && frontNvmeCount === 0) return false;
         return true;
     });
 }
@@ -527,6 +802,9 @@ function render() {
         actionsHtml += `<a href="${docs.hcl}" target="_blank" rel="noopener" class="flex items-center gap-1 px-3 py-2 text-xs bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors text-gray-300"><i data-lucide="external-link" class="w-3 h-3"></i> Cisco HCL</a>`;
         actionsHtml += `<a href="${docs.installGuide}" target="_blank" rel="noopener" class="flex items-center gap-1 px-3 py-2 text-xs bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors text-gray-300"><i data-lucide="external-link" class="w-3 h-3"></i> Install Guide</a>`;
     }
+    if (state.step === 2) {
+        actionsHtml += `<button onclick="shareConfig()" class="flex items-center gap-1 px-3 py-2 text-xs bg-cyan-900/30 hover:bg-cyan-900/50 border border-cyan-800/50 rounded-lg transition-colors text-cyan-400"><i data-lucide="link" class="w-3 h-3"></i> Share</button>`;
+    }
     if (state.step > 0) {
         actionsHtml += `<button onclick="resetTool()" class="flex items-center gap-1 px-3 py-2 text-xs bg-red-900/30 hover:bg-red-900/50 border border-red-800/50 rounded-lg transition-colors text-red-400"><i data-lucide="x" class="w-3 h-3"></i> Reset</button>`;
     }
@@ -542,6 +820,7 @@ function render() {
 
     app.innerHTML = html;
     lucide.createIcons();
+    updateHash();
 }
 
 function renderStepIndicator() {
@@ -560,23 +839,29 @@ function renderServerSelection() {
     let html = `<div class="animate-fade-in space-y-6">
         <div><h2 class="text-xl font-bold mb-2">Select Server Model</h2>
         <p class="text-gray-400 text-sm">Choose the Cisco UCS server you want to add NVMe drives to.</p></div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">`;
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">`;
 
     Object.entries(SERVER_MODELS).forEach(([key, server]) => {
         const pidCount = Object.keys(server.pids).length;
+        const isXSeries = key.startsWith('X');
+        const iconName = isXSeries ? 'layout-grid' : 'server';
+        const accentColor = isXSeries ? 'purple' : 'cyan';
         html += `<button onclick="selectServer('${key}')" class="card card-hover rounded-xl p-6 text-left group">
             <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center group-hover:bg-cyan-500/30 transition-colors">
-                    <i data-lucide="server" class="w-5 h-5 text-cyan-400"></i>
+                <div class="w-10 h-10 rounded-lg bg-${accentColor}-500/20 flex items-center justify-center group-hover:bg-${accentColor}-500/30 transition-colors">
+                    <i data-lucide="${iconName}" class="w-5 h-5 text-${accentColor}-400"></i>
                 </div>
                 <div>
                     <h3 class="font-bold text-white">${server.name}</h3>
-                    <span class="text-xs font-mono text-cyan-400">${server.generation}</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-mono text-${accentColor}-400">${server.generation}</span>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-gray-400">${server.formFactors[0]}</span>
+                    </div>
                 </div>
             </div>
             <p class="text-sm text-gray-400 mb-3">${server.processor}</p>
             <div class="text-xs text-gray-500">${pidCount} configuration${pidCount > 1 ? 's' : ''} available</div>
-            <i data-lucide="chevron-right" class="w-4 h-4 text-cyan-500 mt-3 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-${accentColor}-500 mt-3 opacity-0 group-hover:opacity-100 transition-opacity"></i>
         </button>`;
     });
 
@@ -903,7 +1188,7 @@ function renderCableSummary() {
     } else if (allCables.length === 0) {
         html += `<div class="flex items-center gap-3 text-sm text-gray-400">
             <i data-lucide="info" class="w-4 h-4 text-blue-400"></i>
-            No special cables required for this configuration &mdash; drives connect via backplane.
+            No special cables required for this configuration &mdash; drives connect via ${state.serverKey?.startsWith('X') ? 'front mezzanine module' : 'backplane'}.
         </div>`;
     } else {
         html += `<h4 class="text-sm font-semibold text-gray-300 flex items-center gap-2">
@@ -975,6 +1260,23 @@ function renderRequirements() {
             html += `<span class="text-xs px-2 py-1 rounded bg-slate-700 text-gray-300 font-mono">${r}</span>`;
         });
         html += '</div></div>';
+    }
+
+    // Firmware / Driver Compatibility
+    const fw = FIRMWARE_COMPAT[state.serverKey];
+    if (fw) {
+        html += `<div class="border-t border-slate-600/50 pt-4">
+            <h5 class="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-1">
+                <i data-lucide="shield-check" class="w-3 h-3"></i> Firmware &amp; Driver Notes
+            </h5>
+            <div class="text-xs text-gray-500 mb-2">Management: <span class="text-cyan-400">${fw.management}</span></div>
+            <ul class="space-y-1">`;
+        fw.notes.forEach(note => {
+            html += `<li class="flex items-start gap-2 text-xs text-gray-400">
+                <span class="mt-1 w-1 h-1 rounded-full bg-blue-500 flex-shrink-0"></span>${note}
+            </li>`;
+        });
+        html += '</ul></div>';
     }
 
     html += '</div>';
@@ -1050,6 +1352,7 @@ function setDriveFilterEnd(val) {
 function selectServer(key) {
     state.serverKey = key;
     state.pid = null;
+    state.selectedController = null;
     state.selectedBays = [];
     state.selectedDrive = null;
     state.expandedVendor = null;
@@ -1102,8 +1405,8 @@ function selectDrive(pid) {
 
 function goBack(step) {
     state.step = step;
-    if (step === 0) { state.serverKey = null; state.pid = null; }
-    if (step <= 1) { state.pid = null; state.selectedBays = []; state.selectedDrive = null; }
+    if (step === 0) { state.serverKey = null; state.pid = null; state.selectedController = null; }
+    if (step <= 1) { state.pid = null; state.selectedController = null; state.selectedBays = []; state.selectedDrive = null; }
     render();
 }
 
@@ -1146,8 +1449,64 @@ function downloadBOM() {
     showNotification('CSV downloaded', 'success');
 }
 
+// ─── Shareable Config Links ──────────────────────────────────────────────────
+
+function encodeStateToHash() {
+    if (!state.serverKey || !state.pid) return '';
+    const data = {
+        s: state.serverKey,
+        p: state.pid,
+        c: state.selectedController || '',
+        b: state.selectedBays.join(','),
+        d: state.selectedDrive || '',
+    };
+    return '#' + btoa(JSON.stringify(data));
+}
+
+function decodeHashToState(hash) {
+    if (!hash || hash.length < 2) return false;
+    try {
+        const data = JSON.parse(atob(hash.slice(1)));
+        if (!data.s || !data.p || !SERVER_MODELS[data.s]) return false;
+        if (!SERVER_MODELS[data.s].pids[data.p]) return false;
+        state.serverKey = data.s;
+        state.pid = data.p;
+        state.selectedController = data.c || null;
+        state.selectedBays = (data.b && data.b.length > 0) ? data.b.split(',').map(Number).filter(n => !isNaN(n) && n > 0) : [];
+        state.selectedDrive = data.d || null;
+        state.step = 2;
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+function updateHash() {
+    if (state.step === 2 && state.serverKey && state.pid) {
+        const hash = encodeStateToHash();
+        history.replaceState(null, '', hash);
+    } else {
+        history.replaceState(null, '', window.location.pathname);
+    }
+}
+
+function shareConfig() {
+    const hash = encodeStateToHash();
+    const url = window.location.origin + window.location.pathname + hash;
+    navigator.clipboard.writeText(url).then(
+        () => showNotification('Shareable link copied to clipboard', 'success'),
+        () => {
+            prompt('Copy this link:', url);
+        }
+    );
+}
+
 // ─── Init ────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Try to restore state from URL hash
+    if (window.location.hash) {
+        decodeHashToState(window.location.hash);
+    }
     render();
 });
